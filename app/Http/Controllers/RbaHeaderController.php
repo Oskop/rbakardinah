@@ -71,7 +71,71 @@ class RbaHeaderController extends Controller
     public function show(\App\Models\RbaHeader $header)
     {
         $header->load(['submissions.unit', 'period', 'admin']);
-        return view('admin.headers.show', compact('header'));
+
+        // 1. Fetch all account codes
+        $accountCodes = \App\Models\AccountCode::orderBy('code')->get();
+
+        // 2. Fetch all RBA details for this header
+        $submissionIds = $header->submissions->pluck('id');
+        $details = \App\Models\RbaDetail::whereIn('rba_submission_id', $submissionIds)
+            ->with(['creator', 'validator'])
+            ->get();
+
+        // 3. Fetch all Global Pagu for this header
+        $pagus = \App\Models\RbaAccountPagu::where('rba_header_id', $header->id)->get()->keyBy('account_code_id');
+
+        // Group details by account code
+        $detailsByAccount = $details->groupBy('account_code_id');
+
+        // Build the hierarchical tree
+        $reportData = [];
+        foreach ($accountCodes as $ac) {
+            $code = $ac->code;
+            $items = $detailsByAccount->get($ac->id, collect());
+
+            $nominalUsulan = $items->sum('nominal_request');
+            $nominalPagu = isset($pagus[$ac->id]) ? $pagus[$ac->id]->nominal_pagu : 0;
+
+            // We also need to sum up children for parent nodes
+            // But since we are iterating in order of code, we might need a post-processing or a recursive approach.
+            // A simpler way: for each leaf detail, add its value to all its parent prefixes.
+
+            $reportData[$code] = [
+                'id' => $ac->id,
+                'code' => $code,
+                'name' => $ac->name,
+                'usulan' => $nominalUsulan,
+                'pagu' => $nominalPagu,
+                'details' => $items, // List of individual items for this specific code
+                'level' => count(explode('.', rtrim($code, '.'))),
+            ];
+        }
+
+        // Post-process: Aggregate children into parents
+        // We sort by code length descending to ensure children are processed before parents
+        $codes = array_keys($reportData);
+        usort($codes, function ($a, $b) {
+            return strlen($b) <=> strlen($a);
+        });
+
+        foreach ($codes as $childCode) {
+            $parts = explode('.', rtrim($childCode, '.'));
+            if (count($parts) > 1) {
+                array_pop($parts);
+                $parentCode = implode('.', $parts);
+
+                // If parent exists in our list, add child's values to it
+                if (isset($reportData[$parentCode])) {
+                    $reportData[$parentCode]['usulan'] += $reportData[$childCode]['usulan'];
+                    $reportData[$parentCode]['pagu'] += $reportData[$childCode]['pagu'];
+                }
+            }
+        }
+
+        // Final sort by code ascending for display
+        ksort($reportData);
+
+        return view('admin.headers.show', compact('header', 'reportData'));
     }
 
     /**

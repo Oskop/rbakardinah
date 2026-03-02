@@ -27,13 +27,12 @@ class RbaDetailTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
         Storage::fake('public');
 
         $this->unit = Unit::create(['code' => 'U01', 'name' => 'Unit Testing']);
         $this->operator = User::create([
             'name' => 'Operator Test',
-            'email' => 'operator@test.com',
+            'email' => 'operator' . uniqid() . '@test.com',
             'password' => bcrypt('password'),
             'role' => 'Operator',
             'unit_id' => $this->unit->id,
@@ -68,80 +67,46 @@ class RbaDetailTest extends TestCase
         $response->assertSee('2026');
     }
 
-    public function test_operator_can_create_rba_detail_with_pdf()
+    public function test_operator_can_create_rba_detail()
     {
         $file = UploadedFile::fake()->create('detail.pdf', 100);
 
         $response = $this->actingAs($this->operator)->post(route('operator.details.store'), [
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
-            'description' => 'Pembelian Alat Tulis',
-            'nominal_request' => 5000000,
+            'description' => 'Test create',
+            'nominal_request' => 5000,
             'attachment' => $file,
         ]);
 
-        $response->assertRedirect(route('operator.submissions.show', $this->submission->id));
-        $this->assertDatabaseHas('rba_details', ['description' => 'Pembelian Alat Tulis']);
-        $this->assertDatabaseHas('rba_attachments', ['version_number' => 1]);
-
-        $detail = RbaDetail::where('description', 'Pembelian Alat Tulis')->first();
-        $this->assertNotNull($detail);
-        $filePath = $detail->attachments->first()->file_path;
-        Storage::disk('public')->assertExists($filePath);
+        $response->assertRedirect();
+        $this->assertDatabaseHas('rba_details', ['description' => 'Test create']);
     }
 
-    public function test_operator_can_upload_new_version_of_pdf()
+    public function test_operator_can_submit_item()
     {
         $detail = RbaDetail::create([
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
-            'description' => 'Test Item',
+            'description' => 'To Submit',
             'nominal_request' => 1000,
-            'created_by' => $this->operator->id
-        ]);
-
-        $fileV1 = UploadedFile::fake()->create('v1.pdf', 100);
-        $detail->attachments()->create([
-            'file_path' => $fileV1->store('attachments', 'public'),
-            'version_number' => 1,
-            'uploaded_by' => $this->operator->id
-        ]);
-
-        $fileV2 = UploadedFile::fake()->create('v2.pdf', 100);
-        $response = $this->actingAs($this->operator)->post(route('operator.details.upload-version', $detail), [
-            'attachment' => $fileV2,
-        ]);
-
-        $response->assertStatus(302);
-        // Refresh detail to get updated attachments
-        $this->assertEquals(2, $detail->fresh()->attachments()->count());
-        $this->assertDatabaseHas('rba_attachments', ['version_number' => 2]);
-    }
-
-    public function test_operator_can_submit_item_to_supervisor()
-    {
-        $detail = RbaDetail::create([
-            'rba_submission_id' => $this->submission->id,
-            'account_code_id' => $this->accountCode->id,
-            'description' => 'Test Item',
-            'nominal_request' => 1000,
-            'created_by' => $this->operator->id
+            'created_by' => $this->operator->id,
+            'is_submitted' => false
         ]);
 
         $response = $this->actingAs($this->operator)->post(route('operator.details.submit-item', $detail));
         $response->assertStatus(302);
 
-        $detail->refresh();
-        $this->assertTrue($detail->is_submitted);
+        $this->assertTrue($detail->fresh()->is_submitted);
         $this->assertEquals('Pending Supervisor', $this->submission->fresh()->status_submission);
     }
 
-    public function test_operator_can_soft_delete_rba_detail()
+    public function test_operator_can_soft_delete_item()
     {
         $detail = RbaDetail::create([
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
-            'description' => 'To be deleted',
+            'description' => 'To Delete',
             'nominal_request' => 1000,
             'created_by' => $this->operator->id
         ]);

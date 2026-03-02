@@ -14,9 +14,8 @@ class RbaDetailPolicy
      */
     public function update(User $user, RbaDetail $rbaDetail): Response
     {
-        // 1. Check if submission is already validated
-        if ($rbaDetail->submission->status_submission !== 'Draft') {
-            return Response::deny('Cannot update detail if submission is not in Draft status.');
+        if ($rbaDetail->submission->status_submission !== 'Draft' && !$rbaDetail->is_rejected) {
+            return Response::deny('Cannot update detail if it is not in Draft status and not Rejected.');
         }
 
         // 2. Check if Pagu Global has been issued for this account and header

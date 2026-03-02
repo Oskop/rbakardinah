@@ -16,47 +16,108 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
-                    <h3 class="text-lg font-bold mb-4">Unit Submissions Status</h3>
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Unit Name</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status</th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Last Update</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                    <div class="text-center mb-8 border-b-2 border-gray-800 pb-4">
+                        <h1 class="text-xl font-bold uppercase">DRAFT RENCANA BELANJA DAN ANGGARAN (RBA) BLUD RSUD KARDINAH KOTA TEGAL TAHUN {{ $header->year }}</h1>
+                    </div>
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold">Laporan Hierarki RBA</h3>
+                        <div class="text-sm text-gray-600">
+                            Status Unit:
                             @foreach($header->submissions as $submission)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {{ $submission->unit->name }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                    {{ $submission->status_submission === 'Draft' ? 'bg-gray-100 text-gray-800' : '' }}
-                                                    {{ $submission->status_submission === 'Pending Supervisor' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                                    {{ $submission->status_submission === 'Validated' ? 'bg-green-100 text-green-800' : '' }}
-                                                    {{ $submission->status_submission === 'Pagu Issued' ? 'bg-indigo-100 text-indigo-800' : '' }}
-                                                ">
-                                            {{ $submission->status_submission }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $submission->updated_at->diffForHumans() }}
-                                    </td>
-                                </tr>
+                                <span class="ml-2 px-2 py-1 rounded-full text-xs font-semibold
+                                        {{ $submission->status_submission === 'Draft' ? 'bg-gray-100 text-gray-800' : '' }}
+                                        {{ $submission->status_submission === 'Pending Supervisor' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                        {{ $submission->status_submission === 'Validated' ? 'bg-green-100 text-green-800' : '' }}
+                                    ">
+                                    {{ $submission->unit->name }}: {{ $submission->status_submission }}
+                                </span>
                             @endforeach
-                        </tbody>
-                    </table>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto border border-gray-300 rounded-lg">
+                        <table class="min-w-full border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100 border-b border-gray-300">
+                                    <th
+                                        class="border-r border-gray-300 px-4 py-2 text-left text-xs font-bold uppercase">
+                                        KODE REKENING</th>
+                                    <th
+                                        class="border-r border-gray-300 px-4 py-2 text-left text-xs font-bold uppercase">
+                                        URAIAN BELANJA</th>
+                                    <th
+                                        class="border-r border-gray-300 px-4 py-2 text-right text-xs font-bold uppercase">
+                                        USULAN (Rp)</th>
+                                    <th
+                                        class="border-r border-gray-300 px-4 py-2 text-right text-xs font-bold uppercase">
+                                        PAGU (Rp)</th>
+                                    <th
+                                        class="border-r border-gray-300 px-4 py-2 text-left text-xs font-bold uppercase">
+                                        SUPERVISOR</th>
+                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase">OPERATOR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($reportData as $data)
+                                    @php
+                                        $isParent = $data['usulan'] > 0 || $data['pagu'] > 0;
+                                        $hasDetails = $data['details']->count() > 0;
+                                        $indentLevel = ($data['level'] - 1) * 4;
+                                    @endphp
+                                    <tr
+                                        class="border-b border-gray-200 {{ $data['level'] <= 2 ? 'bg-gray-50 font-bold' : '' }}">
+                                        <td class="border-r border-gray-300 px-4 py-2 text-sm whitespace-nowrap">
+                                            {{ $data['code'] }}
+                                        </td>
+                                        <td class="border-r border-gray-300 px-4 py-2 text-sm"
+                                            style="padding-left: {{ 1 + ($data['level'] - 1) * 1 }}rem">
+                                            {{ strtoupper($data['name']) }}
+                                        </td>
+                                        <td class="border-r border-gray-300 px-4 py-2 text-sm text-right">
+                                            {{ number_format($data['usulan'], 0, ',', '.') }}
+                                        </td>
+                                        <td class="border-r border-gray-300 px-4 py-2 text-sm text-right">
+                                            {{ number_format($data['pagu'], 0, ',', '.') }}
+                                        </td>
+                                        <td class="border-r border-gray-300 px-4 py-2 text-sm">
+                                            {{-- If it's a parent code with direct details, we show them below.
+                                            But for the account code row itself, we only show supervisor if there's exactly
+                                            one common one --}}
+                                        </td>
+                                        <td class="px-4 py-2 text-sm">
+                                        </td>
+                                    </tr>
+
+                                    @if($hasDetails)
+                                        @foreach($data['details'] as $detail)
+                                            <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                                <td class="border-r border-gray-300 px-4 py-1 text-xs text-gray-500 italic">
+                                                    {{-- Sub-code or just empty --}}
+                                                </td>
+                                                <td class="border-r border-gray-300 px-4 py-1 text-xs text-gray-600 italic"
+                                                    style="padding-left: {{ 2 + ($data['level'] - 1) * 1 }}rem">
+                                                    - {{ $detail->description }} ({{ $detail->submission->unit->name }})
+                                                </td>
+                                                <td class="border-r border-gray-300 px-4 py-1 text-xs text-right text-gray-600">
+                                                    {{ number_format($detail->nominal_request, 0, ',', '.') }}
+                                                </td>
+                                                <td class="border-r border-gray-300 px-4 py-1 text-xs text-right text-gray-600">
+                                                    -
+                                                </td>
+                                                <td class="border-r border-gray-300 px-4 py-1 text-xs text-gray-600">
+                                                    {{ $detail->validator->name ?? '-' }}
+                                                </td>
+                                                <td class="px-4 py-1 text-xs text-gray-600">
+                                                    {{ $detail->creator->name ?? '-' }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @endif
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

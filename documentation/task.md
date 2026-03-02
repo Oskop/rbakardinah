@@ -36,6 +36,3 @@
 - [ ] Implement PDF History/Version Viewer
 - [ ] Final UI/UX Polishing
 - [ ] Verification & Testing
-
-
-setelah fitur validasi supervisor diperbaiki, sekarang pada menu daftar Rincian belanja yang diajukan oleh operator, saat rincian belanja yang diajukan ditolak oleh supervisor, rincian tersebut masih belum menampilkan alasan penolakan dan aksi pada rincian tersebut masih terkunci. seharusnya saat supervisor menolak rincian belanja dari operator, maka operator perlu memperbaiki atau menghapus (bukan hard delete) rincian tersebut kemudian diajukan lagi ke supervisor. Dan sekarang pengajuan rincian belanja ke supervisor bisa per item rincian belanja.

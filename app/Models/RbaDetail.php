@@ -5,14 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RbaDetail extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'rba_submission_id',
         'account_code_id',
         'description',
         'nominal_request',
+        'is_submitted',
         'is_validated',
         'validated_at',
         'validated_by',
@@ -31,6 +35,7 @@ class RbaDetail extends Model
     protected function casts(): array
     {
         return [
+            'is_submitted' => 'boolean',
             'is_validated' => 'boolean',
             'validated_at' => 'datetime',
             'is_rejected' => 'boolean',

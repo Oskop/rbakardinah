@@ -45,14 +45,21 @@
                                 </th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-center">
                                     PDF</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
                             @forelse($submission->details as $detail)
                                 <tr>
-                                    <td class="px-4 py-2 text-sm">{{ $detail->accountCode->code }} -
-                                        {{ $detail->accountCode->name }}
+                                    <td class="px-4 py-2 text-sm">
+                                        {{ $detail->accountCode->code }} - {{ $detail->accountCode->name }}
+                                        @if($detail->is_rejected)
+                                            <div class="mt-1 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                                                <strong>Alasan Penolakan:</strong><br>
+                                                {{ $detail->rejection_reason }}
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="px-4 py-2 text-sm">{{ $detail->description }}</td>
                                     <td class="px-4 py-2 text-sm text-right">Rp
@@ -95,24 +102,56 @@
                                         @endif
                                     </td>
                                     <td class="px-4 py-2 text-sm">
-                                        @if($submission->status_submission === 'Draft')
-                                            <div class="flex flex-col space-y-2">
-                                                <a href="{{ route('operator.details.edit', $detail) }}"
-                                                    class="text-indigo-600 hover:text-indigo-900 text-xs font-bold">Edit
-                                                    Detail</a>
+                                        @if($detail->is_validated)
+                                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-[10px] font-bold">Divalidasi</span>
+                                        @elseif($detail->is_rejected)
+                                            <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-[10px] font-bold">Ditolak</span>
+                                        @elseif($detail->is_submitted)
+                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-[10px] font-bold">Diajukan</span>
+                                        @else
+                                            <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-[10px] font-bold">Draft</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-2 text-sm">
+                                        <div class="flex flex-col space-y-2">
+                                            @if($submission->status_submission === 'Draft' || $detail->is_rejected)
+                                                <div class="flex space-x-2">
+                                                    <a href="{{ route('operator.details.edit', $detail) }}"
+                                                        class="text-indigo-600 hover:text-indigo-900 text-xs font-bold border border-indigo-200 px-2 py-1 rounded bg-indigo-50">Edit</a>
+                                                    
+                                                    @if(!$detail->is_submitted || $detail->is_rejected)
+                                                        <form action="{{ route('operator.details.submit-item', $detail) }}" method="POST">
+                                                            @csrf
+                                                            <button type="submit" 
+                                                                class="text-green-600 hover:text-green-900 text-xs font-bold border border-green-200 px-2 py-1 rounded bg-green-50">
+                                                                Ajukan
+                                                            </button>
+                                                        </form>
+                                                    @endif
+
+                                                    <form action="{{ route('operator.details.destroy', $detail) }}" method="POST" onsubmit="return confirm('Hapus rincian ini?')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" 
+                                                            class="text-red-600 hover:text-red-900 text-xs font-bold border border-red-200 px-2 py-1 rounded bg-red-50">
+                                                            Hapus
+                                                        </button>
+                                                    </form>
+                                                </div>
+
                                                 <form action="{{ route('operator.details.upload-version', $detail) }}"
                                                     method="POST" enctype="multipart/form-data"
-                                                    class="flex items-center space-x-1 border-t pt-2">
+                                                    class="flex items-center space-x-1 border-t pt-2 mt-2">
                                                     @csrf
                                                     <input type="file" name="attachment" class="text-xs w-32" required>
                                                     <button type="submit"
                                                         class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-xs">Revisi
                                                         PDF</button>
                                                 </form>
-                                            </div>
-                                        @else
-                                            <span class="text-gray-400">Locked</span>
-                                        @endif
+                                            @else
+                                                <span class="text-gray-400">Locked</span>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @empty

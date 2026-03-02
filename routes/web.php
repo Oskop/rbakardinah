@@ -51,6 +51,7 @@ Route::middleware(['auth', 'role:Operator'])->prefix('operator')->name('operator
     Route::resource('submissions', \App\Http\Controllers\Operator\SubmissionController::class);
     Route::post('submissions/{submission}/submit', [\App\Http\Controllers\Operator\SubmissionController::class, 'submit'])->name('submissions.submit');
     Route::resource('details', \App\Http\Controllers\Operator\DetailController::class);
+    Route::post('details/{detail}/submit-item', [\App\Http\Controllers\Operator\DetailController::class, 'submitItem'])->name('details.submit-item');
     Route::post('details/{detail}/upload-version', [\App\Http\Controllers\Operator\DetailController::class, 'uploadVersion'])->name('details.upload-version');
 });
 

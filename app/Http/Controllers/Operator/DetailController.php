@@ -33,8 +33,8 @@ class DetailController extends Controller
             abort(403);
         }
 
-        if ($detail->submission->status_submission !== 'Draft') {
-            return back()->with('error', 'Cannot edit items in a non-draft submission.');
+        if ($detail->submission->status_submission !== 'Draft' && !$detail->is_rejected) {
+            return back()->with('error', 'Cannot edit items in this state.');
         }
 
         $accountCodes = AccountCode::all();
@@ -126,5 +126,45 @@ class DetailController extends Controller
         ]);
 
         return back()->with('success', "New version (V{$newVersion}) uploaded successfully.");
+    }
+
+    public function submitItem(RbaDetail $detail)
+    {
+        if ($detail->submission->unit_id !== Auth::user()->unit_id) {
+            abort(403);
+        }
+
+        $detail->update([
+            'is_submitted' => true,
+            'is_rejected' => false,
+            'rejection_reason' => null,
+            'is_validated' => false,
+            'validated_at' => null,
+            'validated_by' => null,
+            'rejected_at' => null,
+            'rejected_by' => null,
+        ]);
+
+        // Update submission status if it was Draft
+        if ($detail->submission->status_submission === 'Draft') {
+            $detail->submission->update(['status_submission' => 'Pending Supervisor']);
+        }
+
+        return back()->with('success', 'Rincian berhasil diajukan ke Supervisor.');
+    }
+
+    public function destroy(RbaDetail $detail)
+    {
+        if ($detail->submission->unit_id !== Auth::user()->unit_id) {
+            abort(403);
+        }
+
+        if ($detail->is_validated) {
+            return back()->with('error', 'Cannot delete validated items.');
+        }
+
+        $detail->delete();
+
+        return back()->with('success', 'Rincian berhasil dihapus.');
     }
 }
