@@ -12,6 +12,7 @@ return new class extends Migration {
     {
         Schema::create('kelompok_belanjas', function (Blueprint $table) {
             $table->id();
+            $table->string('kode')->unique();
             $table->string('name')->unique();
             $table->timestamps();
         });

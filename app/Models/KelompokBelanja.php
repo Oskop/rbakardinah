@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class KelompokBelanja extends Model
 {
-    protected $fillable = ['name'];
+    protected $fillable = ['kode', 'name'];
 
     public function accountCodes(): \Illuminate\Database\Eloquent\Relations\HasMany
     {

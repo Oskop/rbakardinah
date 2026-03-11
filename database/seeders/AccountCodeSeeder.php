@@ -13,7 +13,7 @@ class AccountCodeSeeder extends Seeder
     public function run(): void
     {
         $pegawai = \App\Models\KelompokBelanja::where('name', 'Belanja Pegawai')->first()->id;
-        $barang = \App\Models\KelompokBelanja::where('name', 'Belanja Barang & Jasa')->first()->id;
+        $barang = \App\Models\KelompokBelanja::where('name', 'Belanja Barang dan Jasa')->first()->id;
         $modal = \App\Models\KelompokBelanja::where('name', 'Belanja Modal')->first()->id;
 
         AccountCode::create(['kelompok_belanja_id' => $pegawai, 'code' => '5.1.01.01', 'name' => 'Belanja Gaji & Tunjangan']);

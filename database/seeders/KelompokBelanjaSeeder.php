@@ -13,13 +13,13 @@ class KelompokBelanjaSeeder extends Seeder
     public function run(): void
     {
         $groups = [
-            'Belanja Pegawai',
-            'Belanja Barang & Jasa',
-            'Belanja Modal',
+            ['kode' => '5.1.01', 'name' => 'Belanja Pegawai'],
+            ['kode' => '5.1.02', 'name' => 'Belanja Barang dan Jasa'],
+            ['kode' => '5.1.03', 'name' => 'Belanja Modal'],
         ];
 
         foreach ($groups as $group) {
-            \App\Models\KelompokBelanja::create(['name' => $group]);
+            \App\Models\KelompokBelanja::create($group);
         }
     }
 }
