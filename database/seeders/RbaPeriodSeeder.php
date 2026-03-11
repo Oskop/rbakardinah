@@ -13,12 +13,8 @@ class RbaPeriodSeeder extends Seeder
     public function run(): void
     {
         $phases = [
-            'Perencanaan Murni',
-            'Penganggaran Murni',
-            'Pergeseran Murni',
-            'Perencanaan Perubahan',
-            'Penganggaran Perubahan',
-            'Pergeseran Perubahan',
+            'Murni',
+            'Perubahan',
         ];
 
         foreach ($phases as $phase) {
