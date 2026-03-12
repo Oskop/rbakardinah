@@ -19,7 +19,10 @@ class KelompokBelanjaSeeder extends Seeder
         ];
 
         foreach ($groups as $group) {
-            \App\Models\KelompokBelanja::create($group);
+            \App\Models\KelompokBelanja::updateOrCreate(
+                ['kode' => $group['kode']],
+                ['name' => $group['name']]
+            );
         }
     }
 }
