@@ -28,7 +28,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                        <table id="users-table" class="min-w-full divide-y divide-gray-200 stripe hover">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th
@@ -104,4 +104,40 @@
             </div>
         </div>
     </div>
+
+    @push('styles')
+        <link rel="stylesheet" href="https://cdn.datatables.net/2.0.3/css/dataTables.tailwindcss.css">
+        <style>
+            /* Custom minimalist datatables adjustment */
+            div.dt-container div.dt-layout-row {
+                margin-bottom: 0.75rem;
+            }
+        </style>
+    @endpush
+
+    @push('scripts')
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.datatables.net/2.0.3/js/dataTables.js"></script>
+        <script src="https://cdn.datatables.net/2.0.3/js/dataTables.tailwindcss.js"></script>
+        <script>
+            $(document).ready(function() {
+                $('#users-table').DataTable({
+                    responsive: true,
+                    language: {
+                        search: "Cari:",
+                        lengthMenu: "Tampilkan _MENU_ data",
+                        info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                        infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
+                        infoFiltered: "(disaring dari _MAX_ total data)",
+                        paginate: {
+                            first: "Pertama",
+                            last: "Terakhir",
+                            next: "Selanjutnya",
+                            previous: "Sebelumnya"
+                        }
+                    }
+                });
+            });
+        </script>
+    @endpush
 </x-app-layout>
