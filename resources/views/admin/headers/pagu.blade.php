@@ -25,14 +25,14 @@
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Total Usulan (Operator)</th>
                                     <th
-                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">
                                         Nominal Pagu Global</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach($accountCodes as $code)
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
                                             {{ $code->code }} - {{ $code->name }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -40,10 +40,10 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div class="flex items-center space-x-2">
-                                                <span>Rp</span>
+                                                <span class="font-semibold text-gray-700">Rp</span>
                                                 <input type="number" name="pagus[{{ $code->id }}]"
                                                     value="{{ $existingPagus[$code->id]->nominal_pagu ?? '' }}"
-                                                    class="w-full border-gray-300 rounded-md shadow-sm" placeholder="0">
+                                                    class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="0">
                                             </div>
                                         </td>
                                     </tr>
