@@ -14,17 +14,41 @@ class RbaDetailPolicy
      */
     public function update(User $user, RbaDetail $rbaDetail): Response
     {
+        // 1. Check ownership
+        if ($rbaDetail->created_by !== $user->id) {
+            return Response::deny('You do not own this RBA detail.');
+        }
+
+        // 2. Check status
         if ($rbaDetail->submission->status_submission !== 'Draft' && !$rbaDetail->is_rejected) {
             return Response::deny('Cannot update detail if it is not in Draft status and not Rejected.');
         }
 
-        // 2. Check if Pagu Global has been issued for this account and header
+        // 3. Check if Pagu Global has been issued for this account and header
         $paguExists = RbaAccountPagu::where('rba_header_id', $rbaDetail->submission->rba_header_id)
             ->where('account_code_id', $rbaDetail->account_code_id)
             ->exists();
 
         if ($paguExists) {
             return Response::deny('Cannot update nominal after Pagu has been issued for this account.');
+        }
+
+        return Response::allow();
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function delete(User $user, RbaDetail $rbaDetail): Response
+    {
+        // 1. Check ownership
+        if ($rbaDetail->created_by !== $user->id) {
+            return Response::deny('You do not own this RBA detail.');
+        }
+
+        // 2. Check validation status
+        if ($rbaDetail->is_validated) {
+            return Response::deny('Cannot delete validated items.');
         }
 
         return Response::allow();

@@ -27,7 +27,9 @@ class SubmissionController extends Controller
             abort(403);
         }
 
-        $submission->load(['details.accountCode', 'details.attachments', 'header.period']);
+        $submission->load(['details' => function ($query) {
+            $query->where('created_by', Auth::id());
+        }, 'details.accountCode', 'details.attachments', 'header.period']);
 
         // Load pagu for this header
         $pagus = \App\Models\RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)->get()->keyBy('account_code_id');

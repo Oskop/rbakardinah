@@ -33,6 +33,8 @@ class DetailController extends Controller
             abort(403);
         }
 
+        Gate::authorize('update', $detail);
+
         if ($detail->submission->status_submission !== 'Draft' && !$detail->is_rejected) {
             return back()->with('error', 'Cannot edit items in this state.');
         }
@@ -112,6 +114,10 @@ class DetailController extends Controller
             abort(403);
         }
 
+        if ($detail->created_by !== Auth::id()) {
+            abort(403, 'You can only upload versions for your own items.');
+        }
+
         // Versioning logic
         $latestVersion = $detail->attachments()->max('version_number') ?? 0;
         $newVersion = $latestVersion + 1;
@@ -132,6 +138,10 @@ class DetailController extends Controller
     {
         if ($detail->submission->unit_id !== Auth::user()->unit_id) {
             abort(403);
+        }
+
+        if ($detail->created_by !== Auth::id()) {
+            abort(403, 'You can only submit your own items.');
         }
 
         $detail->update([
@@ -159,9 +169,7 @@ class DetailController extends Controller
             abort(403);
         }
 
-        if ($detail->is_validated) {
-            return back()->with('error', 'Cannot delete validated items.');
-        }
+        Gate::authorize('delete', $detail);
 
         $detail->delete();
 
