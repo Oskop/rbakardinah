@@ -53,8 +53,18 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $header->admin->name }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="{{ route('admin.headers.show', $header) }}"
-                                            class="text-indigo-600 hover:text-indigo-900 mr-3">View Submissions</a>
+                                        <div class="flex justify-end items-center space-x-3">
+                                            <form action="{{ route('admin.headers.toggle-status', $header) }}" method="POST" onsubmit="return confirm('Change lock status for this RBA?')">
+                                                @csrf
+                                                @if($header->status_global === 'Draft')
+                                                    <button type="submit" class="text-orange-600 hover:text-orange-900 border border-orange-200 px-2 py-1 rounded bg-orange-50 font-bold">Lock RBA</button>
+                                                @else
+                                                    <button type="submit" class="text-green-600 hover:text-green-900 border border-green-200 px-2 py-1 rounded bg-green-50 font-bold">Unlock RBA</button>
+                                                @endif
+                                            </form>
+                                            <a href="{{ route('admin.headers.show', $header) }}"
+                                                class="text-indigo-600 hover:text-indigo-900">View Submissions</a>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty

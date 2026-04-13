@@ -161,4 +161,16 @@ class RbaHeaderController extends Controller
     {
         //
     }
+
+    public function toggleStatus(\App\Models\RbaHeader $header)
+    {
+        $newStatus = $header->status_global === 'Draft' ? 'Locked' : 'Draft';
+        $header->update(['status_global' => $newStatus]);
+
+        $message = $newStatus === 'Locked'
+            ? 'RBA berhasil terkunci. Operator sudah tidak bisa menambahkan rincian belanja.'
+            : 'RBA berhasil terbuka. Operator sudah bisa menambahkan rincian belanja.';
+
+        return back()->with('success', $message);
+    }
 }
