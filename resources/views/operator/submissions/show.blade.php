@@ -5,19 +5,11 @@
                 {{ __('Workboard RBA') }} - {{ $submission->header->year }} ({{ $submission->header->period->name }})
             </h2>
             <div class="flex space-x-2">
-                @if($submission->status_submission === 'Draft')
+                @if($submission->header->status_global === 'Draft')
                     <a href="{{ route('operator.details.create', ['submission_id' => $submission->id]) }}"
                         class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">
                         + Tambah Rincian
                     </a>
-                    <form action="{{ route('operator.submissions.submit', $submission) }}" method="POST"
-                        onsubmit="return confirm('Ajukan usulan ini ke Supervisor?')">
-                        @csrf
-                        <button type="submit"
-                            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">
-                            Ajukan ke Supervisor
-                        </button>
-                    </form>
                 @endif
                 <a href="{{ route('operator.submissions.index') }}"
                     class="py-2 px-4 text-sm text-gray-600 hover:text-gray-900">Kembali</a>
@@ -114,7 +106,7 @@
                                     </td>
                                     <td class="px-4 py-2 text-sm">
                                         <div class="flex flex-col space-y-2">
-                                            @if($submission->status_submission === 'Draft' || $detail->is_rejected)
+                                            @if($submission->header->status_global === 'Draft' && (!$detail->is_submitted || $detail->is_rejected))
                                                 <div class="flex space-x-2">
                                                     <a href="{{ route('operator.details.edit', $detail) }}"
                                                         class="text-indigo-600 hover:text-indigo-900 text-xs font-bold border border-indigo-200 px-2 py-1 rounded bg-indigo-50">Edit</a>

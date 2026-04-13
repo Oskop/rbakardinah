@@ -20,8 +20,8 @@ class RbaDetailPolicy
         }
 
         // 2. Check status
-        if ($rbaDetail->submission->status_submission !== 'Draft' && !$rbaDetail->is_rejected) {
-            return Response::deny('Cannot update detail if it is not in Draft status and not Rejected.');
+        if ($rbaDetail->submission->header->status_global !== 'Draft' || ($rbaDetail->is_submitted && !$rbaDetail->is_rejected)) {
+            return Response::deny('Cannot update detail if it is already submitted (and not rejected) or the global status is no longer Draft.');
         }
 
         // 3. Check if Pagu Global has been issued for this account and header
@@ -46,9 +46,13 @@ class RbaDetailPolicy
             return Response::deny('You do not own this RBA detail.');
         }
 
-        // 2. Check validation status
+        // 2. Check validation or submission status
         if ($rbaDetail->is_validated) {
             return Response::deny('Cannot delete validated items.');
+        }
+
+        if ($rbaDetail->is_submitted && !$rbaDetail->is_rejected) {
+            return Response::deny('Cannot delete items that are pending supervisor review.');
         }
 
         return Response::allow();
@@ -59,9 +63,9 @@ class RbaDetailPolicy
      */
     public function create(User $user, \App\Models\RbaSubmission $submission, int $accountCodeId): Response
     {
-        // 1. Check if submission is in draft
-        if ($submission->status_submission !== 'Draft') {
-            return Response::deny('Cannot add details to a submission that is not in Draft status.');
+        // 1. Check if global header is in draft
+        if ($submission->header->status_global !== 'Draft') {
+            return Response::deny('Cannot add details to a submission when the global status is not Draft.');
         }
 
         // 2. Check if Pagu Global has been issued

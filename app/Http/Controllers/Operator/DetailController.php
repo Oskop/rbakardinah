@@ -35,7 +35,7 @@ class DetailController extends Controller
 
         Gate::authorize('update', $detail);
 
-        if ($detail->submission->status_submission !== 'Draft' && !$detail->is_rejected) {
+        if ($detail->submission->header->status_global !== 'Draft' || ($detail->is_submitted && !$detail->is_rejected)) {
             return back()->with('error', 'Cannot edit items in this state.');
         }
 
