@@ -12,4 +12,9 @@ class AccountCode extends Model
     {
         return $this->belongsTo(KelompokBelanja::class);
     }
+
+    public function accountPagus(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(RbaAccountPagu::class);
+    }
 }

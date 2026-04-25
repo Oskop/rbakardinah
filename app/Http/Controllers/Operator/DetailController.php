@@ -23,7 +23,12 @@ class DetailController extends Controller
             abort(403);
         }
 
-        $accountCodes = AccountCode::all();
+        // Only show account codes that are NOT locked by pagu
+        $lockedAccountIds = \App\Models\RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)
+            ->where('nominal_pagu', '>', 0)
+            ->pluck('account_code_id');
+
+        $accountCodes = AccountCode::whereNotIn('id', $lockedAccountIds)->get();
         return view('operator.details.create', compact('submission', 'accountCodes'));
     }
 
@@ -35,11 +40,11 @@ class DetailController extends Controller
 
         Gate::authorize('update', $detail);
 
-        if ($detail->submission->header->status_global !== 'Draft' || ($detail->is_submitted && !$detail->is_rejected)) {
-            return back()->with('error', 'Cannot edit items in this state.');
-        }
+        $lockedAccountIds = \App\Models\RbaAccountPagu::where('rba_header_id', $detail->submission->rba_header_id)
+            ->where('nominal_pagu', '>', 0)
+            ->pluck('account_code_id');
 
-        $accountCodes = AccountCode::all();
+        $accountCodes = AccountCode::whereNotIn('id', $lockedAccountIds)->get();
         return view('operator.details.edit', compact('detail', 'accountCodes'));
     }
 
@@ -114,9 +119,7 @@ class DetailController extends Controller
             abort(403);
         }
 
-        if ($detail->created_by !== Auth::id()) {
-            abort(403, 'You can only upload versions for your own items.');
-        }
+        Gate::authorize('update', $detail);
 
         // Versioning logic
         $latestVersion = $detail->attachments()->max('version_number') ?? 0;
@@ -140,9 +143,7 @@ class DetailController extends Controller
             abort(403);
         }
 
-        if ($detail->created_by !== Auth::id()) {
-            abort(403, 'You can only submit your own items.');
-        }
+        Gate::authorize('update', $detail);
 
         $detail->update([
             'is_submitted' => true,

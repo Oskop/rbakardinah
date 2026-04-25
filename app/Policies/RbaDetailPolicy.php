@@ -19,18 +19,15 @@ class RbaDetailPolicy
             return Response::deny('You do not own this RBA detail.');
         }
 
-        // 2. Check status
-        if ($rbaDetail->submission->header->status_global !== 'Draft' || ($rbaDetail->is_submitted && !$rbaDetail->is_rejected)) {
-            return Response::deny('Cannot update detail if it is already submitted (and not rejected) or the global status is no longer Draft.');
+        // 2. Already submitted items (that are not rejected) are locked
+        if ($rbaDetail->is_submitted && !$rbaDetail->is_rejected) {
+            return Response::deny('Cannot update detail if it is already submitted and not rejected.');
         }
 
         // 3. Check if Pagu Global has been issued for this account and header
-        $paguExists = RbaAccountPagu::where('rba_header_id', $rbaDetail->submission->rba_header_id)
-            ->where('account_code_id', $rbaDetail->account_code_id)
-            ->exists();
-
-        if ($paguExists) {
-            return Response::deny('Cannot update nominal after Pagu has been issued for this account.');
+        // Exception: If status_global is NOT Draft, but Pagu is not yet set or 0, we still allow updates.
+        if ($this->isPaguIssued($rbaDetail->submission->rba_header_id, $rbaDetail->account_code_id)) {
+            return Response::deny('Cannot update nominal after Pagu has been issued (> 0) for this account.');
         }
 
         return Response::allow();
@@ -55,6 +52,11 @@ class RbaDetailPolicy
             return Response::deny('Cannot delete items that are pending supervisor review.');
         }
 
+        // 3. Exception check for Pagu
+        if ($this->isPaguIssued($rbaDetail->submission->rba_header_id, $rbaDetail->account_code_id)) {
+             return Response::deny('Cannot delete items after Pagu has been issued (> 0) for this account.');
+        }
+
         return Response::allow();
     }
 
@@ -63,20 +65,22 @@ class RbaDetailPolicy
      */
     public function create(User $user, \App\Models\RbaSubmission $submission, int $accountCodeId): Response
     {
-        // 1. Check if global header is in draft
-        if ($submission->header->status_global !== 'Draft') {
-            return Response::deny('Cannot add details to a submission when the global status is not Draft.');
-        }
-
-        // 2. Check if Pagu Global has been issued
-        $paguExists = RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)
-            ->where('account_code_id', $accountCodeId)
-            ->exists();
-
-        if ($paguExists) {
+        // If Pagu has been issued (> 0), block creation regardless of global status
+        if ($this->isPaguIssued($submission->rba_header_id, $accountCodeId)) {
             return Response::deny('Cannot add new items for an account that already has Pagu issued.');
         }
 
+        // If global status is NOT Draft, we ONLY allow if Pagu is NOT issued (handled by logic above)
+        // This is the core change: we don't return deny immediately if status_global is not Draft.
+
         return Response::allow();
+    }
+
+    private function isPaguIssued(int $headerId, int $accountCodeId): bool
+    {
+        return RbaAccountPagu::where('rba_header_id', $headerId)
+            ->where('account_code_id', $accountCodeId)
+            ->where('nominal_pagu', '>', 0)
+            ->exists();
     }
 }
