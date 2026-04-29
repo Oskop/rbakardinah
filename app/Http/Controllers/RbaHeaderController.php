@@ -135,7 +135,11 @@ class RbaHeaderController extends Controller
         // Final sort by code ascending for display
         ksort($reportData);
 
-        return view('admin.headers.show', compact('header', 'reportData'));
+        // Grand totals
+        $totalUsulan = $details->sum('nominal_request');
+        $totalPagu = $pagus->sum('nominal_pagu');
+
+        return view('admin.headers.show', compact('header', 'reportData', 'totalUsulan', 'totalPagu'));
     }
 
     /**
