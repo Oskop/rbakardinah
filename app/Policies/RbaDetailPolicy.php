@@ -76,6 +76,62 @@ class RbaDetailPolicy
         return Response::allow();
     }
 
+    /**
+     * Determine whether the user can upload a new version of the attachment.
+     */
+    public function uploadVersion(User $user, RbaDetail $rbaDetail): Response
+    {
+        // 1. Check ownership
+        if ($rbaDetail->created_by !== $user->id) {
+            return Response::deny('You do not own this RBA detail.');
+        }
+
+        // 2. If pagu is not issued, they can upload version as long as it's not locked by submission status (or they can upload revisions to rejected items)
+        if (!$this->isPaguIssued($rbaDetail->submission->rba_header_id, $rbaDetail->account_code_id)) {
+            if ($rbaDetail->is_submitted && !$rbaDetail->is_rejected) {
+                return Response::deny('Cannot update detail attachment if it is already submitted and not rejected.');
+            }
+            return Response::allow();
+        }
+
+        // 3. If pagu is issued, they can ONLY upload version if the nominal request exceeds the pagu
+        if ($rbaDetail->isExceedingPagu()) {
+            return Response::allow();
+        }
+
+        return Response::deny('Cannot upload revision for this account since it does not exceed the Pagu.');
+    }
+
+    /**
+     * Determine whether the user can submit the detail.
+     */
+    public function submit(User $user, RbaDetail $rbaDetail): Response
+    {
+        // 1. Check ownership
+        if ($rbaDetail->created_by !== $user->id) {
+            return Response::deny('You do not own this RBA detail.');
+        }
+
+        // 2. Already submitted items (that are not rejected) are locked
+        if ($rbaDetail->is_submitted && !$rbaDetail->is_rejected) {
+            return Response::deny('Cannot submit detail if it is already submitted and not rejected.');
+        }
+
+        // 3. If pagu is issued
+        if ($this->isPaguIssued($rbaDetail->submission->rba_header_id, $rbaDetail->account_code_id)) {
+            // If it exceeds pagu, they can submit ONLY if they have uploaded the revision
+            if ($rbaDetail->isExceedingPagu()) {
+                if ($rbaDetail->hasUploadedRevision()) {
+                    return Response::allow();
+                }
+                return Response::deny('Cannot submit. You must upload a new PDF matching the Pagu first.');
+            }
+            return Response::allow();
+        }
+
+        return Response::allow();
+    }
+
     private function isPaguIssued(int $headerId, int $accountCodeId): bool
     {
         return RbaAccountPagu::where('rba_header_id', $headerId)

@@ -62,6 +62,13 @@ class ReviewController extends Controller
             abort(403);
         }
 
+        // If supervisor is validating the item
+        if (!$detail->is_validated) {
+            if ($detail->isExceedingPagu() && !$detail->hasUploadedRevision()) {
+                return back()->with('error', 'Rincian belanja ini melebihi pagu dan belum memiliki dokumen PDF revisi terbaru dari operator.');
+            }
+        }
+
         $detail->update([
             'is_validated' => !$detail->is_validated,
             'validated_at' => !$detail->is_validated ? now() : null,

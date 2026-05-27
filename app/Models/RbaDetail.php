@@ -77,4 +77,41 @@ class RbaDetail extends Model
     {
         return $this->attachments()->orderByDesc('version_number')->first();
     }
+
+    public function isExceedingPagu(): bool
+    {
+        $pagu = \App\Models\RbaAccountPagu::where('rba_header_id', $this->submission->rba_header_id)
+            ->where('account_code_id', $this->account_code_id)
+            ->first();
+
+        if (!$pagu || $pagu->nominal_pagu <= 0) {
+            return false;
+        }
+
+        $totalUsulan = self::whereHas('submission', function ($q) {
+            $q->where('rba_header_id', $this->submission->rba_header_id);
+        })
+            ->where('account_code_id', $this->account_code_id)
+            ->sum('nominal_request');
+
+        return $totalUsulan > $pagu->nominal_pagu;
+    }
+
+    public function hasUploadedRevision(): bool
+    {
+        $pagu = \App\Models\RbaAccountPagu::where('rba_header_id', $this->submission->rba_header_id)
+            ->where('account_code_id', $this->account_code_id)
+            ->first();
+
+        if (!$pagu) {
+            return true;
+        }
+
+        $latest = $this->latestAttachment();
+        if (!$latest) {
+            return false;
+        }
+
+        return $latest->created_at->greaterThanOrEqualTo($pagu->updated_at);
+    }
 }

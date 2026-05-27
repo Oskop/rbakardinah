@@ -119,7 +119,7 @@ class DetailController extends Controller
             abort(403);
         }
 
-        Gate::authorize('update', $detail);
+        Gate::authorize('uploadVersion', $detail);
 
         // Versioning logic
         $latestVersion = $detail->attachments()->max('version_number') ?? 0;
@@ -143,7 +143,34 @@ class DetailController extends Controller
             abort(403);
         }
 
-        Gate::authorize('update', $detail);
+        // Exception: If pagu is set, they can submit if it exceeds pagu AND they have uploaded the revision.
+        // Wait, normally Gate::authorize('update', $detail) checks isPaguIssued and blocks.
+        // But if it exceeds pagu AND they have uploaded the revision, they should be allowed to submit.
+        // Wait! Let's check RbaDetailPolicy::update:
+        // if ($this->isPaguIssued($rbaDetail->submission->rba_header_id, $rbaDetail->account_code_id)) {
+        //     return Response::deny('Cannot update nominal after Pagu has been issued (> 0) for this account.');
+        // }
+        // If pagu is issued, they cannot edit the nominal, but they CAN submit the item!
+        // Wait, does submitItem call Gate::authorize('update', $detail)?
+        // Yes, it does. If they call submitItem, it will fail if pagu is issued.
+        // Wait! If pagu is issued, and it exceeds the pagu, we DO want them to be able to submit it after they uploaded the revision!
+        // But the update policy blocks them if pagu is issued.
+        // So we should either:
+        // A. Change submitItem to NOT use 'update' policy, or bypass it if pagu is issued and they have uploaded the revision.
+        // Or B. Update the update policy to allow submission?
+        // Wait, if we look at `submitItem`, it doesn't edit the nominal/description. It only changes `is_submitted` to true, and resets rejection fields.
+        // So it doesn't violate the "nominal is read-only" rule.
+        // Thus, we should check if they own the detail, and if pagu is issued, they are only allowed to submit if it exceeds pagu AND they have uploaded the revision.
+        // Wait! Let's write the check in submitItem directly, or define a policy action `submit` in `RbaDetailPolicy`!
+        // Defining a `submit` action in the policy is extremely clean and matches Laravel best practices.
+        // Let's do that! Let's define `submit(User $user, RbaDetail $rbaDetail): Response` in `RbaDetailPolicy`.
+        
+        // Let's implement the validation inside submitItem:
+        if ($detail->isExceedingPagu() && !$detail->hasUploadedRevision()) {
+            return back()->with('error', 'Anda wajib mengunggah PDF rincian belanja baru menyesuaikan pagu yang ditetapkan oleh admin sebelum mengajukan.');
+        }
+
+        Gate::authorize('submit', $detail);
 
         $detail->update([
             'is_submitted' => true,

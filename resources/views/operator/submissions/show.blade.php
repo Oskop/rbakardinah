@@ -25,6 +25,17 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @if(session('success'))
+                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded text-sm font-semibold shadow-sm">
+                    {{ session('success') }}
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm font-semibold shadow-sm animate-pulse">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div x-data="{ 
@@ -159,11 +170,12 @@
                                             @else
                                                 <span class="px-2 py-0.5 bg-gray-100 text-gray-800 rounded-full text-[9px] font-black uppercase">Draft</span>
                                             @endif
-                                        </td>
-                                        <td class="px-4 py-2 text-sm">
+                                        </td>                                        <td class="px-4 py-2 text-sm">
                                             <div class="flex flex-col space-y-2">
                                                 @php
                                                     $isItemLockedByPagu = $paguValue > 0;
+                                                    $isExceeding = $detail->isExceedingPagu();
+                                                    $hasRevision = $detail->hasUploadedRevision();
                                                 @endphp
 
                                                 @if(!$isItemLockedByPagu && (!$detail->is_submitted || $detail->is_rejected))
@@ -198,11 +210,49 @@
                                                             class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-[10px] font-bold">Revisi</button>
                                                     </form>
                                                 @else
-                                                    <div class="flex flex-col items-center space-y-1">
+                                                    <div class="flex flex-col items-center space-y-2">
                                                         @if($isItemLockedByPagu)
-                                                            <span class="text-[9px] bg-red-50 text-red-600 px-1 py-0.5 rounded border border-red-100 font-bold uppercase italic">Pagu Locked</span>
+                                                            @if($isExceeding)
+                                                                @if(!$hasRevision)
+                                                                    <span class="px-2 py-0.5 bg-red-100 text-red-800 border border-red-200 rounded text-[9px] font-black uppercase text-center block">⚠ Wajib Upload PDF Baru</span>
+                                                                    
+                                                                    <form action="{{ route('operator.details.upload-version', $detail) }}"
+                                                                        method="POST" enctype="multipart/form-data"
+                                                                        class="flex items-center space-x-1 border-t pt-2 mt-2">
+                                                                        @csrf
+                                                                        <input type="file" name="attachment" class="text-[10px] w-24" required>
+                                                                        <button type="submit"
+                                                                            class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-[10px] font-bold">Upload</button>
+                                                                    </form>
+                                                                @else
+                                                                    <span class="px-2 py-0.5 bg-green-100 text-green-800 border border-green-200 rounded text-[9px] font-black uppercase text-center block">✓ PDF Penyesuaian Diunggah</span>
+                                                                    
+                                                                    @if(!$detail->is_submitted || $detail->is_rejected)
+                                                                        <form action="{{ route('operator.details.submit-item', $detail) }}" method="POST" class="mt-1">
+                                                                            @csrf
+                                                                            <button type="submit" 
+                                                                                class="text-green-600 hover:text-green-900 text-[10px] font-bold border border-green-200 px-3 py-1 rounded bg-green-50">
+                                                                                Ajukan
+                                                                            </button>
+                                                                        </form>
+                                                                    @endif
+
+                                                                    <form action="{{ route('operator.details.upload-version', $detail) }}"
+                                                                        method="POST" enctype="multipart/form-data"
+                                                                        class="flex items-center space-x-1 border-t pt-2 mt-2">
+                                                                        @csrf
+                                                                        <input type="file" name="attachment" class="text-[10px] w-24" required>
+                                                                        <button type="submit"
+                                                                            class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-[10px] font-bold">Revisi</button>
+                                                                    </form>
+                                                                @endif
+                                                            @else
+                                                                <span class="text-[9px] bg-red-50 text-red-600 px-1 py-0.5 rounded border border-red-100 font-bold uppercase italic">Pagu Locked</span>
+                                                                <span class="text-gray-400 text-[10px] italic font-medium text-center">Read Only</span>
+                                                            @endif
+                                                        @else
+                                                            <span class="text-gray-400 text-[10px] italic font-medium text-center">Read Only</span>
                                                         @endif
-                                                        <span class="text-gray-400 text-[10px] italic font-medium">Read Only</span>
                                                     </div>
                                                 @endif
                                             </div>

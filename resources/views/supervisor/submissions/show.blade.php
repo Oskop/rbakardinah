@@ -20,6 +20,17 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @if(session('success'))
+                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded text-sm font-semibold shadow-sm">
+                    {{ session('success') }}
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm font-semibold shadow-sm animate-pulse">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div x-data="{ 
@@ -111,9 +122,16 @@
                                             @if($paguValue > 0)
                                                 @php 
                                                     $total = $headerTotals[$detail->account_code_id]->total ?? 0;
+                                                    $isExceeding = $total > $paguValue;
+                                                    $hasRevision = $detail->hasUploadedRevision();
                                                 @endphp
-                                                @if($total > $paguValue)
+                                                @if($isExceeding)
                                                     <span class="text-red-600 font-bold text-xs">⚠️ OVER</span>
+                                                    @if(!$hasRevision)
+                                                        <div class="text-[9px] text-red-500 font-semibold">(⚠ Butuh PDF Baru)</div>
+                                                    @else
+                                                        <div class="text-[9px] text-green-600 font-semibold">(✓ PDF Penyesuaian)</div>
+                                                    @endif
                                                 @else
                                                     <span class="text-green-600 text-xs font-medium">Tercover</span>
                                                 @endif
@@ -133,15 +151,21 @@
                                             <div class="flex flex-col items-center space-y-1">
                                                 <div class="flex space-x-1">
                                                     <!-- Validation Toggle -->
-                                                    <form action="{{ route('supervisor.details.toggle-validation', $detail) }}" method="POST">
-                                                        @csrf
-                                                        <button type="submit" class="inline-flex items-center px-2 py-1 border rounded text-[10px] font-bold transition
-                                                            {{ $detail->is_validated 
-                                                                ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200' 
-                                                                : 'bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200' }}">
-                                                            {{ $detail->is_validated ? '✅ Valid' : '⏳ Valid' }}
+                                                    @if($detail->isExceedingPagu() && !$detail->hasUploadedRevision())
+                                                        <button type="button" disabled class="inline-flex items-center px-2 py-1 border rounded text-[10px] font-bold bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed font-medium text-center" title="Operator belum mengunggah PDF revisi baru">
+                                                            ⏳ Valid (Butuh PDF Baru)
                                                         </button>
-                                                    </form>
+                                                    @else
+                                                        <form action="{{ route('supervisor.details.toggle-validation', $detail) }}" method="POST">
+                                                            @csrf
+                                                            <button type="submit" class="inline-flex items-center px-2 py-1 border rounded text-[10px] font-bold transition
+                                                                {{ $detail->is_validated 
+                                                                    ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200' 
+                                                                    : 'bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200' }}">
+                                                                {{ $detail->is_validated ? '✅ Valid' : '⏳ Valid' }}
+                                                            </button>
+                                                        </form>
+                                                    @endif
 
                                                     <!-- Rejection Button -->
                                                     @if(!$detail->is_validated)
