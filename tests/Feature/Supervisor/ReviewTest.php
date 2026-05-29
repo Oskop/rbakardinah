@@ -24,7 +24,7 @@ class ReviewTest extends TestCase
         parent::setUp();
 
         $unit = Unit::create(['code' => 'U01', 'name' => 'Unit Test']);
-        $group = \App\Models\KelompokBelanja::create(['name' => 'Test Group']);
+        $group = \App\Models\KelompokBelanja::create(['kode' => 'KB01', 'name' => 'Test Group']);
         $accountCode = AccountCode::create([
             'kelompok_belanja_id' => $group->id,
             'code' => '5.1.01',

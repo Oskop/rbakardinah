@@ -15,7 +15,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
-class RbaDetailTest extends TestCase
+class RbaDetailFeaturesTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -52,7 +52,7 @@ class RbaDetailTest extends TestCase
             'status_submission' => 'Draft'
         ]);
 
-        $group = KelompokBelanja::create(['name' => 'Test Group']);
+        $group = KelompokBelanja::create(['kode' => 'KB01', 'name' => 'Test Group']);
         $this->accountCode = AccountCode::create([
             'kelompok_belanja_id' => $group->id,
             'code' => '5.1.01',

@@ -37,7 +37,7 @@ class PaguTest extends TestCase
             'status_global' => 'Active'
         ]);
 
-        $group = \App\Models\KelompokBelanja::create(['name' => 'Test Group']);
+        $group = \App\Models\KelompokBelanja::create(['kode' => 'KB01', 'name' => 'Test Group']);
         $this->accountCode = AccountCode::create([
             'kelompok_belanja_id' => $group->id,
             'code' => '5.1.01',

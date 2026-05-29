@@ -37,7 +37,7 @@ class HistoryTest extends TestCase
             'status_submission' => 'Draft'
         ]);
 
-        $group = KelompokBelanja::create(['name' => 'Test Group']);
+        $group = KelompokBelanja::create(['kode' => 'KB01', 'name' => 'Test Group']);
         $accountCode = AccountCode::create([
             'kelompok_belanja_id' => $group->id,
             'code' => '5.1.01',

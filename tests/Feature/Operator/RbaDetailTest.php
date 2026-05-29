@@ -53,7 +53,7 @@ class RbaDetailTest extends TestCase
             'status_submission' => 'Draft'
         ]);
 
-        $group = KelompokBelanja::create(['name' => 'Test Group']);
+        $group = KelompokBelanja::create(['kode' => 'KB01', 'name' => 'Test Group']);
         $this->accountCode = AccountCode::create([
             'kelompok_belanja_id' => $group->id,
             'code' => '5.1.01',
@@ -150,5 +150,103 @@ class RbaDetailTest extends TestCase
         $response->assertStatus(302);
 
         $this->assertTrue($detail->fresh()->trashed());
+    }
+
+    public function test_operator_must_upload_new_pdf_when_nominal_exceeds_pagu()
+    {
+        // 1. Set pagu global
+        $pagu = \App\Models\RbaAccountPagu::create([
+            'rba_header_id' => $this->submission->rba_header_id,
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 500000,
+        ]);
+
+        // 2. Create detail that exceeds pagu
+        $detail = RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Exceeding item',
+            'nominal_request' => 600000,
+            'created_by' => $this->operator->id,
+        ]);
+
+        $fileV1 = UploadedFile::fake()->create('v1.pdf', 100);
+        $att1 = $detail->attachments()->create([
+            'file_path' => $fileV1->store('attachments', 'public'),
+            'version_number' => 1,
+            'uploaded_by' => $this->operator->id,
+        ]);
+        $att1->timestamps = false;
+        $att1->created_at = now()->subMinutes(5);
+        $att1->save();
+
+        // 3. Attempt to submit should fail
+        $response = $this->actingAs($this->operator)->post(route('operator.details.submit-item', $detail));
+        $response->assertSessionHas('error');
+        $this->assertFalse($detail->fresh()->is_submitted);
+
+        // 4. Upload revision PDF (created_at >= pagu->updated_at)
+        $fileV2 = UploadedFile::fake()->create('v2.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.upload-version', $detail), [
+            'attachment' => $fileV2,
+        ]);
+
+        // 5. Attempt to submit should now succeed
+        $response = $this->actingAs($this->operator)->post(route('operator.details.submit-item', $detail));
+        $response->assertSessionHas('success');
+        $this->assertTrue($detail->fresh()->is_submitted);
+    }
+
+    public function test_supervisor_cannot_validate_item_exceeding_pagu_without_revision()
+    {
+        // 1. Set pagu global
+        $pagu = \App\Models\RbaAccountPagu::create([
+            'rba_header_id' => $this->submission->rba_header_id,
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 500000,
+        ]);
+
+        // 2. Create detail that exceeds pagu
+        $detail = RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Exceeding item',
+            'nominal_request' => 600000,
+            'created_by' => $this->operator->id,
+        ]);
+
+        $fileV1 = UploadedFile::fake()->create('v1.pdf', 100);
+        $att1 = $detail->attachments()->create([
+            'file_path' => $fileV1->store('attachments', 'public'),
+            'version_number' => 1,
+            'uploaded_by' => $this->operator->id,
+        ]);
+        $att1->timestamps = false;
+        $att1->created_at = now()->subMinutes(5);
+        $att1->save();
+
+        $supervisor = User::create([
+            'name' => 'Supervisor Test',
+            'email' => 'supervisor@test.com',
+            'password' => bcrypt('password'),
+            'role' => 'Supervisor',
+            'unit_id' => $this->unit->id,
+        ]);
+
+        // 3. Attempt to validate should fail
+        $response = $this->actingAs($supervisor)->post(route('supervisor.details.toggle-validation', $detail));
+        $response->assertSessionHas('error');
+        $this->assertFalse($detail->fresh()->is_validated);
+
+        // 4. Operator uploads revision
+        $fileV2 = UploadedFile::fake()->create('v2.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.upload-version', $detail), [
+            'attachment' => $fileV2,
+        ]);
+
+        // 5. Supervisor attempts to validate should now succeed
+        $response = $this->actingAs($supervisor)->post(route('supervisor.details.toggle-validation', $detail));
+        $response->assertSessionHas('success');
+        $this->assertTrue($detail->fresh()->is_validated);
     }
 }
