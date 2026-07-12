@@ -26,7 +26,7 @@ class ReviewController extends Controller
             abort(403);
         }
 
-        $submission->load(['details.accountCode', 'details.attachments', 'header.period']);
+        $submission->load(['details.accountCode', 'details.attachments', 'header.period', 'documents.versions', 'documents.latestVersion']);
 
         // Load pagu for indicators
         $pagus = \App\Models\RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)->get()->keyBy('account_code_id');

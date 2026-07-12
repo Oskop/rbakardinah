@@ -49,7 +49,8 @@ class RbaDetailFeaturesTest extends TestCase
         $this->submission = RbaSubmission::create([
             'rba_header_id' => $header->id,
             'unit_id' => $this->unit->id,
-            'status_submission' => 'Draft'
+            'status_submission' => 'Draft',
+            'background' => 'Latar belakang unit testing'
         ]);
 
         $group = KelompokBelanja::create(['kode' => 'KB01', 'name' => 'Test Group']);

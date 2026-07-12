@@ -12,10 +12,18 @@
                 @endphp
                 
                 @if($submission->header->status_global === 'Draft' || $hasOpenPagu)
-                    <a href="{{ route('operator.details.create', ['submission_id' => $submission->id]) }}"
-                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">
-                        + Tambah Rincian
-                    </a>
+                    @if(!empty($submission->background))
+                        <a href="{{ route('operator.details.create', ['submission_id' => $submission->id]) }}"
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">
+                            + Tambah Rincian
+                        </a>
+                    @else
+                        <button disabled
+                            title="Silakan isi data Latar Belakang terlebih dahulu"
+                            class="bg-gray-400 text-white font-bold py-2 px-4 rounded text-sm cursor-not-allowed">
+                            + Tambah Rincian
+                        </button>
+                    @endif
                 @endif
                 <a href="{{ route('operator.submissions.index') }}"
                     class="py-2 px-4 text-sm text-gray-600 hover:text-gray-900">Kembali</a>
@@ -35,6 +43,48 @@
                     {{ session('error') }}
                 </div>
             @endif
+
+            <!-- Latar Belakang Section -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-6 text-gray-900">
+                    <h3 class="font-bold text-lg text-gray-800 mb-4">Latar Belakang RBA</h3>
+                    
+                    @if(empty($submission->background))
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-yellow-700">
+                                        Anda belum mengisi data Latar Belakang. Anda **wajib** mengisi Latar Belakang terlebih dahulu sebelum dapat menambahkan rincian belanja.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <form action="{{ route('operator.submissions.update-background', $submission) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="mb-4">
+                            <textarea name="background" rows="4" 
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" 
+                                placeholder="Tuliskan latar belakang RBA secara lengkap di sini..." 
+                                {{ $submission->header->status_global === 'Locked' ? 'readonly' : '' }} required>{{ old('background', $submission->background) }}</textarea>
+                        </div>
+                        @if($submission->header->status_global !== 'Locked')
+                            <div class="flex justify-end">
+                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm shadow-md transition duration-150 ease-in-out">
+                                    {{ empty($submission->background) ? 'Simpan Latar Belakang' : 'Perbarui Latar Belakang' }}
+                                </button>
+                            </div>
+                        @endif
+                    </form>
+                </div>
+            </div>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
@@ -265,9 +315,82 @@
                                 @endforelse
                             </tbody>
                         </table>
-                    </div>
                 </div>
             </div>
+
+            <!-- Dokumen Pendukung (KAK, RAK, RTP) Section -->
+            @php
+                $isLocked = $submission->header->status_global === 'Locked';
+                $docsMap = $submission->documents->keyBy('type');
+            @endphp
+
+            @if($isLocked)
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
+                    <div class="p-6 text-gray-900">
+                        <h3 class="font-bold text-lg text-gray-800 mb-4">Dokumen Realisasi & Penyesuaian (KAK, RAK, RTP)</h3>
+                        <p class="text-xs text-gray-500 mb-4">RBA telah dikunci/pagu ditetapkan. Silakan unggah dokumen KAK, RAK, dan RTP versi penyesuaian Anda.</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            @foreach(['KAK', 'RAK', 'RTP'] as $docType)
+                                @php
+                                    $doc = $docsMap->get($docType);
+                                    $latestVersion = $doc ? $doc->latestVersion : null;
+                                @endphp
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col justify-between">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-3">
+                                            <h4 class="font-bold text-sm text-gray-700">Dokumen {{ $docType }}</h4>
+                                            @if($latestVersion)
+                                                <span class="bg-green-100 text-green-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                                    V{{ $latestVersion->version_number }}
+                                                </span>
+                                            @else
+                                                <span class="bg-red-100 text-red-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                                    Belum Diunggah
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                        @if($latestVersion)
+                                            <div class="mb-4">
+                                                <a href="{{ \Illuminate\Support\Facades\Storage::url($latestVersion->file_path) }}" target="_blank"
+                                                    class="text-indigo-600 hover:underline text-xs font-semibold inline-flex items-center space-x-1">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                    </svg>
+                                                    <span>Unduh Versi Terbaru (V{{ $latestVersion->version_number }})</span>
+                                                </a>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <div>
+                                        <form action="{{ route('operator.submissions.documents.upload', $submission) }}" method="POST" enctype="multipart/form-data" class="mt-2">
+                                            @csrf
+                                            <input type="hidden" name="type" value="{{ $docType }}">
+                                            <div class="flex flex-col space-y-2">
+                                                <input type="file" name="attachment" accept="application/pdf" class="text-xs w-full" required>
+                                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-3 rounded text-xs shadow">
+                                                    {{ $latestVersion ? 'Unggah Revisi Baru' : 'Unggah Dokumen' }}
+                                                </button>
+                                            </div>
+                                        </form>
+
+                                        @if($doc)
+                                            <div class="mt-3 text-center">
+                                                <a href="{{ route('submissions.documents.history', ['submission' => $submission->id, 'type' => $docType]) }}" 
+                                                    class="text-[10px] text-gray-500 hover:text-indigo-600 font-semibold underline">
+                                                    Lihat Riwayat Versi
+                                                </a>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

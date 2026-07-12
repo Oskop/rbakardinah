@@ -44,6 +44,10 @@ Route::get('history/{detail}', [\App\Http\Controllers\General\HistoryController:
     ->middleware(['auth'])
     ->name('history.show');
 
+Route::get('submissions/{submission}/documents/{type}/history', [\App\Http\Controllers\Operator\DocumentController::class, 'history'])
+    ->middleware(['auth'])
+    ->name('submissions.documents.history');
+
 Route::middleware(['auth', 'role:Operator'])->prefix('operator')->name('operator.')->group(function () {
     Route::get('/dashboard', function () {
         return view('operator.dashboard');
@@ -51,6 +55,8 @@ Route::middleware(['auth', 'role:Operator'])->prefix('operator')->name('operator
 
     Route::resource('submissions', \App\Http\Controllers\Operator\SubmissionController::class);
     Route::post('submissions/{submission}/submit', [\App\Http\Controllers\Operator\SubmissionController::class, 'submit'])->name('submissions.submit');
+    Route::put('submissions/{submission}/background', [\App\Http\Controllers\Operator\SubmissionController::class, 'updateBackground'])->name('submissions.update-background');
+    Route::post('submissions/{submission}/documents/upload', [\App\Http\Controllers\Operator\DocumentController::class, 'uploadDocument'])->name('submissions.documents.upload');
     Route::resource('details', \App\Http\Controllers\Operator\DetailController::class);
     Route::post('details/{detail}/submit-item', [\App\Http\Controllers\Operator\DetailController::class, 'submitItem'])->name('details.submit-item');
     Route::post('details/{detail}/upload-version', [\App\Http\Controllers\Operator\DetailController::class, 'uploadVersion'])->name('details.upload-version');

@@ -50,7 +50,8 @@ class RbaDetailTest extends TestCase
         $this->submission = RbaSubmission::create([
             'rba_header_id' => $header->id,
             'unit_id' => $this->unit->id,
-            'status_submission' => 'Draft'
+            'status_submission' => 'Draft',
+            'background' => 'Latar belakang unit testing'
         ]);
 
         $group = KelompokBelanja::create(['kode' => 'KB01', 'name' => 'Test Group']);
@@ -248,5 +249,76 @@ class RbaDetailTest extends TestCase
         $response = $this->actingAs($supervisor)->post(route('supervisor.details.toggle-validation', $detail));
         $response->assertSessionHas('success');
         $this->assertTrue($detail->fresh()->is_validated);
+    }
+
+    public function test_operator_cannot_add_detail_if_background_is_empty()
+    {
+        // Set background to null
+        $this->submission->update(['background' => null]);
+
+        $file = UploadedFile::fake()->create('detail.pdf', 100);
+
+        $response = $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Test Item',
+            'nominal_request' => 5000000,
+            'attachment' => $file,
+        ]);
+
+        $response->assertRedirect(route('operator.submissions.show', $this->submission->id));
+        $response->assertSessionHas('error', 'Sebelum menginput rincian belanja, Anda wajib mengisi data latar belakang terlebih dahulu.');
+        $this->assertDatabaseMissing('rba_details', ['description' => 'Test Item']);
+    }
+
+    public function test_operator_can_save_background()
+    {
+        $this->submission->update(['background' => null]);
+
+        $response = $this->actingAs($this->operator)->put(route('operator.submissions.update-background', $this->submission), [
+            'background' => 'Ini adalah teks latar belakang baru yang diisi oleh operator.'
+        ]);
+
+        $response->assertSessionHas('success', 'Latar belakang RBA berhasil diperbarui.');
+        $this->assertEquals('Ini adalah teks latar belakang baru yang diisi oleh operator.', $this->submission->fresh()->background);
+    }
+
+    public function test_operator_can_upload_kak_rak_rtp_versioned_documents_when_locked()
+    {
+        // 1. Lock header
+        $this->submission->header->update(['status_global' => 'Locked']);
+
+        // 2. Upload KAK V1
+        $fileV1 = UploadedFile::fake()->create('kak_v1.pdf', 100);
+        $response = $this->actingAs($this->operator)->post(route('operator.submissions.documents.upload', $this->submission), [
+            'type' => 'KAK',
+            'attachment' => $fileV1,
+        ]);
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('rba_submission_documents', [
+            'rba_submission_id' => $this->submission->id,
+            'type' => 'KAK'
+        ]);
+
+        $doc = \App\Models\RbaSubmissionDocument::where('rba_submission_id', $this->submission->id)->where('type', 'KAK')->first();
+        $this->assertNotNull($doc);
+        $this->assertDatabaseHas('rba_submission_document_versions', [
+            'rba_submission_document_id' => $doc->id,
+            'version_number' => 1
+        ]);
+
+        // 3. Upload KAK V2
+        $fileV2 = UploadedFile::fake()->create('kak_v2.pdf', 100);
+        $response = $this->actingAs($this->operator)->post(route('operator.submissions.documents.upload', $this->submission), [
+            'type' => 'KAK',
+            'attachment' => $fileV2,
+        ]);
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('rba_submission_document_versions', [
+            'rba_submission_document_id' => $doc->id,
+            'version_number' => 2
+        ]);
     }
 }

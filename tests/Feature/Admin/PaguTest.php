@@ -73,7 +73,8 @@ class PaguTest extends TestCase
         $submission = RbaSubmission::create([
             'rba_header_id' => $this->header->id,
             'unit_id' => $this->operator->unit_id,
-            'status_submission' => 'Draft'
+            'status_submission' => 'Draft',
+            'background' => 'Latar belakang unit testing'
         ]);
 
         $response = $this->actingAs($this->operator)->post(route('operator.details.store'), [

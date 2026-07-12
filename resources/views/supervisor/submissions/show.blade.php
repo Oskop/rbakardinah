@@ -31,6 +31,16 @@
                 </div>
             @endif
 
+            <!-- Latar Belakang Section -->
+            @if(!empty($submission->background))
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                    <div class="p-6 text-gray-900">
+                        <h3 class="font-bold text-lg text-gray-800 mb-2">Latar Belakang RBA</h3>
+                        <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ $submission->background }}</p>
+                    </div>
+                </div>
+            @endif
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div x-data="{ 
@@ -210,6 +220,75 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Dokumen Pendukung (KAK, RAK, RTP) Section for Supervisor -->
+            @php
+                $isLocked = $submission->header->status_global === 'Locked';
+                $docsMap = $submission->documents->keyBy('type');
+            @endphp
+
+            @if($isLocked)
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
+                    <div class="p-6 text-gray-900">
+                        <h3 class="font-bold text-lg text-gray-800 mb-4">Dokumen Realisasi & Penyesuaian (KAK, RAK, RTP)</h3>
+                        <p class="text-xs text-gray-500 mb-4">Berikut adalah dokumen KAK, RAK, dan RTP yang diunggah oleh Operator untuk RBA ini.</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            @foreach(['KAK', 'RAK', 'RTP'] as $docType)
+                                @php
+                                    $doc = $docsMap->get($docType);
+                                    $latestVersion = $doc ? $doc->latestVersion : null;
+                                @endphp
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col justify-between">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-3">
+                                            <h4 class="font-bold text-sm text-gray-700">Dokumen {{ $docType }}</h4>
+                                            @if($latestVersion)
+                                                <span class="bg-green-100 text-green-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                                    V{{ $latestVersion->version_number }}
+                                                </span>
+                                            @else
+                                                <span class="bg-red-100 text-red-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                                    Belum Diunggah
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                        @if($latestVersion)
+                                            <div class="mb-4">
+                                                <a href="{{ \Illuminate\Support\Facades\Storage::url($latestVersion->file_path) }}" target="_blank"
+                                                    class="text-indigo-600 hover:underline text-xs font-semibold inline-flex items-center space-x-1">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                    </svg>
+                                                    <span>Unduh Versi Terbaru (V{{ $latestVersion->version_number }})</span>
+                                                </a>
+                                            </div>
+                                            <div class="text-xs text-gray-500 mb-2">
+                                                Diunggah oleh: <strong class="text-gray-700">{{ $latestVersion->uploader->name }}</strong>
+                                            </div>
+                                            <div class="text-xs text-gray-500">
+                                                Pada: {{ $latestVersion->created_at->timezone('Asia/Jakarta')->format('d M Y - H:i') }} WIB
+                                            </div>
+                                        @else
+                                            <p class="text-xs text-gray-400 italic">Operator belum mengunggah dokumen ini.</p>
+                                        @endif
+                                    </div>
+
+                                    @if($doc)
+                                        <div class="mt-4 pt-3 border-t text-center">
+                                            <a href="{{ route('submissions.documents.history', ['submission' => $submission->id, 'type' => $docType]) }}" 
+                                                class="text-[10px] text-gray-500 hover:text-indigo-600 font-semibold underline">
+                                                Lihat Riwayat Versi
+                                            </a>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 
