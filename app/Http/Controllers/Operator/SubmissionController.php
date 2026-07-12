@@ -29,7 +29,7 @@ class SubmissionController extends Controller
 
         $submission->load(['details' => function ($query) {
             $query->where('created_by', Auth::id());
-        }, 'details.accountCode', 'details.attachments', 'header.period']);
+        }, 'details.accountCode', 'details.attachments', 'header.period', 'documents.versions', 'documents.latestVersion']);
 
         // Load pagu for this header
         $pagus = \App\Models\RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)->get()->keyBy('account_code_id');
@@ -59,5 +59,22 @@ class SubmissionController extends Controller
         $submission->update(['status_submission' => 'Pending Supervisor']);
 
         return redirect()->route('operator.submissions.index')->with('success', 'Submission sent to Supervisor.');
+    }
+
+    public function updateBackground(Request $request, RbaSubmission $submission)
+    {
+        if ($submission->unit_id !== Auth::user()->unit_id) {
+            abort(403);
+        }
+
+        $request->validate([
+            'background' => 'required|string',
+        ]);
+
+        $submission->update([
+            'background' => $request->background,
+        ]);
+
+        return back()->with('success', 'Latar belakang RBA berhasil diperbarui.');
     }
 }

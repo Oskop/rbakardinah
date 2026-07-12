@@ -23,6 +23,11 @@ class DetailController extends Controller
             abort(403);
         }
 
+        if (empty($submission->background)) {
+            return redirect()->route('operator.submissions.show', $submission->id)
+                ->with('error', 'Sebelum menginput rincian belanja, Anda wajib mengisi data latar belakang terlebih dahulu.');
+        }
+
         // Only show account codes that are NOT locked by pagu
         $lockedAccountIds = \App\Models\RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)
             ->where('nominal_pagu', '>', 0)
@@ -82,6 +87,11 @@ class DetailController extends Controller
 
         if ($submission->unit_id !== Auth::user()->unit_id) {
             abort(403);
+        }
+
+        if (empty($submission->background)) {
+            return redirect()->route('operator.submissions.show', $submission->id)
+                ->with('error', 'Sebelum menginput rincian belanja, Anda wajib mengisi data latar belakang terlebih dahulu.');
         }
 
         Gate::authorize('create', [RbaDetail::class, $submission, $validated['account_code_id']]);
