@@ -58,8 +58,12 @@ class DetailController extends Controller
         $validated = $request->validate([
             'account_code_id' => 'required|exists:account_codes,id',
             'description' => 'required|string',
-            'nominal_request' => 'required|numeric|min:0',
+            'volume' => 'required|numeric|min:0.01',
+            'satuan' => 'required|string|max:50',
+            'harga_satuan' => 'required|numeric|min:0',
         ]);
+
+        $validated['nominal_request'] = $validated['volume'] * $validated['harga_satuan'];
 
         if ($detail->submission->unit_id !== Auth::user()->unit_id) {
             abort(403);
@@ -79,9 +83,13 @@ class DetailController extends Controller
             'rba_submission_id' => 'required|exists:rba_submissions,id',
             'account_code_id' => 'required|exists:account_codes,id',
             'description' => 'required|string',
-            'nominal_request' => 'required|numeric|min:0',
+            'volume' => 'required|numeric|min:0.01',
+            'satuan' => 'required|string|max:50',
+            'harga_satuan' => 'required|numeric|min:0',
             'attachment' => 'required|file|mimes:pdf|max:10240', // 10MB
         ]);
+
+        $validated['nominal_request'] = $validated['volume'] * $validated['harga_satuan'];
 
         $submission = RbaSubmission::findOrFail($validated['rba_submission_id']);
 
@@ -101,6 +109,9 @@ class DetailController extends Controller
                 'rba_submission_id' => $validated['rba_submission_id'],
                 'account_code_id' => $validated['account_code_id'],
                 'description' => $validated['description'],
+                'volume' => $validated['volume'],
+                'satuan' => $validated['satuan'],
+                'harga_satuan' => $validated['harga_satuan'],
                 'nominal_request' => $validated['nominal_request'],
                 'created_by' => Auth::id(),
             ]);

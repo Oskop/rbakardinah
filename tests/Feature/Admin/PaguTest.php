@@ -81,7 +81,9 @@ class PaguTest extends TestCase
             'rba_submission_id' => $submission->id,
             'account_code_id' => $this->accountCode->id,
             'description' => 'Test',
-            'nominal_request' => 100,
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 100,
             'attachment' => \Illuminate\Http\UploadedFile::fake()->create('test.pdf', 100)
         ]);
 

@@ -76,12 +76,20 @@ class RbaDetailFeaturesTest extends TestCase
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
             'description' => 'Test create',
-            'nominal_request' => 5000,
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 5000,
             'attachment' => $file,
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('rba_details', ['description' => 'Test create']);
+        $this->assertDatabaseHas('rba_details', [
+            'description' => 'Test create',
+            'volume' => 1.00,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 5000.00,
+            'nominal_request' => 5000.00
+        ]);
     }
 
     public function test_operator_can_submit_item()
@@ -90,6 +98,9 @@ class RbaDetailFeaturesTest extends TestCase
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
             'description' => 'To Submit',
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 1000,
             'nominal_request' => 1000,
             'created_by' => $this->operator->id,
             'is_submitted' => false
@@ -108,6 +119,9 @@ class RbaDetailFeaturesTest extends TestCase
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
             'description' => 'To Delete',
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 1000,
             'nominal_request' => 1000,
             'created_by' => $this->operator->id
         ]);

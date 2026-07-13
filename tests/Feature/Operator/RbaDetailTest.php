@@ -77,12 +77,20 @@ class RbaDetailTest extends TestCase
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
             'description' => 'Pembelian Alat Tulis',
-            'nominal_request' => 5000000,
+            'volume' => 100,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 50000,
             'attachment' => $file,
         ]);
 
         $response->assertRedirect(route('operator.submissions.show', $this->submission->id));
-        $this->assertDatabaseHas('rba_details', ['description' => 'Pembelian Alat Tulis']);
+        $this->assertDatabaseHas('rba_details', [
+            'description' => 'Pembelian Alat Tulis',
+            'volume' => 100.00,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 50000.00,
+            'nominal_request' => 5000000.00
+        ]);
         $this->assertDatabaseHas('rba_attachments', ['version_number' => 1]);
 
         $detail = RbaDetail::where('description', 'Pembelian Alat Tulis')->first();
@@ -97,6 +105,9 @@ class RbaDetailTest extends TestCase
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
             'description' => 'Test Item',
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 1000,
             'nominal_request' => 1000,
             'created_by' => $this->operator->id
         ]);
@@ -125,6 +136,9 @@ class RbaDetailTest extends TestCase
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
             'description' => 'Test Item',
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 1000,
             'nominal_request' => 1000,
             'created_by' => $this->operator->id
         ]);
@@ -143,6 +157,9 @@ class RbaDetailTest extends TestCase
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
             'description' => 'To be deleted',
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 1000,
             'nominal_request' => 1000,
             'created_by' => $this->operator->id
         ]);
@@ -167,6 +184,9 @@ class RbaDetailTest extends TestCase
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
             'description' => 'Exceeding item',
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 600000,
             'nominal_request' => 600000,
             'created_by' => $this->operator->id,
         ]);
@@ -212,6 +232,9 @@ class RbaDetailTest extends TestCase
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
             'description' => 'Exceeding item',
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 600000,
             'nominal_request' => 600000,
             'created_by' => $this->operator->id,
         ]);
@@ -262,7 +285,9 @@ class RbaDetailTest extends TestCase
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
             'description' => 'Test Item',
-            'nominal_request' => 5000000,
+            'volume' => 100,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 50000,
             'attachment' => $file,
         ]);
 

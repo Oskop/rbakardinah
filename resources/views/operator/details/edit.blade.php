@@ -32,12 +32,31 @@
                             @error('description') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
 
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2">Volume</label>
+                                <input type="number" name="volume" id="volume" step="0.01" min="0.01" value="{{ $detail->volume }}"
+                                    class="w-full border-gray-300 rounded-md shadow-sm" required>
+                                @error('volume') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2">Satuan</label>
+                                <input type="text" name="satuan" id="satuan" placeholder="Contoh: Rim, Pcs, Bln" value="{{ $detail->satuan }}"
+                                    class="w-full border-gray-300 rounded-md shadow-sm" required>
+                                @error('satuan') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2">Harga Satuan (Rp)</label>
+                                <input type="number" name="harga_satuan" id="harga_satuan" min="0" value="{{ (int)$detail->harga_satuan }}"
+                                    class="w-full border-gray-300 rounded-md shadow-sm" required>
+                                @error('harga_satuan') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+
                         <div class="mb-4">
-                            <label class="block text-gray-700 text-sm font-bold mb-2">Nominal Usulan (Rp)</label>
-                            <input type="number" name="nominal_request"
-                                class="w-full border-gray-300 rounded-md shadow-sm" required min="0"
-                                value="{{ $detail->nominal_request }}">
-                            @error('nominal_request') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Harga Total (Rp)</label>
+                            <input type="text" id="harga_total" readonly
+                                class="w-full border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed font-semibold text-gray-700" value="Rp 0">
                         </div>
 
                         <div class="flex items-center justify-end">
@@ -53,4 +72,27 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const volumeInput = document.getElementById('volume');
+            const hargaSatuanInput = document.getElementById('harga_satuan');
+            const hargaTotalInput = document.getElementById('harga_total');
+
+            function calculateTotal() {
+                const volume = parseFloat(volumeInput.value) || 0;
+                const hargaSatuan = parseFloat(hargaSatuanInput.value) || 0;
+                const total = volume * hargaSatuan;
+                
+                // Format rupiah for display
+                hargaTotalInput.value = 'Rp ' + total.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+            }
+
+            volumeInput.addEventListener('input', calculateTotal);
+            hargaSatuanInput.addEventListener('input', calculateTotal);
+            
+            // Run initial calculation
+            calculateTotal();
+        });
+    </script>
 </x-app-layout>

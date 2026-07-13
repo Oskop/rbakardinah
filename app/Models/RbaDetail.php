@@ -15,6 +15,9 @@ class RbaDetail extends Model
         'rba_submission_id',
         'account_code_id',
         'description',
+        'volume',
+        'satuan',
+        'harga_satuan',
         'nominal_request',
         'is_submitted',
         'is_validated',
@@ -40,6 +43,8 @@ class RbaDetail extends Model
             'validated_at' => 'datetime',
             'is_rejected' => 'boolean',
             'rejected_at' => 'datetime',
+            'volume' => 'float',
+            'harga_satuan' => 'decimal:2',
         ];
     }
 

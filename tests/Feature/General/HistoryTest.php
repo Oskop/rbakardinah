@@ -47,6 +47,9 @@ class HistoryTest extends TestCase
             'rba_submission_id' => $submission->id,
             'account_code_id' => $accountCode->id,
             'description' => 'Test Item',
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 1000,
             'nominal_request' => 1000,
             'created_by' => $operator->id
         ]);

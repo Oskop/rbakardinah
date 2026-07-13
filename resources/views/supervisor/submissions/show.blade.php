@@ -119,7 +119,12 @@
                                         data-pagu="{{ $paguValue }}"
                                         data-account-id="{{ $detail->account_code_id }}">
                                         <td class="px-4 py-2 text-sm">{{ $detail->accountCode->code }} - {{ $detail->accountCode->name }}</td>
-                                        <td class="px-4 py-2 text-sm">{{ $detail->description }}</td>
+                                        <td class="px-4 py-2 text-sm">
+                                            {{ $detail->description }}
+                                            <div class="text-[11px] text-gray-500 mt-0.5 font-medium">
+                                                Rincian: {{ number_format($detail->volume, 2, ',', '.') }} {{ $detail->satuan }} x Rp {{ number_format($detail->harga_satuan, 0, ',', '.') }}
+                                            </div>
+                                        </td>
                                         <td class="px-4 py-2 text-sm text-right">Rp {{ number_format($detail->nominal_request, 0, ',', '.') }}</td>
                                         <td class="px-4 py-2 text-sm text-right">
                                             @if($paguValue > 0)
