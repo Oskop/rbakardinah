@@ -101,6 +101,9 @@
                                 <tr>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rekening</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Deskripsi</th>
+                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Volume</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Satuan</th>
+                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Harga Satuan</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-right">Usulan</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-right">Pagu Global</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status Pagu</th>
@@ -121,9 +124,15 @@
                                         <td class="px-4 py-2 text-sm">{{ $detail->accountCode->code }} - {{ $detail->accountCode->name }}</td>
                                         <td class="px-4 py-2 text-sm">
                                             {{ $detail->description }}
-                                            <div class="text-[11px] text-gray-500 mt-0.5 font-medium">
-                                                Rincian: {{ number_format($detail->volume, 2, ',', '.') }} {{ $detail->satuan }} x Rp {{ number_format($detail->harga_satuan, 0, ',', '.') }}
-                                            </div>
+                                        </td>
+                                        <td class="px-4 py-2 text-sm text-right">
+                                            {{ number_format($detail->volume, 2, ',', '.') }}
+                                        </td>
+                                        <td class="px-4 py-2 text-sm">
+                                            {{ $detail->satuan }}
+                                        </td>
+                                        <td class="px-4 py-2 text-sm text-right">
+                                            Rp {{ number_format($detail->harga_satuan, 0, ',', '.') }}
                                         </td>
                                         <td class="px-4 py-2 text-sm text-right">Rp {{ number_format($detail->nominal_request, 0, ',', '.') }}</td>
                                         <td class="px-4 py-2 text-sm text-right">
@@ -217,7 +226,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="px-4 py-8 text-center text-gray-500 italic">Belum ada rincian belanja.</td>
+                                        <td colspan="11" class="px-4 py-8 text-center text-gray-500 italic">Belum ada rincian belanja.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
