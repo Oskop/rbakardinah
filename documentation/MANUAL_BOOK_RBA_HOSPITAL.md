@@ -1,11 +1,11 @@
-# MANUAL BOOK & PANDUAN PENGGUNAAN SISTEM RBA HOSPITAL
+# MANUAL BOOK & PANDUAN PENGGUNAAN SISTEM SIPAKAR
 **RSUD KARDINAH**
 
 ---
 
 | Informasi Dokumen | Detail |
 | :--- | :--- |
-| **Nama Aplikasi** | Sistem Informasi Rencana Bisnis dan Anggaran (RBA Hospital) |
+| **Nama Aplikasi** | SIPAKAR |
 | **Instansi** | RSUD Kardinah Kota Tegal |
 | **Versi Dokumen** | 2.0 (Edisi Pengelompokan Dokumen Per Operator) |
 | **Tanggal Terbit** | 30 Juli 2026 |
@@ -17,7 +17,7 @@
 
 1. [PENDAHULUAN](#1-pendahuluan)
    - 1.1 Latar Belakang
-   - 1.2 Alur Penyusunan RBA Hospital
+   - 1.2 Alur Penyusunan SIPAKAR
    - 1.3 Hak Akses & Matriks Peran Pengguna
 2. [PANDUAN HAK AKSES ADMINISTRATOR](#2-panduan-hak-akses-administrator)
    - 2.1 Login & Navigasi Utama
@@ -45,11 +45,11 @@
 ## 1. PENDAHULUAN
 
 ### 1.1 Latar Belakang
-Sistem Informasi **RBA Hospital** dikembangkan untuk mengdigitalisasi seluruh alur perencanaan anggaran, penyusunan Rencana Bisnis dan Anggaran (RBA), serta pengawasan usulan belanja dan pendapatan di lingkungan RSUD Kardinah. Sistem ini memastikan transparansi, kepatuhan batas pagu indikatif, serta memfasilitasi pelaporan berkas pendukung seperti Kerangka Acuan Kerja (KAK), Rencana Anggaran Kerja (RAK), dan Rencana Tindak Pengendalian (RTP).
+Sistem Informasi **SIPAKAR** dikembangkan untuk mengdigitalisasi seluruh alur perencanaan anggaran, penyusunan Rencana Bisnis dan Anggaran (RBA), serta pengawasan usulan belanja dan pendapatan di lingkungan RSUD Kardinah. Sistem ini memastikan transparansi, kepatuhan batas pagu indikatif, serta memfasilitasi pelaporan berkas pendukung seperti Kerangka Acuan Kerja (KAK), Rencana Anggaran Kerja (RAK), dan Rencana Tindak Pengendalian (RTP).
 
-### 1.2 Alur Penyusunan RBA Hospital
+### 1.2 Alur Penyusunan SIPAKAR
 
-![Flowchart Alur Penyusunan RBA Hospital](./images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/flowchart.png)
+![Flowchart Alur Penyusunan SIPAKAR](./images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/flowchart.png)
 
 ### 1.3 Hak Akses & Matriks Peran Pengguna
 
@@ -66,7 +66,7 @@ Sistem Informasi **RBA Hospital** dikembangkan untuk mengdigitalisasi seluruh al
 ![Admin Dashboard](./images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/admin_dashboard_1785393971573.png)
 
 ### 2.1 Login & Navigasi Utama
-1. Buka peramban (*browser*) dan akses URL portal RBA Hospital.
+1. Buka peramban (*browser*) dan akses URL portal SIPAKAR.
 2. Masukkan email Administrator (contoh: `admin@hospital.com`) dan kata sandi.
 3. Setelah berhasil masuk, Anda akan diarahkan ke **Dashboard Administrator** yang menampilkan statistik umum unit, periode RBA aktif, dan ringkasan usulan.
 
