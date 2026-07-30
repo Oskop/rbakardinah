@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Manual Book RBA Hospital - RSUD Kardinah</title>
+    
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm 15mm 15mm 15mm;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #1e293b;
+            line-height: 1.6;
+            font-size: 11pt;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            color: #1e3a8a;
+            font-size: 22pt;
+            border-bottom: 3px solid #1e3a8a;
+            padding-bottom: 8px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        h2 {
+            color: #1e3a8a;
+            font-size: 15pt;
+            border-bottom: 2px solid #cbd5e1;
+            padding-bottom: 4px;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            page-break-after: avoid;
+        }
+        h3 {
+            color: #0f172a;
+            font-size: 12pt;
+            margin-top: 18px;
+            margin-bottom: 8px;
+            page-break-after: avoid;
+        }
+        p {
+            margin-bottom: 10px;
+            text-align: justify;
+        }
+        strong {
+            color: #0f172a;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 10pt;
+            page-break-inside: avoid;
+        }
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: #1e3a8a;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 15px auto;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            page-break-inside: avoid;
+        }
+        .mermaid-box {
+            background-color: #f8fafc;
+            border-left: 4px solid #3b82f6;
+            padding: 12px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 9pt;
+            page-break-inside: avoid;
+        }
+        ul, ol {
+            margin-top: 5px;
+            margin-bottom: 12px;
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 4px;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #e2e8f0;
+            margin: 20px 0;
+        }
+        .cover-sub {
+            text-align: center;
+            font-weight: bold;
+            font-size: 14pt;
+            color: #3b82f6;
+            margin-top: -10px;
+            margin-bottom: 25px;
+        }
+    </style>
+    
+</head>
+<body>
+    <h1 id="manual-book-panduan-penggunaan-sistem-rba-hospital">MANUAL BOOK &amp; PANDUAN PENGGUNAAN SISTEM RBA HOSPITAL</h1>
+<p><strong>RSUD KARDINAH</strong></p>
+<hr />
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Informasi Dokumen</th>
+<th style="text-align: left;">Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Nama Aplikasi</strong></td>
+<td style="text-align: left;">Sistem Informasi Rencana Bisnis dan Anggaran (RBA Hospital)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Instansi</strong></td>
+<td style="text-align: left;">RSUD Kardinah Kota Tegal</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Versi Dokumen</strong></td>
+<td style="text-align: left;">2.0 (Edisi Pengelompokan Dokumen Per Operator)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Tanggal Terbit</strong></td>
+<td style="text-align: left;">30 Juli 2026</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Target Pengguna</strong></td>
+<td style="text-align: left;">Administrator, Supervisor (Kabid/Kabag), Operator (Unit/Sub-Unit)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="daftar-isi">DAFTAR ISI</h2>
+<ol>
+<li><a href="#1-pendahuluan">PENDAHULUAN</a></li>
+<li>1.1 Latar Belakang</li>
+<li>1.2 Alur Penyusunan RBA Hospital</li>
+<li>1.3 Hak Akses &amp; Matriks Peran Pengguna</li>
+<li><a href="#2-panduan-hak-akses-administrator">PANDUAN HAK AKSES ADMINISTRATOR</a></li>
+<li>2.1 Login &amp; Navigasi Utama</li>
+<li>2.2 Manajemen Pengguna &amp; Unit Kerja</li>
+<li>2.3 Manajemen Kode Rekening &amp; Kelompok Belanja</li>
+<li>2.4 Inisialisasi Periode &amp; Header RBA</li>
+<li>2.5 Setting Pagu Indikatif (Pagu Global per Rekening)</li>
+<li>2.6 Penguncian RBA (Lock / Unlock Status Global)</li>
+<li><a href="#3-panduan-hak-akses-operator-unit-bawahan">PANDUAN HAK AKSES OPERATOR (UNIT BAWAHAN)</a></li>
+<li>3.1 Dashboard &amp; Workboard Operator</li>
+<li>3.2 Pengisian Latar Belakang RBA</li>
+<li>3.3 Penambahan &amp; Edit Rincian Belanja (Volume, Satuan, Harga Satuan)</li>
+<li>3.4 Pengunggahan Lampiran PDF Rincian Belanja</li>
+<li>3.5 Pengajuan Usulan (<em>Submit</em>) ke Supervisor</li>
+<li>3.6 Pengunggahan Dokumen KAK, RAK, dan RTP per Operator (Setelah RBA Locked)</li>
+<li><a href="#4-panduan-hak-akses-supervisor-kabid--kabag">PANDUAN HAK AKSES SUPERVISOR (KABID / KABAG)</a></li>
+<li>4.1 Dashboard Supervisor</li>
+<li>4.2 Review Usulan RBA Unit Bawahan</li>
+<li>4.3 Validasi &amp; Penolakan Rincian Belanja (Handling Exceeding Pagu)</li>
+<li>4.4 Pengelompokan &amp; Peninjauan Dokumen KAK, RAK, dan RTP Per Operator (Fitur Terbaru)</li>
+<li><a href="#5-troubleshooting--pertanyaan-sering-diajukan-faq">TROUBLESHOOTING &amp; PERTANYAAN SERING DIAJUKAN (FAQ)</a></li>
+</ol>
+<hr />
+<h2 id="1-pendahuluan">1. PENDAHULUAN</h2>
+<h3 id="11-latar-belakang">1.1 Latar Belakang</h3>
+<p>Sistem Informasi <strong>RBA Hospital</strong> dikembangkan untuk mengdigitalisasi seluruh alur perencanaan anggaran, penyusunan Rencana Bisnis dan Anggaran (RBA), serta pengawasan usulan belanja dan pendapatan di lingkungan RSUD Kardinah. Sistem ini memastikan transparansi, kepatuhan batas pagu indikatif, serta memfasilitasi pelaporan berkas pendukung seperti Kerangka Acuan Kerja (KAK), Rencana Anggaran Kerja (RAK), dan Rencana Tindak Pengendalian (RTP).</p>
+<h3 id="12-alur-penyusunan-rba-hospital">1.2 Alur Penyusunan RBA Hospital</h3>
+<p><img alt="Flowchart Alur Penyusunan RBA Hospital" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/flowchart.png" /></p>
+<h3 id="13-hak-akses-matriks-peran-pengguna">1.3 Hak Akses &amp; Matriks Peran Pengguna</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Peran Pengguna</th>
+<th style="text-align: left;">Deskripsi Peran</th>
+<th style="text-align: left;">Hak Akses Utama</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Administrator</strong></td>
+<td style="text-align: left;">Direktur / Wadir &amp; Pengelola Sistem Utama</td>
+<td style="text-align: left;">Manajemen user/unit, penetapan pagu indikatif, penguncian status global RBA.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Supervisor</strong></td>
+<td style="text-align: left;">Kepala Bidang / Kepala Bagian</td>
+<td style="text-align: left;">Review usulan belanja unit, validasi/tolak rincian, peninjauan berkas KAK/RAK/RTP terpisah per Operator bawahan.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Operator</strong></td>
+<td style="text-align: left;">Pelaksana Unit Kerja / Sub-Unit Bawahan</td>
+<td style="text-align: left;">Pengisian rincian belanja (volume x harga), upload PDF pendukung, upload berkas KAK/RAK/RTP.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-panduan-hak-akses-administrator">2. PANDUAN HAK AKSES ADMINISTRATOR</h2>
+<p><img alt="Admin Dashboard" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/admin_dashboard_1785393971573.png" /></p>
+<h3 id="21-login-navigasi-utama">2.1 Login &amp; Navigasi Utama</h3>
+<ol>
+<li>Buka peramban (<em>browser</em>) dan akses URL portal RBA Hospital.</li>
+<li>Masukkan email Administrator (contoh: <code>admin@hospital.com</code>) dan kata sandi.</li>
+<li>Setelah berhasil masuk, Anda akan diarahkan ke <strong>Dashboard Administrator</strong> yang menampilkan statistik umum unit, periode RBA aktif, dan ringkasan usulan.</li>
+</ol>
+<h3 id="22-manajemen-pengguna-unit-kerja">2.2 Manajemen Pengguna &amp; Unit Kerja</h3>
+<p><img alt="Admin Users" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/admin_users_1785393978979.png" /></p>
+<ol>
+<li>Pilih menu <strong>Users</strong> pada bilah navigasi atas.</li>
+<li>Klik tombol <strong>Tambah User Baru</strong> untuk menonaktifkan atau menambahkan akun baru.</li>
+<li>Tentukan nama pengguna, email, peran (<em>Administrator</em>, <em>Supervisor</em>, atau <em>Operator</em>), serta Unit Kerja terkait (wajib diisi untuk Supervisor dan Operator).</li>
+</ol>
+<h3 id="23-manajemen-kode-rekening-kelompok-belanja">2.3 Manajemen Kode Rekening &amp; Kelompok Belanja</h3>
+<p><img alt="Admin Kelompok Belanja" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/Screenshot-2026-07-30-152001.png" /></p>
+<ol>
+<li>Pilih menu <strong>Kelompok Belanja</strong> untuk mengatur klasifikasi utama anggaran (Belanja Pegawai, Belanja Barang &amp; Jasa, Belanja Modal).</li>
+</ol>
+<p><img alt="Admin Account Codes" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/Screenshot-2026-07-30-152227.png" /></p>
+<ol>
+<li>Pilih menu <strong>Account Codes</strong> untuk mengelola master kode rekening 6 digit beserta deskripsi standar rumah sakit.</li>
+</ol>
+<h3 id="24-inisialisasi-periode-header-rba">2.4 Inisialisasi Periode &amp; Header RBA</h3>
+<p><img alt="Admin Periods" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/admin_periods_1785393989862.png" /></p>
+<ol>
+<li>Pilih menu <strong>Periods</strong> untuk membuat atau mengedit periode tahun anggaran berjalan (misal: Murni / Perubahan).</li>
+</ol>
+<p><img alt="Admin Headers" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/admin_headers_1785393998039.png" /></p>
+<ol>
+<li>Pilih menu <strong>RBA Headers</strong> untuk membuat header anggaran induk bagi seluruh unit kerja.</li>
+</ol>
+<h3 id="25-setting-pagu-indikatif-pagu-global-per-rekening">2.5 Setting Pagu Indikatif (Pagu Global per Rekening)</h3>
+<p><img alt="Admin RBA Headers" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/Screenshot-2026-07-30-152919.png" /></p>
+<ol>
+<li>Pada halaman <strong>RBA Headers</strong>, klik tombol <strong>Set Pagu Global</strong> pada baris header RBA yang bersangkutan.</li>
+<li>Isikan batas nominal maksimal (<em>Pagu Global</em>) untuk masing-masing kode rekening belanja.</li>
+<li>Simpan perubahan. Pagu ini akan mengunci pengajuan usulan atau edit oleh operator per nomor rekeningnya, serta memberikan peringatan jika usulan melebihi pagu yang ditentukan.</li>
+</ol>
+<h3 id="26-penguncian-rba-lock-unlock-status-global">2.6 Penguncian RBA (Lock / Unlock Status Global)</h3>
+<ol>
+<li>Setelah seluruh proses perencanaan dan pengesahan usulan selesai, Administrator dapat mengubah status RBA Header dari <strong>Unlocked</strong> menjadi <strong>Locked</strong> dengan menekan tombol <strong>Kunci RBA Header</strong>.</li>
+<li><strong>Dampak Penguncian (Locked)</strong>:</li>
+<li>Operator dan Supervisor tidak dapat lagi menambah atau mengubah rincian angka usulan.</li>
+<li>Modul pengunggahan dokumen KAK, RAK, dan RTP pada tampilan Operator dan Supervisor secara otomatis menjadi <strong>AKTIF</strong>.</li>
+</ol>
+<hr />
+<h2 id="3-panduan-hak-akses-operator-unit-bawahan">3. PANDUAN HAK AKSES OPERATOR (UNIT BAWAHAN)</h2>
+<p><img alt="Operator Dashboard" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/operator_dashboard_1785394064010.png" /></p>
+<h3 id="31-dashboard-workboard-operator">3.1 Dashboard &amp; Workboard Operator</h3>
+<ol>
+<li>Login menggunakan akun Operator unit Anda (contoh: <code>pde@hospital.com</code>).</li>
+<li>Masuk ke menu <strong>Submissions</strong> untuk melihat daftar pengajuan RBA unit.</li>
+<li>Klik tombol <strong>Buka Workboard</strong> pada RBA berjalan.</li>
+</ol>
+<p><img alt="Operator Workboard" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/operator_submission_detail_1785394080707.png" /></p>
+<h3 id="32-pengisian-latar-belakang-rba">3.2 Pengisian Latar Belakang RBA</h3>
+<ol>
+<li>Pada bagian atas Workboard, periksa kolom <strong>Latar Belakang RBA</strong>.</li>
+<li>Klik <strong>Edit / Simpan Latar Belakang</strong> untuk mengisi penjelasan rasionalitas usulan anggaran unit kerja Anda.</li>
+</ol>
+<h3 id="33-penambahan-edit-rincian-belanja">3.3 Penambahan &amp; Edit Rincian Belanja</h3>
+<p><img alt="Operator Tambah Rincian Belanja" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/Screenshot-2026-07-30-153823.png" /></p>
+<ol>
+<li>Tekan tombol <strong>+ Tambah Rincian Belanja</strong>.</li>
+<li>Pilih <strong>Kode Rekening Belanja</strong>.</li>
+<li>Masukkan <strong>Deskripsi Rincian</strong>, <strong>Volume</strong>, <strong>Satuan</strong> (contoh: <em>Pcs, Bulan, Paket</em>), dan <strong>Harga Satuan (Rp)</strong>.</li>
+<li>Sistem secara otomatis menghitung <code>Total Usulan = Volume x Harga Satuan</code>.</li>
+</ol>
+<h3 id="34-pengunggahan-lampiran-pdf-rincian-belanja">3.4 Pengunggahan Lampiran PDF Rincian Belanja</h3>
+<ol>
+<li>Apabila total usulan pada kode rekening tertentu melebihi pagu global (<em>Status: OVER</em>), sistem memerlukan dokumen penjelas PDF.</li>
+<li>Klik icon <strong>Upload PDF</strong> pada baris rincian yang bersangkutan untuk mengunggah dokumen JUSTIFIKASI/REVISI versi terbaru.</li>
+</ol>
+<h3 id="35-pengajuan-usulan-submit-ke-supervisor">3.5 Pengajuan Usulan (<em>Submit</em>) ke Supervisor</h3>
+<p><img alt="Operator Ajukan Usulan" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/Screenshot-2026-07-30-154347.png" /></p>
+<ol>
+<li>Setelah seluruh rincian selesai diisi dan diverifikasi mandiri, tekan tombol <strong>Ajukan</strong>.</li>
+<li>Status submission akan berubah menjadi <code>Ajuan</code>.</li>
+</ol>
+<h3 id="36-pengunggahan-dokumen-kak-rak-dan-rtp-locked-rba">3.6 Pengunggahan Dokumen KAK, RAK, dan RTP (Locked RBA)</h3>
+<p><img alt="Operator Unggah KAK RAK RTP" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/Screenshot-2026-07-30-154727.png" /></p>
+<ol>
+<li>Apabila RBA Header telah dikunci (<em>Locked</em>) oleh Administrator, bagian <strong>Dokumen Realisasi &amp; Penyesuaian</strong> di bawah halaman Workboard akan terbuka.</li>
+<li>Pilih jenis dokumen:</li>
+<li><strong>KAK</strong>: Kerangka Acuan Kerja</li>
+<li><strong>RAK</strong>: Rencana Anggaran Kerja</li>
+<li><strong>RTP</strong>: Rencana Tindak Pengendalian</li>
+<li>Unggah file bertipe <strong>PDF</strong> (Maksimal 10MB).</li>
+<li>Setiap pengunggahan ulang akan mencatat versi secara otomatis (V1, V2, dst.) di mana dokumen dikaitkan secara eksplisit dengan akun Operator Anda.</li>
+</ol>
+<hr />
+<h2 id="4-panduan-hak-akses-supervisor-kabid-kabag">4. PANDUAN HAK AKSES SUPERVISOR (KABID / KABAG)</h2>
+<p><img alt="Supervisor Dashboard" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/Screenshot-2026-07-30-154943.png" /></p>
+<h3 id="41-dashboard-supervisor">4.1 Dashboard Supervisor</h3>
+<ol>
+<li>Login menggunakan akun Supervisor (contoh: <code>rensar@hospital.com</code>).</li>
+<li>Dashboard menampilkan daftar unit bawahan yang berada di bawah naungan struktur organisasi Anda.</li>
+</ol>
+<h3 id="42-review-usulan-rba-unit-bawahan">4.2 Review Usulan RBA Unit Bawahan</h3>
+<p><img alt="Supervisor Submissions" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/Screenshot-2026-07-30-154914.png" /></p>
+<ol>
+<li>Pilih menu <strong>Review RBA</strong>.</li>
+<li>Klik tombol <strong>Review Detail</strong> pada pengajuan RBA unit bawahan.</li>
+</ol>
+<h3 id="43-validasi-penolakan-rincian-belanja">4.3 Validasi &amp; Penolakan Rincian Belanja</h3>
+<p><img alt="Supervisor Review Page" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/Screenshot-2026-07-30-155133.png" /></p>
+<ol>
+<li>Pada tabel Rincian Belanja:</li>
+<li><strong>Indikator Pagu</strong>: Membandingkan total usulan unit terhadap Pagu Global.</li>
+<li><strong>Tombol Validasi (✅ Valid)</strong>: Klik untuk memvalidasi item rincian.</li>
+<li><strong>Tombol Tolak (✖ Tolak)</strong>: Klik untuk menolak item rincian dengan mengisi alasan penolakan pada pop-up dialog.</li>
+<li><strong>Aturan Penanganan Over Pagu</strong>:</li>
+<li>Jika rincian berstatus <code>OVER</code> dan Operator <strong>belum</strong> mengunggah PDF revisi, tombol validasi akan terkunci dengan pesan <em>⏳ Valid (Butuh PDF Baru)</em>.</li>
+</ol>
+<h3 id="44-pengelompokan-dokumen-kak-rak-rtp-per-operator">4.4 Pengelompokan Dokumen KAK, RAK, RTP Per Operator</h3>
+<p><img alt="Supervisor Review Page" src="file:///c:/Users/PC12/Project/rbakardinah/documentation/images/a0d3473b-9a53-46c8-91ef-fbb0e5181b0b/Screenshot-2026-07-30-155249.png" /></p>
+<ol>
+<li>Gulir ke bagian paling bawah halaman Review RBA pada seksi <strong>Dokumen Realisasi &amp; Penyesuaian (KAK, RAK, RTP) Per Operator</strong>.</li>
+<li>Berkas KAK, RAK, dan RTP dikelompokkan secara terpisah di bawah nama dan email masing-masing Operator (Unit Bawahan).</li>
+<li><strong>Fungsi Utama</strong>:</li>
+<li>Supervisor dapat mengunduh dokumen versi terbaru per Operator.</li>
+<li>Supervisor dapat meninjau <strong>Riwayat Versi</strong> per Operator tanpa khawatir berkas antar Operator di unit yang sama saling menindih (<em>overwrite</em>).</li>
+</ol>
+<hr />
+<h2 id="5-troubleshooting-pertanyaan-sering-diajukan-faq">5. TROUBLESHOOTING &amp; PERTANYAAN SERING DIAJUKAN (FAQ)</h2>
+<h3 id="q1-mengapa-tombol-upload-kakrakrtp-tidak-muncul-di-halaman-operator">Q1: Mengapa tombol upload KAK/RAK/RTP tidak muncul di halaman Operator?</h3>
+<p><strong>Jawab</strong>: Pengunggahan dokumen KAK, RAK, dan RTP hanya dapat dilakukan setelah status RBA Header diubah menjadi <strong>Locked</strong> oleh Administrator.</p>
+<h3 id="q2-mengapa-supervisor-tidak-bisa-menekan-tombol-validasi-pada-rincian-belanja-tertentu">Q2: Mengapa Supervisor tidak bisa menekan tombol Validasi pada rincian belanja tertentu?</h3>
+<p><strong>Jawab</strong>: Rincian belanja tersebut melebihi batas Pagu Indikatif (<em>Over Pagu</em>). Operator wajib mengunggah file PDF penyesuaian/revisi terlebih dahulu sebelum Supervisor dapat memvalidasi.</p>
+<h3 id="q3-apakah-dokumen-kak-yang-diunggah-operator-a-akan-menindih-dokumen-milik-operator-b-di-bawah-unit-yang-sama">Q3: Apakah dokumen KAK yang diunggah Operator A akan menindih dokumen milik Operator B di bawah unit yang sama?</h3>
+<p><strong>Jawab</strong>: Tidak. Setiap dokumen KAK, RAK, dan RTP disimpan secara independen dengan mengacu pada id user masing-masing Operator pengunggah.</p>
+<hr />
+<p><em>Dokumen ini diterbitkan secara resmi oleh Tim Pengembang Sistem Informasi RSUD Kardinah.</em></p>
+</body>
+</html>
