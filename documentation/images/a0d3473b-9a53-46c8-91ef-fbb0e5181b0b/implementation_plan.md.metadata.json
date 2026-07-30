@@ -1,0 +1,6 @@
+{
+  "summary": "Rencana implementasi pengelompokan dokumen KAK, RAK, dan RTP berdasarkan Operator (unit bawahan) pada tampilan Supervisor. Memperbarui tabel rba_submission_documents untuk menyimpan user_id pengunggah dan menyesuaikan controller serta tampilan supervisor.",
+  "updatedAt": "2026-07-30T06:19:18.153940200Z",
+  "requestFeedback": true,
+  "userFacing": true
+}
