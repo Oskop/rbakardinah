@@ -11,12 +11,18 @@ class RbaSubmissionDocument extends Model
 {
     protected $fillable = [
         'rba_submission_id',
-        'type'
+        'type',
+        'user_id',
     ];
 
     public function submission(): BelongsTo
     {
         return $this->belongsTo(RbaSubmission::class, 'rba_submission_id');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function versions(): HasMany

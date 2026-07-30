@@ -33,6 +33,7 @@ class DocumentController extends Controller
             $document = RbaSubmissionDocument::firstOrCreate([
                 'rba_submission_id' => $submission->id,
                 'type' => $request->type,
+                'user_id' => Auth::id(),
             ]);
 
             // Versioning
@@ -52,7 +53,7 @@ class DocumentController extends Controller
         return back()->with('success', "Dokumen {$request->type} versi baru berhasil diunggah.");
     }
 
-    public function history(RbaSubmission $submission, string $type)
+    public function history(Request $request, RbaSubmission $submission, string $type)
     {
         if ($submission->unit_id !== Auth::user()->unit_id && Auth::user()->role !== 'Supervisor' && Auth::user()->role !== 'Administrator') {
             abort(403);
@@ -62,10 +63,20 @@ class DocumentController extends Controller
             abort(404);
         }
 
-        $document = RbaSubmissionDocument::with(['versions.uploader'])
+        $userId = $request->query('user_id');
+        if (!$userId && Auth::user()->role === 'Operator') {
+            $userId = Auth::id();
+        }
+
+        $query = RbaSubmissionDocument::with(['versions.uploader'])
             ->where('rba_submission_id', $submission->id)
-            ->where('type', $type)
-            ->first();
+            ->where('type', $type);
+
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+
+        $document = $query->first();
 
         $versions = $document ? $document->versions : collect();
 

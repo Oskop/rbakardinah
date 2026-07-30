@@ -235,71 +235,91 @@
                 </div>
             </div>
 
-            <!-- Dokumen Pendukung (KAK, RAK, RTP) Section for Supervisor -->
+            <!-- Dokumen Pendukung (KAK, RAK, RTP) Section for Supervisor per Operator -->
             @php
                 $isLocked = $submission->header->status_global === 'Locked';
-                $docsMap = $submission->documents->keyBy('type');
             @endphp
 
             @if($isLocked)
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
                     <div class="p-6 text-gray-900">
-                        <h3 class="font-bold text-lg text-gray-800 mb-4">Dokumen Realisasi & Penyesuaian (KAK, RAK, RTP)</h3>
-                        <p class="text-xs text-gray-500 mb-4">Berikut adalah dokumen KAK, RAK, dan RTP yang diunggah oleh Operator untuk RBA ini.</p>
+                        <h3 class="font-bold text-lg text-gray-800 mb-2">Dokumen Realisasi & Penyesuaian (KAK, RAK, RTP) Per Operator</h3>
+                        <p class="text-xs text-gray-500 mb-6">Berikut adalah dokumen KAK, RAK, dan RTP yang diunggah oleh masing-masing Operator (Unit Bawahan) di bawah naungan unit Anda.</p>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            @foreach(['KAK', 'RAK', 'RTP'] as $docType)
-                                @php
-                                    $doc = $docsMap->get($docType);
-                                    $latestVersion = $doc ? $doc->latestVersion : null;
-                                @endphp
-                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col justify-between">
+                        @forelse($operators as $op)
+                            @php
+                                $opDocsMap = isset($documents[$op->id]) ? $documents[$op->id]->keyBy('type') : collect();
+                            @endphp
+                            <div class="mb-8 p-5 bg-gray-50/70 rounded-xl border border-gray-200">
+                                <div class="flex items-center space-x-2 mb-4 pb-3 border-b border-gray-200">
+                                    <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                    </div>
                                     <div>
-                                        <div class="flex justify-between items-center mb-3">
-                                            <h4 class="font-bold text-sm text-gray-700">Dokumen {{ $docType }}</h4>
-                                            @if($latestVersion)
-                                                <span class="bg-green-100 text-green-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                                                    V{{ $latestVersion->version_number }}
-                                                </span>
-                                            @else
-                                                <span class="bg-red-100 text-red-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                                                    Belum Diunggah
-                                                </span>
+                                        <h4 class="font-bold text-base text-gray-800">{{ $op->name }}</h4>
+                                        <p class="text-xs text-gray-500">{{ $op->email }}</p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    @foreach(['KAK', 'RAK', 'RTP'] as $docType)
+                                        @php
+                                            $doc = $opDocsMap->get($docType);
+                                            $latestVersion = $doc ? $doc->latestVersion : null;
+                                        @endphp
+                                        <div class="bg-white p-4 rounded-lg border border-gray-200 flex flex-col justify-between shadow-sm">
+                                            <div>
+                                                <div class="flex justify-between items-center mb-3">
+                                                    <h5 class="font-bold text-sm text-gray-700">Dokumen {{ $docType }}</h5>
+                                                    @if($latestVersion)
+                                                        <span class="bg-green-100 text-green-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                                            V{{ $latestVersion->version_number }}
+                                                        </span>
+                                                    @else
+                                                        <span class="bg-red-100 text-red-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                                            Belum Diunggah
+                                                        </span>
+                                                    @endif
+                                                </div>
+
+                                                @if($latestVersion)
+                                                    <div class="mb-4">
+                                                        <a href="{{ \Illuminate\Support\Facades\Storage::url($latestVersion->file_path) }}" target="_blank"
+                                                            class="text-indigo-600 hover:underline text-xs font-semibold inline-flex items-center space-x-1">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                            </svg>
+                                                            <span>Unduh Versi Terbaru (V{{ $latestVersion->version_number }})</span>
+                                                        </a>
+                                                    </div>
+                                                    <div class="text-xs text-gray-500 mb-1">
+                                                        Diunggah oleh: <strong class="text-gray-700">{{ $latestVersion->uploader->name }}</strong>
+                                                    </div>
+                                                    <div class="text-xs text-gray-500">
+                                                        Pada: {{ $latestVersion->created_at->timezone('Asia/Jakarta')->format('d M Y - H:i') }} WIB
+                                                    </div>
+                                                @else
+                                                    <p class="text-xs text-gray-400 italic">Operator belum mengunggah dokumen ini.</p>
+                                                @endif
+                                            </div>
+
+                                            @if($doc)
+                                                <div class="mt-4 pt-3 border-t text-center">
+                                                    <a href="{{ route('submissions.documents.history', ['submission' => $submission->id, 'type' => $docType, 'user_id' => $op->id]) }}" 
+                                                        class="text-[10px] text-gray-500 hover:text-indigo-600 font-semibold underline">
+                                                        Lihat Riwayat Versi
+                                                    </a>
+                                                </div>
                                             @endif
                                         </div>
-
-                                        @if($latestVersion)
-                                            <div class="mb-4">
-                                                <a href="{{ \Illuminate\Support\Facades\Storage::url($latestVersion->file_path) }}" target="_blank"
-                                                    class="text-indigo-600 hover:underline text-xs font-semibold inline-flex items-center space-x-1">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                    </svg>
-                                                    <span>Unduh Versi Terbaru (V{{ $latestVersion->version_number }})</span>
-                                                </a>
-                                            </div>
-                                            <div class="text-xs text-gray-500 mb-2">
-                                                Diunggah oleh: <strong class="text-gray-700">{{ $latestVersion->uploader->name }}</strong>
-                                            </div>
-                                            <div class="text-xs text-gray-500">
-                                                Pada: {{ $latestVersion->created_at->timezone('Asia/Jakarta')->format('d M Y - H:i') }} WIB
-                                            </div>
-                                        @else
-                                            <p class="text-xs text-gray-400 italic">Operator belum mengunggah dokumen ini.</p>
-                                        @endif
-                                    </div>
-
-                                    @if($doc)
-                                        <div class="mt-4 pt-3 border-t text-center">
-                                            <a href="{{ route('submissions.documents.history', ['submission' => $submission->id, 'type' => $docType]) }}" 
-                                                class="text-[10px] text-gray-500 hover:text-indigo-600 font-semibold underline">
-                                                Lihat Riwayat Versi
-                                            </a>
-                                        </div>
-                                    @endif
+                                    @endforeach
                                 </div>
-                            @endforeach
-                        </div>
+                            </div>
+                        @empty
+                            <p class="text-sm text-gray-500 italic">Belum ada Operator di bawah unit kerja ini.</p>
+                        @endforelse
                     </div>
                 </div>
             @endif

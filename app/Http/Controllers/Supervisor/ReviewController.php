@@ -26,7 +26,21 @@ class ReviewController extends Controller
             abort(403);
         }
 
-        $submission->load(['details.accountCode', 'details.attachments', 'header.period', 'documents.versions', 'documents.latestVersion']);
+        $operators = \App\Models\User::where('unit_id', Auth::user()->unit_id)
+            ->where('role', 'Operator')
+            ->orderBy('name')
+            ->get();
+
+        $submission->load([
+            'details.accountCode', 
+            'details.attachments', 
+            'header.period', 
+            'documents' => function ($query) {
+                $query->with(['user', 'versions.uploader', 'latestVersion']);
+            }
+        ]);
+
+        $documents = $submission->documents->groupBy('user_id');
 
         // Load pagu for indicators
         $pagus = \App\Models\RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)->get()->keyBy('account_code_id');
@@ -38,7 +52,7 @@ class ReviewController extends Controller
             ->get()
             ->keyBy('account_code_id');
 
-        return view('supervisor.submissions.show', compact('submission', 'pagus', 'headerTotals'));
+        return view('supervisor.submissions.show', compact('submission', 'pagus', 'headerTotals', 'operators', 'documents'));
     }
 
     public function validate(RbaSubmission $submission)
