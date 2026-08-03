@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'DIPAESI') }}</title>
+    <title>{{ config('app.name', 'SIPAKAR') }}</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -55,15 +55,9 @@
 
         <div class="relative z-10">
             <a href="/" class="flex items-center gap-3 group mb-8">
-                <div
-                    class="p-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200 group-hover:scale-110 transition-transform duration-300">
-                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                </div>
+                <img src="{{ asset('images/LogoSipakar.png') }}" class="h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300" alt="SIPAKAR Logo">
                 <span class="text-3xl font-extrabold tracking-tight text-slate-800 uppercase"><span
-                        class="text-indigo-600">DIPAESI</span></span>
+                        class="text-indigo-600">SIPAKAR</span></span>
             </a>
         </div>
 
@@ -80,7 +74,7 @@
         <!-- Footer Info -->
         <div class="relative z-10 mt-8 text-center">
             <p class="text-sm text-slate-400">
-                &copy; {{ date('Y') }} DIPAESI. Professional Budgeting Solution.
+                &copy; {{ date('Y') }} SIPAKAR. Sistem Perencanaan dan Penganggaran RSUD Kardinah.
             </p>
         </div>
     </div>

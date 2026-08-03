@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DIPAESI - Digitalisasi Perencanaan dan Evaluasi</title>
+    <title>SIPAKAR - Sistem Perencanaan dan Penganggaran RSUD Kardinah</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,17 +71,11 @@
 
         <!-- Navigation -->
         <nav class="relative z-50 flex items-center justify-between px-6 py-8 mx-auto max-w-7xl lg:px-8">
-            <div class="flex items-center gap-3 group cursor-pointer">
-                <div
-                    class="p-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200 group-hover:scale-110 transition-transform duration-300">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                </div>
+            <a href="/" class="flex items-center gap-3 group cursor-pointer">
+                <img src="{{ asset('images/LogoSipakar.png') }}" class="h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300" alt="SIPAKAR Logo">
                 <span class="text-2xl font-extrabold tracking-tight text-slate-800 uppercase"><span
-                        class="text-indigo-600">DIPAESI</span></span>
-            </div>
+                        class="text-indigo-600">SIPAKAR</span></span>
+            </a>
 
             @if (Route::has('login'))
                 <div class="flex items-center gap-4">
@@ -112,7 +106,7 @@
                 <div class="flex mb-8">
                     <div
                         class="relative px-3 py-1 text-sm leading-6 rounded-full text-slate-600 ring-1 ring-slate-900/10 hover:ring-slate-900/20 glass">
-                        DIGITALISASI PERENCANAAN DAN EVALUASI.
+                        SISTEM PERENCANAAN DAN PENGANGGARAN RSUD KARDINAH.
                     </div>
                 </div>
                 <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-6xl">
@@ -183,7 +177,7 @@
         <!-- Footer -->
         <div class="relative z-10 px-6 py-12 mx-auto max-w-7xl lg:px-8 border-t border-slate-200/50">
             <p class="text-sm leading-5 text-slate-500">
-                &copy; {{ date('Y') }} DIPAESI. All rights reserved. Professional Budgeting Solution.
+                &copy; {{ date('Y') }} SIPAKAR. All rights reserved. Sistem Perencanaan dan Penganggaran RSUD Kardinah.
             </p>
         </div>
     </div>
