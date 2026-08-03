@@ -21,7 +21,7 @@ Salin file `.env.example` menjadi `.env` dan sesuaikan konfigurasi database Anda
 copy .env.example .env
 ```
 
-Kemudian pada file php.ini pastikan sudah mengaktifkan extension mbstring, zip, fileinf, pdo_mysql, mysqli
+Kemudian pada file `php.ini` di direktori php, pastikan sudah mengaktifkan extension openssl, mbstring, zip, fileinf, pdo_mysql, mysqli, fileinfo, curl. Selain itu, pastikan juga setel `extension_dir` = "ext" atau path direktori dari ext (apabila php diunduh secara manual dengan versi lebih dari 8.5)
 ### 2. Instalasi Dependensi
 Instal semua package PHP dan JavaScript yang dibutuhkan.
 
