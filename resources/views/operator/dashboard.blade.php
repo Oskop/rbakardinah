@@ -454,24 +454,18 @@
                             </div>
 
                             <!-- Summary Cards -->
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4">
-                                    <p class="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">Total Usulan
-                                        Global</p>
-                                    <p class="text-xl font-black text-indigo-900 mt-1"
-                                        x-text="formatIDR(selectedRba.total_usulan_global)"></p>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 flex flex-col justify-between">
+                                    <p class="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">Total Usulan Global</p>
+                                    <p class="text-base sm:text-lg font-black text-indigo-900 mt-1 whitespace-nowrap" x-text="formatIDR(selectedRba.total_usulan_global)"></p>
                                 </div>
-                                <div class="bg-green-50/60 border border-green-100 rounded-xl p-4">
-                                    <p class="text-[11px] font-bold text-green-700 uppercase tracking-wider">Total Pagu
-                                        Global</p>
-                                    <p class="text-xl font-black text-green-900 mt-1"
-                                        x-text="formatIDR(selectedRba.total_pagu_global)"></p>
+                                <div class="bg-green-50/60 border border-green-100 rounded-xl p-3 flex flex-col justify-between">
+                                    <p class="text-[11px] font-bold text-green-700 uppercase tracking-wider">Total Pagu Global</p>
+                                    <p class="text-base sm:text-lg font-black text-green-900 mt-1 whitespace-nowrap" x-text="formatIDR(selectedRba.total_pagu_global)"></p>
                                 </div>
-                                <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                                    <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Jumlah
-                                        Operator Berkontribusi</p>
-                                    <p class="text-xl font-black text-gray-800 mt-1"
-                                        x-text="selectedRba.operators.length + ' Operator'"></p>
+                                <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 flex flex-col justify-between">
+                                    <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Jumlah Operator Berkontribusi</p>
+                                    <p class="text-base sm:text-lg font-black text-gray-800 mt-1 whitespace-nowrap" x-text="selectedRba.operators.length + ' Operator'"></p>
                                 </div>
                             </div>
 
