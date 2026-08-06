@@ -34,9 +34,7 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
 });
 
 Route::middleware(['auth', 'role:Supervisor'])->prefix('supervisor')->name('supervisor.')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('supervisor.dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\Supervisor\DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('users', \App\Http\Controllers\Supervisor\UserController::class);
     Route::get('submissions', [\App\Http\Controllers\Supervisor\ReviewController::class, 'index'])->name('submissions.index');
