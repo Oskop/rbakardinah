@@ -24,6 +24,7 @@
         selectedRba: null,
         viewMode: 'table',
         historyViewMode: 'list',
+        searchRba: '',
         chartInstance: null,
         historyChartInstance: null,
 
@@ -46,6 +47,16 @@
                     this.$nextTick(() => this.renderChart());
                 }
             });
+        },
+
+        filteredRbas() {
+            if (!this.searchRba.trim()) return this.rbas;
+            const q = this.searchRba.toLowerCase().trim();
+            return this.rbas.filter(r => 
+                ('rba ' + r.year).toLowerCase().includes(q) ||
+                r.year.toString().includes(q) ||
+                (r.period_name || '').toLowerCase().includes(q)
+            );
         },
 
         selectRba(rba) {
@@ -284,14 +295,32 @@
 
                     <!-- Mode 1: Mode Daftar -->
                     <div x-show="historyViewMode === 'list'" class="space-y-3">
+                        <!-- Search Box for RBA History -->
+                        <div class="relative mb-2">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-4 w-4 text-gray-400" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            <input x-model="searchRba" type="text" placeholder="Cari RBA (Tahun / Periode)..." 
+                                class="w-full text-xs border-gray-200 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-9 py-2 bg-gray-50/50 focus:bg-white transition-colors">
+                        </div>
+
                         <template x-if="rbas.length === 0">
                             <div class="text-center py-8 text-gray-400 italic text-sm">
                                 Belum ada RBA Header yang terdaftar.
                             </div>
                         </template>
 
-                        <div class="space-y-3 max-h-[620px] overflow-y-auto pr-1">
-                            <template x-for="rba in rbas" :key="rba.id">
+                        <template x-if="rbas.length > 0 && filteredRbas().length === 0">
+                            <div class="text-center py-8 text-gray-400 italic text-xs">
+                                RBA tidak ditemukan dengan kata kunci "<span x-text="searchRba"></span>".
+                            </div>
+                        </template>
+
+                        <!-- Scrollable container with fixed comfortable height -->
+                        <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                            <template x-for="rba in filteredRbas()" :key="rba.id">
                                 <div @click="selectRba(rba)" :class="selectedRba && selectedRba.id === rba.id 
                                         ? 'border-indigo-600 bg-indigo-50/40 shadow-sm ring-2 ring-indigo-500/20' 
                                         : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50/70'"
