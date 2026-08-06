@@ -10,6 +10,7 @@ use App\Models\RbaSubmission;
 use App\Models\AccountCode;
 use App\Models\KelompokBelanja;
 use App\Models\RbaDetail;
+use App\Models\RbaAccountPagu;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -99,6 +100,43 @@ class RbaDetailTest extends TestCase
         Storage::disk('public')->assertExists($filePath);
     }
 
+    public function test_operator_submission_view_displays_previous_period_pagu_in_awal_column()
+    {
+        // 1. Setup 2025 Perubahan Header with Pagu
+        $period2025 = RbaPeriod::create(['name' => 'Perubahan']);
+        $header2025 = RbaHeader::create([
+            'period_id' => $period2025->id,
+            'year' => 2025,
+            'admin_id' => 1,
+            'status_global' => 'Locked'
+        ]);
+
+        RbaAccountPagu::create([
+            'rba_header_id' => $header2025->id,
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 15000000
+        ]);
+
+        // 2. Create detail in current 2026 Murni submission
+        RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Usulan 2026 ATK',
+            'volume' => 10,
+            'satuan' => 'Paket',
+            'harga_satuan' => 1000000,
+            'nominal_request' => 10000000,
+            'created_by' => $this->operator->id
+        ]);
+
+        // 3. Access submission show page
+        $response = $this->actingAs($this->operator)->get(route('operator.submissions.show', $this->submission->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('AWAL');
+        $response->assertSee('Rp 15.000.000');
+    }
+
     public function test_operator_can_upload_new_version_of_pdf()
     {
         $detail = RbaDetail::create([
@@ -125,7 +163,6 @@ class RbaDetailTest extends TestCase
         ]);
 
         $response->assertStatus(302);
-        // Refresh detail to get updated attachments
         $this->assertEquals(2, $detail->fresh()->attachments()->count());
         $this->assertDatabaseHas('rba_attachments', ['version_number' => 2]);
     }
@@ -172,14 +209,12 @@ class RbaDetailTest extends TestCase
 
     public function test_operator_must_upload_new_pdf_when_nominal_exceeds_pagu()
     {
-        // 1. Set pagu global
-        $pagu = \App\Models\RbaAccountPagu::create([
+        $pagu = RbaAccountPagu::create([
             'rba_header_id' => $this->submission->rba_header_id,
             'account_code_id' => $this->accountCode->id,
             'nominal_pagu' => 500000,
         ]);
 
-        // 2. Create detail that exceeds pagu
         $detail = RbaDetail::create([
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
@@ -201,18 +236,15 @@ class RbaDetailTest extends TestCase
         $att1->created_at = now()->subMinutes(5);
         $att1->save();
 
-        // 3. Attempt to submit should fail
         $response = $this->actingAs($this->operator)->post(route('operator.details.submit-item', $detail));
         $response->assertSessionHas('error');
         $this->assertFalse($detail->fresh()->is_submitted);
 
-        // 4. Upload revision PDF (created_at >= pagu->updated_at)
         $fileV2 = UploadedFile::fake()->create('v2.pdf', 100);
         $this->actingAs($this->operator)->post(route('operator.details.upload-version', $detail), [
             'attachment' => $fileV2,
         ]);
 
-        // 5. Attempt to submit should now succeed
         $response = $this->actingAs($this->operator)->post(route('operator.details.submit-item', $detail));
         $response->assertSessionHas('success');
         $this->assertTrue($detail->fresh()->is_submitted);
@@ -220,14 +252,12 @@ class RbaDetailTest extends TestCase
 
     public function test_supervisor_cannot_validate_item_exceeding_pagu_without_revision()
     {
-        // 1. Set pagu global
-        $pagu = \App\Models\RbaAccountPagu::create([
+        $pagu = RbaAccountPagu::create([
             'rba_header_id' => $this->submission->rba_header_id,
             'account_code_id' => $this->accountCode->id,
             'nominal_pagu' => 500000,
         ]);
 
-        // 2. Create detail that exceeds pagu
         $detail = RbaDetail::create([
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
@@ -257,18 +287,15 @@ class RbaDetailTest extends TestCase
             'unit_id' => $this->unit->id,
         ]);
 
-        // 3. Attempt to validate should fail
         $response = $this->actingAs($supervisor)->post(route('supervisor.details.toggle-validation', $detail));
         $response->assertSessionHas('error');
         $this->assertFalse($detail->fresh()->is_validated);
 
-        // 4. Operator uploads revision
         $fileV2 = UploadedFile::fake()->create('v2.pdf', 100);
         $this->actingAs($this->operator)->post(route('operator.details.upload-version', $detail), [
             'attachment' => $fileV2,
         ]);
 
-        // 5. Supervisor attempts to validate should now succeed
         $response = $this->actingAs($supervisor)->post(route('supervisor.details.toggle-validation', $detail));
         $response->assertSessionHas('success');
         $this->assertTrue($detail->fresh()->is_validated);
@@ -276,7 +303,6 @@ class RbaDetailTest extends TestCase
 
     public function test_operator_cannot_add_detail_if_background_is_empty()
     {
-        // Set background to null
         $this->submission->update(['background' => null]);
 
         $file = UploadedFile::fake()->create('detail.pdf', 100);
@@ -310,10 +336,8 @@ class RbaDetailTest extends TestCase
 
     public function test_operator_can_upload_kak_rak_rtp_versioned_documents_when_locked()
     {
-        // 1. Lock header
         $this->submission->header->update(['status_global' => 'Locked']);
 
-        // 2. Upload KAK V1
         $fileV1 = UploadedFile::fake()->create('kak_v1.pdf', 100);
         $response = $this->actingAs($this->operator)->post(route('operator.submissions.documents.upload', $this->submission), [
             'type' => 'KAK',
@@ -333,7 +357,6 @@ class RbaDetailTest extends TestCase
             'version_number' => 1
         ]);
 
-        // 3. Upload KAK V2
         $fileV2 = UploadedFile::fake()->create('kak_v2.pdf', 100);
         $response = $this->actingAs($this->operator)->post(route('operator.submissions.documents.upload', $this->submission), [
             'type' => 'KAK',
