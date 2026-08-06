@@ -8,6 +8,12 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
+    $user = auth()->user();
+    if ($user) {
+        if ($user->role === 'Administrator') return redirect()->route('admin.dashboard');
+        if ($user->role === 'Supervisor') return redirect()->route('supervisor.dashboard');
+        if ($user->role === 'Operator') return redirect()->route('operator.dashboard');
+    }
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -49,9 +55,7 @@ Route::get('submissions/{submission}/documents/{type}/history', [\App\Http\Contr
     ->name('submissions.documents.history');
 
 Route::middleware(['auth', 'role:Operator'])->prefix('operator')->name('operator.')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('operator.dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\Operator\DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('submissions', \App\Http\Controllers\Operator\SubmissionController::class);
     Route::post('submissions/{submission}/submit', [\App\Http\Controllers\Operator\SubmissionController::class, 'submit'])->name('submissions.submit');
