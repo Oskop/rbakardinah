@@ -97,11 +97,12 @@
                         </div>
 
                         <div class="overflow-x-auto border border-gray-200 rounded-xl shadow-sm my-4">
-                            <table class="min-w-[1100px] w-full divide-y divide-gray-200">
+                            <table class="min-w-[1200px] w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rekening</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Deskripsi</th>
+                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">AWAL</th>
                                     <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Volume</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Satuan</th>
                                     <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Harga Satuan</th>
@@ -117,6 +118,7 @@
                                 @forelse($submission->details as $detail)
                                     @php
                                         $paguValue = isset($pagus[$detail->account_code_id]) ? $pagus[$detail->account_code_id]->nominal_pagu : 0;
+                                        $awalValue = isset($previousPagus[$detail->account_code_id]) ? $previousPagus[$detail->account_code_id]->nominal_pagu : 0;
                                     @endphp
                                     <tr x-show="!search || $el.innerText.toLowerCase().includes(search.toLowerCase())"
                                         data-usulan="{{ $detail->nominal_request }}"
@@ -125,6 +127,13 @@
                                         <td class="px-4 py-2 text-sm">{{ $detail->accountCode->code }} - {{ $detail->accountCode->name }}</td>
                                         <td class="px-4 py-2 text-sm">
                                             {{ $detail->description }}
+                                        </td>
+                                        <td class="px-4 py-2 text-sm text-right font-semibold text-gray-700">
+                                            @if($awalValue > 0)
+                                                Rp {{ number_format($awalValue, 0, ',', '.') }}
+                                            @else
+                                                <span class="text-gray-400">-</span>
+                                            @endif
                                         </td>
                                         <td class="px-4 py-2 text-sm text-right">
                                             {{ number_format($detail->volume, 2, ',', '.') }}
@@ -227,7 +236,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="11" class="px-4 py-8 text-center text-gray-500 italic">Belum ada rincian belanja.</td>
+                                        <td colspan="12" class="px-4 py-8 text-center text-gray-500 italic">Belum ada rincian belanja.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

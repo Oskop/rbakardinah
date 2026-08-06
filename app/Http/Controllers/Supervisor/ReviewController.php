@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Supervisor;
 
 use App\Http\Controllers\Controller;
+use App\Models\RbaHeader;
 use App\Models\RbaSubmission;
+use App\Models\RbaAccountPagu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -43,7 +45,43 @@ class ReviewController extends Controller
         $documents = $submission->documents->groupBy('user_id');
 
         // Load pagu for indicators
-        $pagus = \App\Models\RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)->get()->keyBy('account_code_id');
+        $pagus = RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)->get()->keyBy('account_code_id');
+
+        // Determine previous RBA header to fetch nominal pagu AWAL
+        $currentHeader = $submission->header;
+        $currentYear = $currentHeader->year;
+        $currentPeriodName = $currentHeader->period->name ?? '';
+
+        $previousHeader = null;
+        if (stripos($currentPeriodName, 'Perubahan') !== false) {
+            // If current is Perubahan -> Previous is Murni for the SAME year
+            $previousHeader = RbaHeader::where('year', $currentYear)
+                ->where('id', '!=', $currentHeader->id)
+                ->whereHas('period', function ($q) {
+                    $q->where('name', 'like', '%Murni%');
+                })
+                ->first();
+        } else {
+            // If current is Murni -> Previous is Perubahan for the PREVIOUS year (year - 1)
+            $previousHeader = RbaHeader::where('year', $currentYear - 1)
+                ->whereHas('period', function ($q) {
+                    $q->where('name', 'like', '%Perubahan%');
+                })
+                ->first();
+        }
+
+        // Fallback: Closest preceding RBA header by ID/Year
+        if (!$previousHeader) {
+            $previousHeader = RbaHeader::where('id', '<', $currentHeader->id)
+                ->orderByDesc('year')
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        $previousPagus = $previousHeader
+            ? RbaAccountPagu::where('rba_header_id', $previousHeader->id)->get()->keyBy('account_code_id')
+            : collect();
+
         $headerTotals = \App\Models\RbaDetail::whereHas('submission', function ($q) use ($submission) {
             $q->where('rba_header_id', $submission->rba_header_id);
         })
@@ -52,7 +90,7 @@ class ReviewController extends Controller
             ->get()
             ->keyBy('account_code_id');
 
-        return view('supervisor.submissions.show', compact('submission', 'pagus', 'headerTotals', 'operators', 'documents'));
+        return view('supervisor.submissions.show', compact('submission', 'pagus', 'headerTotals', 'operators', 'documents', 'previousPagus'));
     }
 
     public function validate(RbaSubmission $submission)
