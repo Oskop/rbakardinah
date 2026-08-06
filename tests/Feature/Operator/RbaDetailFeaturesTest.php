@@ -92,6 +92,28 @@ class RbaDetailFeaturesTest extends TestCase
         ]);
     }
 
+    public function test_operator_can_create_rba_detail_with_long_description()
+    {
+        $file = UploadedFile::fake()->create('detail.pdf', 100);
+        $longDescription = 'Storage Server dengan spek 2x Intel Xeon Scalable (Gold Gen 5), minimal 32 Cores, 256 GB / 512 GB ECC Registered DDR5 (Dapat diekspansi hingga 1 TB+), 2x SSD 480GB Enterprise SATA/NVMe (RAID 1), Enterprise NVMe U.2 / U.3 (Model Read/Write Intensive) minimal 10 TB, Dual-port 10 Gbps SFP+ PCIe Network Adapter, Redundant Power Supply (1+1) Hot-Swap, 80+ Platinum/Titanium (min. 800W - 1200W)';
+
+        $response = $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => $longDescription,
+            'volume' => 1,
+            'satuan' => 'Unit',
+            'harga_satuan' => 350000000,
+            'attachment' => $file,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('rba_details', [
+            'description' => $longDescription,
+            'nominal_request' => 350000000.00
+        ]);
+    }
+
     public function test_operator_can_submit_item()
     {
         $detail = RbaDetail::create([
