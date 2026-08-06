@@ -23,7 +23,9 @@
         rbas: {{ json_encode($rbaData) }},
         selectedRba: null,
         viewMode: 'table',
+        historyViewMode: 'list',
         chartInstance: null,
+        historyChartInstance: null,
 
         init() {
             if (this.rbas.length > 0) {
@@ -32,6 +34,11 @@
             this.$watch('viewMode', (value) => {
                 if (value === 'chart') {
                     this.$nextTick(() => this.renderChart());
+                }
+            });
+            this.$watch('historyViewMode', (value) => {
+                if (value === 'chart') {
+                    this.$nextTick(() => this.renderHistoryBarChart());
                 }
             });
             this.$watch('selectedRba', () => {
@@ -127,6 +134,100 @@
                     }
                 }
             });
+        },
+
+        renderHistoryBarChart() {
+            if (!this.$refs.historyCanvas) return;
+            if (this.historyChartInstance) {
+                this.historyChartInstance.destroy();
+            }
+
+            // Reverse rbas to display chronologically from oldest to newest
+            const chronologicalRbas = [...this.rbas].reverse();
+
+            const labels = chronologicalRbas.map(r => `RBA ${r.year} ${r.period_name}`);
+            const dataUsulan = chronologicalRbas.map(r => r.total_usulan_global);
+            const dataPagu = chronologicalRbas.map(r => r.total_pagu_global);
+
+            const ctx = this.$refs.historyCanvas.getContext('2d');
+            this.historyChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Total Usulan Belanja',
+                            data: dataUsulan,
+                            backgroundColor: '#6366f1',
+                            borderColor: '#4f46e5',
+                            borderWidth: 1.5,
+                            borderRadius: 6,
+                        },
+                        {
+                            label: 'Total Pagu Global',
+                            data: dataPagu,
+                            backgroundColor: '#10b981',
+                            borderColor: '#059669',
+                            borderWidth: 1.5,
+                            borderRadius: 6,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                boxWidth: 14,
+                                padding: 12,
+                                font: {
+                                    size: 11,
+                                    weight: '700',
+                                    family: 'sans-serif'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const val = context.raw || 0;
+                                    return ` ${label}: Rp ${Number(val).toLocaleString('id-ID')}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000000) {
+                                        return 'Rp ' + (value / 1000000000).toFixed(1) + ' M';
+                                    } else if (value >= 1000000) {
+                                        return 'Rp ' + (value / 1000000).toFixed(0) + ' Jt';
+                                    }
+                                    return 'Rp ' + Number(value).toLocaleString('id-ID');
+                                },
+                                font: { size: 10, weight: '500' }
+                            },
+                            grid: {
+                                color: '#f3f4f6'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: { size: 10, weight: '700' }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
         }
     }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
@@ -156,71 +257,101 @@
 
                 <!-- Left Column: Daftar RBA Historis (4 Cols) -->
                 <div class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-gray-200/80 p-5 space-y-4">
-                    <div class="flex justify-between items-center pb-3 border-b border-gray-100">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-3 border-b border-gray-100 gap-2">
                         <div>
                             <h3 class="font-extrabold text-base text-gray-800">Daftar RBA Historis</h3>
-                            <p class="text-xs text-gray-500">Urutan RBA Terbaru ke Tertua</p>
+                            <p class="text-xs text-gray-500" x-text="historyViewMode === 'list' ? 'Urutan RBA Terbaru ke Tertua' : 'Grafik Fluktuasi Usulan vs Pagu'"></p>
                         </div>
-                        <span
-                            class="bg-indigo-50 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full border border-indigo-100"
-                            x-text="rbas.length + ' Header'"></span>
+                        <div class="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200/80">
+                            <button @click="historyViewMode = 'list'"
+                                :class="historyViewMode === 'list' ? 'bg-white text-indigo-700 shadow-sm font-bold' : 'text-gray-500 hover:text-gray-800 font-medium'"
+                                class="px-2.5 py-1 text-xs rounded-lg transition-all flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                                </svg>
+                                <span>Daftar</span>
+                            </button>
+                            <button @click="historyViewMode = 'chart'"
+                                :class="historyViewMode === 'chart' ? 'bg-white text-indigo-700 shadow-sm font-bold' : 'text-gray-500 hover:text-gray-800 font-medium'"
+                                class="px-2.5 py-1 text-xs rounded-lg transition-all flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                                <span>Grafik</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <template x-if="rbas.length === 0">
-                        <div class="text-center py-8 text-gray-400 italic text-sm">
-                            Belum ada RBA Header yang terdaftar.
-                        </div>
-                    </template>
-
-                    <div class="space-y-3 max-h-[620px] overflow-y-auto pr-1">
-                        <template x-for="rba in rbas" :key="rba.id">
-                            <div @click="selectRba(rba)" :class="selectedRba && selectedRba.id === rba.id 
-                                    ? 'border-indigo-600 bg-indigo-50/40 shadow-sm ring-2 ring-indigo-500/20' 
-                                    : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50/70'"
-                                class="cursor-pointer border rounded-xl p-4 transition-all duration-200 relative group">
-
-                                <div class="flex justify-between items-start mb-2">
-                                    <div>
-                                        <span class="inline-flex items-center gap-1 text-sm font-black text-gray-900"
-                                            x-text="'RBA ' + rba.year"></span>
-                                        <span
-                                            class="text-xs text-indigo-700 font-semibold bg-indigo-100/60 px-2 py-0.5 rounded-md ml-1"
-                                            x-text="rba.period_name"></span>
-                                    </div>
-                                    <span :class="rba.status_global === 'Locked' 
-                                        ? 'bg-red-50 text-red-700 border-red-200' 
-                                        : 'bg-green-50 text-green-700 border-green-200'"
-                                        class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border"
-                                        x-text="rba.status_global">
-                                    </span>
-                                </div>
-
-                                <div class="space-y-1 mt-3 pt-2 border-t border-gray-100 text-xs">
-                                    <div class="flex justify-between items-center text-gray-600">
-                                        <span>Total Usulan (Semua Operator):</span>
-                                        <span class="font-extrabold text-indigo-700"
-                                            x-text="formatIDR(rba.total_usulan_global)"></span>
-                                    </div>
-                                    <div class="flex justify-between items-center text-gray-600">
-                                        <span>Pagu Global:</span>
-                                        <span class="font-extrabold text-green-700"
-                                            x-text="formatIDR(rba.total_pagu_global)"></span>
-                                    </div>
-                                </div>
-
-                                <div
-                                    class="mt-3 flex justify-between items-center text-[11px] text-gray-400 font-semibold group-hover:text-indigo-600">
-                                    <span x-text="rba.operators.length + ' Operator Berkontribusi'"></span>
-                                    <span class="inline-flex items-center gap-0.5">
-                                        <span>Lihat Operator</span>
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7"></path>
-                                        </svg>
-                                    </span>
-                                </div>
+                    <!-- Mode 1: Mode Daftar -->
+                    <div x-show="historyViewMode === 'list'" class="space-y-3">
+                        <template x-if="rbas.length === 0">
+                            <div class="text-center py-8 text-gray-400 italic text-sm">
+                                Belum ada RBA Header yang terdaftar.
                             </div>
                         </template>
+
+                        <div class="space-y-3 max-h-[620px] overflow-y-auto pr-1">
+                            <template x-for="rba in rbas" :key="rba.id">
+                                <div @click="selectRba(rba)" :class="selectedRba && selectedRba.id === rba.id 
+                                        ? 'border-indigo-600 bg-indigo-50/40 shadow-sm ring-2 ring-indigo-500/20' 
+                                        : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50/70'"
+                                    class="cursor-pointer border rounded-xl p-4 transition-all duration-200 relative group">
+
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div>
+                                            <span class="inline-flex items-center gap-1 text-sm font-black text-gray-900"
+                                                x-text="'RBA ' + rba.year"></span>
+                                            <span
+                                                class="text-xs text-indigo-700 font-semibold bg-indigo-100/60 px-2 py-0.5 rounded-md ml-1"
+                                                x-text="rba.period_name"></span>
+                                        </div>
+                                        <span :class="rba.status_global === 'Locked' 
+                                            ? 'bg-red-50 text-red-700 border-red-200' 
+                                            : 'bg-green-50 text-green-700 border-green-200'"
+                                            class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border"
+                                            x-text="rba.status_global">
+                                        </span>
+                                    </div>
+
+                                    <div class="space-y-1 mt-3 pt-2 border-t border-gray-100 text-xs">
+                                        <div class="flex justify-between items-center text-gray-600">
+                                            <span>Total Usulan (Semua Operator):</span>
+                                            <span class="font-extrabold text-indigo-700"
+                                                x-text="formatIDR(rba.total_usulan_global)"></span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-gray-600">
+                                            <span>Pagu Global:</span>
+                                            <span class="font-extrabold text-green-700"
+                                                x-text="formatIDR(rba.total_pagu_global)"></span>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        class="mt-3 flex justify-between items-center text-[11px] text-gray-400 font-semibold group-hover:text-indigo-600">
+                                        <span x-text="rba.operators.length + ' Operator Berkontribusi'"></span>
+                                        <span class="inline-flex items-center gap-0.5">
+                                            <span>Lihat Operator</span>
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 5l7 7-7 7"></path>
+                                            </svg>
+                                        </span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Mode 2: Mode Grafik -->
+                    <div x-show="historyViewMode === 'chart'" class="space-y-3" style="display: none;">
+                        <div class="bg-gray-50/70 p-3 rounded-xl border border-gray-200/80 mb-2">
+                            <p class="text-xs text-gray-600 leading-relaxed font-medium">
+                                📊 <strong>Grafik Fluktuasi RBA:</strong> Membandingkan total usulan belanja dari seluruh operator dengan total pagu global yang ditetapkan oleh Administrator untuk setiap periode RBA (kronologis).
+                            </p>
+                        </div>
+                        <div class="relative w-full h-[450px] bg-white p-3 rounded-xl border border-gray-100">
+                            <canvas x-ref="historyCanvas"></canvas>
+                        </div>
                     </div>
                 </div>
 
@@ -244,37 +375,45 @@
                     <template x-if="selectedRba">
                         <div class="space-y-6">
 
-                            <!-- Header Info & Controls -->
+                            <!-- Header Info RBA Selected -->
                             <div
                                 class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-gray-200">
                                 <div>
                                     <div class="flex items-center gap-2">
                                         <h3 class="font-black text-xl text-gray-900"
-                                            x-text="'Detail RBA Tahun ' + selectedRba.year"></h3>
+                                            x-text="'Detail RBA ' + selectedRba.year"></h3>
                                         <span
-                                            class="text-xs font-bold text-indigo-700 bg-indigo-100 px-2.5 py-1 rounded-md"
+                                            class="text-xs font-bold text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-md"
                                             x-text="selectedRba.period_name"></span>
+                                        <span :class="selectedRba.status_global === 'Locked' 
+                                            ? 'bg-red-50 text-red-700 border-red-200' 
+                                            : 'bg-green-50 text-green-700 border-green-200'"
+                                            class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border"
+                                            x-text="selectedRba.status_global">
+                                        </span>
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-1">Daftar total usulan belanja masing-masing
-                                        Operator beserta pagunya</p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Rincian Usulan Belanja per Operator pada RBA <span
+                                            x-text="selectedRba.year"></span> (<span
+                                            x-text="selectedRba.period_name"></span>).
+                                    </p>
                                 </div>
 
-                                <!-- Segmented Control Switcher -->
-                                <div class="inline-flex rounded-xl bg-gray-100 p-1 border border-gray-200 shadow-inner">
+                                <!-- View Toggle (Table vs Chart Pie) -->
+                                <div class="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200">
                                     <button @click="viewMode = 'table'"
-                                        :class="viewMode === 'table' ? 'bg-white text-indigo-700 shadow-sm font-extrabold' : 'text-gray-600 hover:text-gray-900 font-medium'"
-                                        class="px-4 py-1.5 rounded-lg text-xs transition-all duration-150 flex items-center gap-1.5">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        :class="viewMode === 'table' ? 'bg-white text-indigo-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900 font-medium'"
+                                        class="px-3 py-1.5 text-xs rounded-lg transition-all flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                            </path>
+                                                d="M3 10h18M3 14h18M9 4v16m6-16v16"></path>
                                         </svg>
-                                        <span>Tabel Operator</span>
+                                        <span>Tabel</span>
                                     </button>
                                     <button @click="viewMode = 'chart'"
-                                        :class="viewMode === 'chart' ? 'bg-white text-indigo-700 shadow-sm font-extrabold' : 'text-gray-600 hover:text-gray-900 font-medium'"
-                                        class="px-4 py-1.5 rounded-lg text-xs transition-all duration-150 flex items-center gap-1.5">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        :class="viewMode === 'chart' ? 'bg-white text-indigo-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900 font-medium'"
+                                        class="px-3 py-1.5 text-xs rounded-lg transition-all flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -285,11 +424,11 @@
                                 </div>
                             </div>
 
-                            <!-- Top Metric Summary Cards -->
+                            <!-- Summary Cards -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4">
-                                    <p class="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">Total
-                                        Usulan (Semua Operator)</p>
+                                    <p class="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">Total Usulan
+                                        Global</p>
                                     <p class="text-xl font-black text-indigo-900 mt-1"
                                         x-text="formatIDR(selectedRba.total_usulan_global)"></p>
                                 </div>
@@ -381,7 +520,7 @@
                             </div>
 
                             <!-- Mode 2: Pie Chart View per Operator -->
-                            <div x-show="viewMode === 'chart'" class="space-y-4">
+                            <div x-show="viewMode === 'chart'" class="space-y-4" style="display: none;">
                                 <div class="bg-gray-50 border border-gray-200 rounded-xl p-6 relative">
                                     <h4 class="text-sm font-bold text-gray-700 text-center mb-4">Persentase & Proporsi
                                         Total Usulan Belanja per Operator</h4>
