@@ -146,198 +146,200 @@
                             </div>
                         </div>
 
-                        <table class="min-w-full divide-y divide-gray-200" id="details-table">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rekening</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Deskripsi</th>
-                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">AWAL</th>
-                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Volume</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Satuan</th>
-                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Harga Satuan</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-right">Usulan (Unit)</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-right">Pagu Global</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status Pagu</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-center">PDF</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200" x-ref="tbody">
-                                @forelse($submission->details as $detail)
-                                    @php
-                                        $paguValue = isset($pagus[$detail->account_code_id]) ? $pagus[$detail->account_code_id]->nominal_pagu : 0;
-                                        $awalValue = isset($previousPagus[$detail->account_code_id]) ? $previousPagus[$detail->account_code_id]->nominal_pagu : 0;
-                                    @endphp
-                                    <tr x-show="!search || $el.innerText.toLowerCase().includes(search.toLowerCase())"
-                                        data-usulan="{{ $detail->nominal_request }}"
-                                        data-pagu="{{ $paguValue }}"
-                                        data-account-id="{{ $detail->account_code_id }}">
-                                        <td class="px-4 py-2 text-sm">
-                                            {{ $detail->accountCode->code }} - {{ $detail->accountCode->name }}
-                                            @if($detail->is_rejected)
-                                                <div class="mt-1 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
-                                                    <strong>Alasan Penolakan:</strong><br>
-                                                    {{ $detail->rejection_reason }}
-                                                </div>
-                                            @endif
-                                        </td>
-                                        <td class="px-4 py-2 text-sm">
-                                            {{ $detail->description }}
-                                        </td>
-                                        <td class="px-4 py-2 text-sm text-right font-semibold text-gray-700">
-                                            @if($awalValue > 0)
-                                                Rp {{ number_format($awalValue, 0, ',', '.') }}
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-4 py-2 text-sm text-right">
-                                            {{ number_format($detail->volume, 2, ',', '.') }}
-                                        </td>
-                                        <td class="px-4 py-2 text-sm">
-                                            {{ $detail->satuan }}
-                                        </td>
-                                        <td class="px-4 py-2 text-sm text-right">
-                                            Rp {{ number_format($detail->harga_satuan, 0, ',', '.') }}
-                                        </td>
-                                        <td class="px-4 py-2 text-sm text-right">Rp {{ number_format($detail->nominal_request, 0, ',', '.') }}</td>
-                                        <td class="px-4 py-2 text-sm text-right">
-                                            @if($paguValue > 0)
-                                                Rp {{ number_format($paguValue, 0, ',', '.') }}
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-4 py-2 text-sm">
-                                            @if($paguValue > 0)
-                                                @php 
-                                                    $total = $headerTotals[$detail->account_code_id]->total ?? 0;
-                                                @endphp
-                                                @if($total > $paguValue)
-                                                    <span class="text-red-600 font-bold text-xs">MELEBIHI PAGU</span>
-                                                    <div class="text-[10px] text-red-500 font-medium">(Over: Rp {{ number_format($total - $paguValue, 0, ',', '.') }})</div>
-                                                @else
-                                                    <span class="text-green-600 font-semibold text-xs whitespace-nowrap">✓ Tercover</span>
-                                                @endif
-                                            @else
-                                                <span class="text-yellow-600 italic text-xs">Pagu Belum Diset</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-4 py-2 text-sm text-center">
-                                            @php $latest = $detail->latestAttachment(); @endphp
-                                            @if($latest)
-                                                <a href="{{ Storage::url($latest->file_path) }}" target="_blank"
-                                                    class="text-blue-600 hover:underline text-xs">
-                                                    PDF V{{ $latest->version_number }}
-                                                </a>
-                                            @endif
-                                        </td>
-                                        <td class="px-4 py-2 text-sm">
-                                            @if($detail->is_validated)
-                                                <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-[9px] font-black uppercase">Valid</span>
-                                            @elseif($detail->is_rejected)
-                                                <span class="px-2 py-0.5 bg-red-100 text-red-800 rounded-full text-[9px] font-black uppercase">Tolak</span>
-                                            @elseif($detail->is_submitted)
-                                                <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-[9px] font-black uppercase">Ajuan</span>
-                                            @else
-                                                <span class="px-2 py-0.5 bg-gray-100 text-gray-800 rounded-full text-[9px] font-black uppercase">Draft</span>
-                                            @endif
-                                        </td>                                        <td class="px-4 py-2 text-sm">
-                                            <div class="flex flex-col space-y-2">
-                                                @php
-                                                    $isItemLockedByPagu = $paguValue > 0;
-                                                    $isExceeding = $detail->isExceedingPagu();
-                                                    $hasRevision = $detail->hasUploadedRevision();
-                                                @endphp
-
-                                                @if(!$isItemLockedByPagu && (!$detail->is_submitted || $detail->is_rejected))
-                                                    <div class="flex space-x-2">
-                                                        <a href="{{ route('operator.details.edit', $detail) }}"
-                                                            class="text-indigo-600 hover:text-indigo-900 text-[10px] font-bold border border-indigo-200 px-2 py-1 rounded bg-indigo-50">Edit</a>
-                                                        
-                                                        <form action="{{ route('operator.details.submit-item', $detail) }}" method="POST">
-                                                            @csrf
-                                                            <button type="submit" 
-                                                                class="text-green-600 hover:text-green-900 text-[10px] font-bold border border-green-200 px-2 py-1 rounded bg-green-50">
-                                                                Ajukan
-                                                            </button>
-                                                        </form>
-
-                                                        <form action="{{ route('operator.details.destroy', $detail) }}" method="POST" onsubmit="return confirm('Hapus rincian ini?')">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" 
-                                                                class="text-red-600 hover:text-red-900 text-[10px] font-bold border border-red-200 px-2 py-1 rounded bg-red-50">
-                                                                Hapus
-                                                            </button>
-                                                        </form>
+                        <div class="overflow-x-auto border border-gray-200 rounded-xl shadow-sm my-4">
+                            <table class="min-w-[1200px] w-full divide-y divide-gray-200" id="details-table">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rekening</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Deskripsi</th>
+                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">AWAL</th>
+                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Volume</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Satuan</th>
+                                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Harga Satuan</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-right">Usulan (Unit)</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-right">Pagu Global</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status Pagu</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-center">PDF</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200" x-ref="tbody">
+                                    @forelse($submission->details as $detail)
+                                        @php
+                                            $paguValue = isset($pagus[$detail->account_code_id]) ? $pagus[$detail->account_code_id]->nominal_pagu : 0;
+                                            $awalValue = isset($previousPagus[$detail->account_code_id]) ? $previousPagus[$detail->account_code_id]->nominal_pagu : 0;
+                                        @endphp
+                                        <tr x-show="!search || $el.innerText.toLowerCase().includes(search.toLowerCase())"
+                                            data-usulan="{{ $detail->nominal_request }}"
+                                            data-pagu="{{ $paguValue }}"
+                                            data-account-id="{{ $detail->account_code_id }}">
+                                            <td class="px-4 py-2 text-sm">
+                                                {{ $detail->accountCode->code }} - {{ $detail->accountCode->name }}
+                                                @if($detail->is_rejected)
+                                                    <div class="mt-1 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                                                        <strong>Alasan Penolakan:</strong><br>
+                                                        {{ $detail->rejection_reason }}
                                                     </div>
-
-                                                    <form action="{{ route('operator.details.upload-version', $detail) }}"
-                                                        method="POST" enctype="multipart/form-data"
-                                                        class="flex items-center space-x-1 border-t pt-2 mt-2">
-                                                        @csrf
-                                                        <input type="file" name="attachment" class="text-[10px] w-24" required>
-                                                        <button type="submit"
-                                                            class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-[10px] font-bold">Revisi</button>
-                                                    </form>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-2 text-sm">
+                                                {{ $detail->description }}
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-right font-semibold text-gray-700">
+                                                @if($awalValue > 0)
+                                                    Rp {{ number_format($awalValue, 0, ',', '.') }}
                                                 @else
-                                                    <div class="flex flex-col items-center space-y-2">
-                                                        @if($isItemLockedByPagu)
-                                                            @if($isExceeding)
-                                                                @if(!$hasRevision)
-                                                                    <span class="px-2 py-0.5 bg-red-100 text-red-800 border border-red-200 rounded text-[9px] font-black uppercase text-center block">⚠ Wajib Upload PDF Baru</span>
-                                                                    
-                                                                    <form action="{{ route('operator.details.upload-version', $detail) }}"
-                                                                        method="POST" enctype="multipart/form-data"
-                                                                        class="flex items-center space-x-1 border-t pt-2 mt-2">
-                                                                        @csrf
-                                                                        <input type="file" name="attachment" class="text-[10px] w-24" required>
-                                                                        <button type="submit"
-                                                                            class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-[10px] font-bold">Upload</button>
-                                                                    </form>
-                                                                @else
-                                                                    <span class="px-2 py-0.5 bg-green-100 text-green-800 border border-green-200 rounded text-[9px] font-black uppercase text-center block">✓ PDF Penyesuaian Diunggah</span>
-                                                                    
-                                                                    @if(!$detail->is_submitted || $detail->is_rejected)
-                                                                        <form action="{{ route('operator.details.submit-item', $detail) }}" method="POST" class="mt-1">
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-right">
+                                                {{ number_format($detail->volume, 2, ',', '.') }}
+                                            </td>
+                                            <td class="px-4 py-2 text-sm">
+                                                {{ $detail->satuan }}
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-right">
+                                                Rp {{ number_format($detail->harga_satuan, 0, ',', '.') }}
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-right">Rp {{ number_format($detail->nominal_request, 0, ',', '.') }}</td>
+                                            <td class="px-4 py-2 text-sm text-right">
+                                                @if($paguValue > 0)
+                                                    Rp {{ number_format($paguValue, 0, ',', '.') }}
+                                                @else
+                                                    <span class="text-gray-400">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-2 text-sm">
+                                                @if($paguValue > 0)
+                                                    @php 
+                                                        $total = $headerTotals[$detail->account_code_id]->total ?? 0;
+                                                    @endphp
+                                                    @if($total > $paguValue)
+                                                        <span class="text-red-600 font-bold text-xs">MELEBIHI PAGU</span>
+                                                        <div class="text-[10px] text-red-500 font-medium">(Over: Rp {{ number_format($total - $paguValue, 0, ',', '.') }})</div>
+                                                    @else
+                                                        <span class="text-green-600 font-semibold text-xs whitespace-nowrap">✓ Tercover</span>
+                                                    @endif
+                                                @else
+                                                    <span class="text-yellow-600 italic text-xs">Pagu Belum Diset</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-center">
+                                                @php $latest = $detail->latestAttachment(); @endphp
+                                                @if($latest)
+                                                    <a href="{{ Storage::url($latest->file_path) }}" target="_blank"
+                                                        class="text-blue-600 hover:underline text-xs">
+                                                        PDF V{{ $latest->version_number }}
+                                                    </a>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-2 text-sm">
+                                                @if($detail->is_validated)
+                                                    <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-[9px] font-black uppercase">Valid</span>
+                                                @elseif($detail->is_rejected)
+                                                    <span class="px-2 py-0.5 bg-red-100 text-red-800 rounded-full text-[9px] font-black uppercase">Tolak</span>
+                                                @elseif($detail->is_submitted)
+                                                    <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-[9px] font-black uppercase">Ajuan</span>
+                                                @else
+                                                    <span class="px-2 py-0.5 bg-gray-100 text-gray-800 rounded-full text-[9px] font-black uppercase">Draft</span>
+                                                @endif
+                                            </td>                                        <td class="px-4 py-2 text-sm">
+                                                <div class="flex flex-col space-y-2">
+                                                    @php
+                                                        $isItemLockedByPagu = $paguValue > 0;
+                                                        $isExceeding = $detail->isExceedingPagu();
+                                                        $hasRevision = $detail->hasUploadedRevision();
+                                                    @endphp
+
+                                                    @if(!$isItemLockedByPagu && (!$detail->is_submitted || $detail->is_rejected))
+                                                        <div class="flex space-x-2">
+                                                            <a href="{{ route('operator.details.edit', $detail) }}"
+                                                                class="text-indigo-600 hover:text-indigo-900 text-[10px] font-bold border border-indigo-200 px-2 py-1 rounded bg-indigo-50">Edit</a>
+                                                            
+                                                            <form action="{{ route('operator.details.submit-item', $detail) }}" method="POST">
+                                                                @csrf
+                                                                <button type="submit" 
+                                                                    class="text-green-600 hover:text-green-900 text-[10px] font-bold border border-green-200 px-2 py-1 rounded bg-green-50">
+                                                                    Ajukan
+                                                                </button>
+                                                            </form>
+
+                                                            <form action="{{ route('operator.details.destroy', $detail) }}" method="POST" onsubmit="return confirm('Hapus rincian ini?')">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" 
+                                                                    class="text-red-600 hover:text-red-900 text-[10px] font-bold border border-red-200 px-2 py-1 rounded bg-red-50">
+                                                                    Hapus
+                                                                </button>
+                                                            </form>
+                                                        </div>
+
+                                                        <form action="{{ route('operator.details.upload-version', $detail) }}"
+                                                            method="POST" enctype="multipart/form-data"
+                                                            class="flex items-center space-x-1 border-t pt-2 mt-2">
+                                                            @csrf
+                                                            <input type="file" name="attachment" class="text-[10px] w-24" required>
+                                                            <button type="submit"
+                                                                class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-[10px] font-bold">Revisi</button>
+                                                        </form>
+                                                    @else
+                                                        <div class="flex flex-col items-center space-y-2">
+                                                            @if($isItemLockedByPagu)
+                                                                @if($isExceeding)
+                                                                    @if(!$hasRevision)
+                                                                        <span class="px-2 py-0.5 bg-red-100 text-red-800 border border-red-200 rounded text-[9px] font-black uppercase text-center block">⚠ Wajib Upload PDF Baru</span>
+                                                                        
+                                                                        <form action="{{ route('operator.details.upload-version', $detail) }}"
+                                                                            method="POST" enctype="multipart/form-data"
+                                                                            class="flex items-center space-x-1 border-t pt-2 mt-2">
                                                                             @csrf
-                                                                            <button type="submit" 
-                                                                                class="text-green-600 hover:text-green-900 text-[10px] font-bold border border-green-200 px-3 py-1 rounded bg-green-50">
-                                                                                Ajukan
-                                                                            </button>
+                                                                            <input type="file" name="attachment" class="text-[10px] w-24" required>
+                                                                            <button type="submit"
+                                                                                class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-[10px] font-bold">Upload</button>
+                                                                        </form>
+                                                                    @else
+                                                                        <span class="px-2 py-0.5 bg-green-100 text-green-800 border border-green-200 rounded text-[9px] font-black uppercase text-center block">✓ PDF Penyesuaian Diunggah</span>
+                                                                        
+                                                                        @if(!$detail->is_submitted || $detail->is_rejected)
+                                                                            <form action="{{ route('operator.details.submit-item', $detail) }}" method="POST" class="mt-1">
+                                                                                @csrf
+                                                                                <button type="submit" 
+                                                                                    class="text-green-600 hover:text-green-900 text-[10px] font-bold border border-green-200 px-3 py-1 rounded bg-green-50">
+                                                                                    Ajukan
+                                                                                </button>
+                                                                            </form>
+                                                                        @endif
+
+                                                                        <form action="{{ route('operator.details.upload-version', $detail) }}"
+                                                                            method="POST" enctype="multipart/form-data"
+                                                                            class="flex items-center space-x-1 border-t pt-2 mt-2">
+                                                                            @csrf
+                                                                            <input type="file" name="attachment" class="text-[10px] w-24" required>
+                                                                            <button type="submit"
+                                                                                class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-[10px] font-bold">Revisi</button>
                                                                         </form>
                                                                     @endif
-
-                                                                    <form action="{{ route('operator.details.upload-version', $detail) }}"
-                                                                        method="POST" enctype="multipart/form-data"
-                                                                        class="flex items-center space-x-1 border-t pt-2 mt-2">
-                                                                        @csrf
-                                                                        <input type="file" name="attachment" class="text-[10px] w-24" required>
-                                                                        <button type="submit"
-                                                                            class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-[10px] font-bold">Revisi</button>
-                                                                    </form>
+                                                                @else
+                                                                    <span class="text-[9px] bg-red-50 text-red-600 px-1 py-0.5 rounded border border-red-100 font-bold uppercase italic">Pagu Locked</span>
+                                                                    <span class="text-gray-400 text-[10px] italic font-medium text-center">Read Only</span>
                                                                 @endif
                                                             @else
-                                                                <span class="text-[9px] bg-red-50 text-red-600 px-1 py-0.5 rounded border border-red-100 font-bold uppercase italic">Pagu Locked</span>
                                                                 <span class="text-gray-400 text-[10px] italic font-medium text-center">Read Only</span>
                                                             @endif
-                                                        @else
-                                                            <span class="text-gray-400 text-[10px] italic font-medium text-center">Read Only</span>
-                                                        @endif
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr class="empty-row">
-                                        <td colspan="12" class="px-4 py-8 text-center text-gray-500 italic">Belum ada rincian belanja.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr class="empty-row">
+                                            <td colspan="12" class="px-4 py-8 text-center text-gray-500 italic">Belum ada rincian belanja.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                 </div>
             </div>
 

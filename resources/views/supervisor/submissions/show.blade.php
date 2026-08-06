@@ -96,7 +96,8 @@
                             </div>
                         </div>
 
-                        <table class="min-w-full divide-y divide-gray-200">
+                        <div class="overflow-x-auto border border-gray-200 rounded-xl shadow-sm my-4">
+                            <table class="min-w-[1100px] w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rekening</th>
@@ -231,6 +232,7 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             </div>
