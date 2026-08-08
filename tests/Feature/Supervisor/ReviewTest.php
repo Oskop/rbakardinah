@@ -102,4 +102,53 @@ class ReviewTest extends TestCase
         $response->assertSee('AWAL');
         $response->assertSee('Rp 25.000.000');
     }
+
+    public function test_supervisor_can_preview_print_report_with_operator_filters()
+    {
+        $operator1 = User::factory()->create(['role' => 'Operator', 'unit_id' => $this->supervisor->unit_id, 'name' => 'Operator Satu']);
+        $operator2 = User::factory()->create(['role' => 'Operator', 'unit_id' => $this->supervisor->unit_id, 'name' => 'Operator Dua']);
+
+        RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Op 1',
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 1000000,
+            'nominal_request' => 1000000,
+            'created_by' => $operator1->id
+        ]);
+
+        RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Op 2',
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 2000000,
+            'nominal_request' => 2000000,
+            'created_by' => $operator2->id
+        ]);
+
+        // Test Print All Operators
+        $resAll = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.print-preview', [
+            'submission' => $this->submission->id,
+            'include_background' => 1
+        ]));
+        $resAll->assertStatus(200);
+        $resAll->assertSee('Item Op 1');
+        $resAll->assertSee('Item Op 2');
+        $resAll->assertSee('Semua Operator');
+
+        // Test Filter Single Operator (Operator 1)
+        $resOp1 = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.print-preview', [
+            'submission' => $this->submission->id,
+            'include_background' => 1,
+            'operator_ids' => [$operator1->id]
+        ]));
+        $resOp1->assertStatus(200);
+        $resOp1->assertSee('Item Op 1');
+        $resOp1->assertDontSee('Item Op 2');
+        $resOp1->assertSee('Operator Satu');
+    }
 }

@@ -25,6 +25,7 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::resource('kelompok-belanja', \App\Http\Controllers\KelompokBelanjaController::class);
     Route::resource('account-codes', \App\Http\Controllers\AccountCodeController::class);
     Route::resource('periods', \App\Http\Controllers\RbaPeriodController::class);
+    Route::get('headers/{header}/print-preview', [\App\Http\Controllers\RbaHeaderController::class, 'printPreview'])->name('headers.print-preview');
     Route::resource('headers', \App\Http\Controllers\RbaHeaderController::class);
     Route::post('headers/{header}/toggle-status', [\App\Http\Controllers\RbaHeaderController::class, 'toggleStatus'])->name('headers.toggle-status');
     Route::get('headers/{header}/pagu', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'index'])->name('headers.pagu.index');
@@ -36,6 +37,7 @@ Route::middleware(['auth', 'role:Supervisor'])->prefix('supervisor')->name('supe
 
     Route::resource('users', \App\Http\Controllers\Supervisor\UserController::class);
     Route::get('submissions', [\App\Http\Controllers\Supervisor\ReviewController::class, 'index'])->name('submissions.index');
+    Route::get('submissions/{submission}/print-preview', [\App\Http\Controllers\Supervisor\ReviewController::class, 'printPreview'])->name('submissions.print-preview');
     Route::get('submissions/{submission}', [\App\Http\Controllers\Supervisor\ReviewController::class, 'show'])->name('submissions.show');
     Route::post('submissions/{submission}/validate', [\App\Http\Controllers\Supervisor\ReviewController::class, 'validate'])->name('submissions.validate');
     Route::post('details/{detail}/toggle-validation', [\App\Http\Controllers\Supervisor\ReviewController::class, 'toggleDetailValidation'])->name('details.toggle-validation');

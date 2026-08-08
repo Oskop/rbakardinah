@@ -4,13 +4,123 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('RBA Submissions') }} - {{ $header->year }} ({{ $header->period->name }})
             </h2>
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-3" x-data="{ openPrintModal: false, filterScope: 'all', selectedUnits: [], selectedOperators: [] }">
+                <!-- Tombol Cetak Admin -->
+                <button @click="openPrintModal = true" type="button"
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded text-sm inline-flex items-center gap-1.5 shadow transition-all">
+                    <span>🖨️ Cetak Rincian Usulan</span>
+                </button>
+
                 <a href="{{ route('admin.headers.pagu.index', $header) }}"
                     class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm shadow">
                     Set Pagu Global
                 </a>
-                <a href="{{ route('admin.headers.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Back to
-                    List</a>
+                <a href="{{ route('admin.headers.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Back to List</a>
+
+                <!-- Modal Konfigurasi Cetak Admin -->
+                <div x-show="openPrintModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+                    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                        <div x-show="openPrintModal" x-transition.opacity class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" @click="openPrintModal = false"></div>
+
+                        <div x-show="openPrintModal" x-transition:enter="ease-out duration-300"
+                            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                            class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-gray-100">
+                            
+                            <form action="{{ route('admin.headers.print-preview', $header->id) }}" method="GET" target="_blank" @submit="openPrintModal = false">
+                                <div class="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center justify-between text-white">
+                                    <h3 class="text-base font-bold flex items-center gap-2">
+                                        <span>🖨️ Konfigurasi Cetak RBA Administrator</span>
+                                    </h3>
+                                    <button type="button" @click="openPrintModal = false" class="text-gray-400 hover:text-white font-bold text-xl">&times;</button>
+                                </div>
+
+                                <div class="p-6 space-y-5">
+                                    <!-- 1. Opsi Latar Belakang -->
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">1. Latar Belakang Sub-Unit</label>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 hover:border-emerald-500 cursor-pointer bg-slate-50 text-xs font-semibold text-gray-700">
+                                                <input type="radio" name="include_background" value="1" checked class="text-emerald-600 focus:ring-emerald-500">
+                                                <span>Dengan Latar Belakang</span>
+                                            </label>
+                                            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 hover:border-emerald-500 cursor-pointer bg-slate-50 text-xs font-semibold text-gray-700">
+                                                <input type="radio" name="include_background" value="0" class="text-emerald-600 focus:ring-emerald-500">
+                                                <span>Tanpa Latar Belakang</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- 2. Opsi Filter Scope -->
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">2. Filter Scope Cetak</label>
+                                        <div class="grid grid-cols-2 gap-2 mb-3">
+                                            <label class="flex items-center gap-2 p-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-800 cursor-pointer hover:bg-emerald-50">
+                                                <input type="radio" x-model="filterScope" value="all" class="text-emerald-600 focus:ring-emerald-500">
+                                                <span>Seluruh RSUD (Semua Unit & Op)</span>
+                                            </label>
+                                            <label class="flex items-center gap-2 p-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-800 cursor-pointer hover:bg-emerald-50">
+                                                <input type="radio" x-model="filterScope" value="units" class="text-emerald-600 focus:ring-emerald-500">
+                                                <span>Filter Per Unit (Supervisor)</span>
+                                            </label>
+                                            <label class="flex items-center gap-2 p-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-800 cursor-pointer hover:bg-emerald-50">
+                                                <input type="radio" x-model="filterScope" value="operators" class="text-emerald-600 focus:ring-emerald-500">
+                                                <span>Filter Per Operator Spesifik</span>
+                                            </label>
+                                            <label class="flex items-center gap-2 p-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-800 cursor-pointer hover:bg-emerald-50">
+                                                <input type="radio" x-model="filterScope" value="custom" class="text-emerald-600 focus:ring-emerald-500">
+                                                <span>Kombinasi Unit + Operator</span>
+                                            </label>
+                                        </div>
+
+                                        <!-- Filter Checklist Unit Kerja (Jika filterScope == 'units' atau 'custom') -->
+                                        <div x-show="filterScope === 'units' || filterScope === 'custom'" x-transition class="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-3 max-h-40 overflow-y-auto space-y-1.5">
+                                            <div class="flex justify-between items-center pb-2 border-b border-gray-200 text-[11px] font-bold text-gray-500">
+                                                <span>PILIH UNIT KERJA (SUPERVISOR):</span>
+                                                <div class="space-x-2">
+                                                    <button type="button" @click="selectedUnits = [{{ $units->pluck('id')->join(',') }}]" class="text-emerald-600 hover:underline">Pilih Semua</button>
+                                                    <span>|</span>
+                                                    <button type="button" @click="selectedUnits = []" class="text-red-600 hover:underline">Reset</button>
+                                                </div>
+                                            </div>
+                                            @foreach($units as $unit)
+                                                <label class="flex items-center gap-2 text-xs text-gray-700 py-1 px-1.5 hover:bg-white rounded cursor-pointer transition-colors">
+                                                    <input type="checkbox" name="unit_ids[]" value="{{ $unit->id }}" x-model="selectedUnits" class="rounded text-emerald-600 focus:ring-emerald-500">
+                                                    <span><strong>{{ $unit->name }}</strong> <span class="text-gray-400">({{ $unit->code }})</span></span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+
+                                        <!-- Filter Checklist Operator (Jika filterScope == 'operators' atau 'custom') -->
+                                        <div x-show="filterScope === 'operators' || filterScope === 'custom'" x-transition class="bg-gray-50 border border-gray-200 rounded-xl p-3 max-h-40 overflow-y-auto space-y-1.5">
+                                            <div class="flex justify-between items-center pb-2 border-b border-gray-200 text-[11px] font-bold text-gray-500">
+                                                <span>PILIH OPERATOR SPESIFIK:</span>
+                                                <div class="space-x-2">
+                                                    <button type="button" @click="selectedOperators = [{{ $allOperators->pluck('id')->join(',') }}]" class="text-emerald-600 hover:underline">Pilih Semua</button>
+                                                    <span>|</span>
+                                                    <button type="button" @click="selectedOperators = []" class="text-red-600 hover:underline">Reset</button>
+                                                </div>
+                                            </div>
+                                            @foreach($allOperators as $op)
+                                                <label class="flex items-center gap-2 text-xs text-gray-700 py-1 px-1.5 hover:bg-white rounded cursor-pointer transition-colors">
+                                                    <input type="checkbox" name="operator_ids[]" value="{{ $op->id }}" x-model="selectedOperators" class="rounded text-emerald-600 focus:ring-emerald-500">
+                                                    <span><strong>{{ $op->name }}</strong> <span class="text-gray-400">({{ $op->unit->name ?? 'Unit' }})</span></span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-2 border-t border-gray-100">
+                                    <button type="button" @click="openPrintModal = false" class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-200 rounded-xl transition-all">Batal</button>
+                                    <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all flex items-center gap-1.5">
+                                        <span>🌐 Buka Pratinjau Cetak</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </x-slot>

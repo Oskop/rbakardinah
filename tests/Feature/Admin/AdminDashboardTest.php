@@ -31,4 +31,77 @@ class AdminDashboardTest extends TestCase
         $response->assertSee('Users');
         $response->assertSee('Units');
     }
+
+    public function test_admin_can_preview_print_report_with_unit_and_operator_filters()
+    {
+        $admin = User::factory()->create(['role' => 'Administrator']);
+        $unit1 = \App\Models\Unit::create(['code' => 'U01', 'name' => 'Unit Rawat Inap']);
+        $unit2 = \App\Models\Unit::create(['code' => 'U02', 'name' => 'Unit Farmasi']);
+
+        $period = RbaPeriod::create(['name' => 'Murni']);
+        $header = RbaHeader::create([
+            'year' => 2026,
+            'period_id' => $period->id,
+            'admin_id' => $admin->id,
+            'status_global' => 'Draft'
+        ]);
+
+        $sub1 = \App\Models\RbaSubmission::create(['rba_header_id' => $header->id, 'unit_id' => $unit1->id]);
+        $sub2 = \App\Models\RbaSubmission::create(['rba_header_id' => $header->id, 'unit_id' => $unit2->id]);
+
+        $group = \App\Models\KelompokBelanja::create(['kode' => 'KB01', 'name' => 'Group']);
+        $ac = \App\Models\AccountCode::create(['kelompok_belanja_id' => $group->id, 'code' => '5.1.01', 'name' => 'Belanja Gaji']);
+
+        $op1 = User::factory()->create(['role' => 'Operator', 'unit_id' => $unit1->id, 'name' => 'Op Inap']);
+        $op2 = User::factory()->create(['role' => 'Operator', 'unit_id' => $unit2->id, 'name' => 'Op Farmasi']);
+
+        \App\Models\RbaDetail::create([
+            'rba_submission_id' => $sub1->id,
+            'account_code_id' => $ac->id,
+            'description' => 'Item Inap',
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 1000,
+            'nominal_request' => 1000,
+            'created_by' => $op1->id
+        ]);
+
+        \App\Models\RbaDetail::create([
+            'rba_submission_id' => $sub2->id,
+            'account_code_id' => $ac->id,
+            'description' => 'Item Farmasi',
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 2000,
+            'nominal_request' => 2000,
+            'created_by' => $op2->id
+        ]);
+
+        // 1. Test Admin Print All
+        $resAll = $this->actingAs($admin)->get(route('admin.headers.print-preview', ['header' => $header->id]));
+        $resAll->assertStatus(200);
+        $resAll->assertSee('Item Inap');
+        $resAll->assertSee('Item Farmasi');
+        $resAll->assertSee('Seluruh Unit Kerja');
+
+        // 2. Test Admin Print Filter Unit 1
+        $resUnit1 = $this->actingAs($admin)->get(route('admin.headers.print-preview', [
+            'header' => $header->id,
+            'unit_ids' => [$unit1->id]
+        ]));
+        $resUnit1->assertStatus(200);
+        $resUnit1->assertSee('Item Inap');
+        $resUnit1->assertDontSee('Item Farmasi');
+        $resUnit1->assertSee('Unit Rawat Inap');
+
+        // 3. Test Admin Print Filter Operator 2
+        $resOp2 = $this->actingAs($admin)->get(route('admin.headers.print-preview', [
+            'header' => $header->id,
+            'operator_ids' => [$op2->id]
+        ]));
+        $resOp2->assertStatus(200);
+        $resOp2->assertDontSee('Item Inap');
+        $resOp2->assertSee('Item Farmasi');
+        $resOp2->assertSee('Op Farmasi');
+    }
 }
