@@ -153,4 +153,33 @@ class RbaDetailFeaturesTest extends TestCase
 
         $this->assertTrue($detail->fresh()->trashed());
     }
+
+    public function test_operator_can_preview_print_report_with_and_without_background()
+    {
+        // Test preview with background
+        $responseWithBg = $this->actingAs($this->operator)->get(route('operator.submissions.print-preview', [
+            'submission' => $this->submission->id,
+            'include_background' => 1
+        ]));
+        $responseWithBg->assertStatus(200);
+        $responseWithBg->assertSee('LATAR BELAKANG SUB-UNIT');
+        $responseWithBg->assertSee('Latar belakang unit testing');
+
+        // Test preview without background
+        $responseNoBg = $this->actingAs($this->operator)->get(route('operator.submissions.print-preview', [
+            'submission' => $this->submission->id,
+            'include_background' => 0
+        ]));
+        $responseNoBg->assertStatus(200);
+        $responseNoBg->assertDontSee('LATAR BELAKANG SUB-UNIT');
+    }
+
+    public function test_operator_can_export_pdf_report()
+    {
+        $response = $this->actingAs($this->operator)->get(route('operator.submissions.export-pdf', [
+            'submission' => $this->submission->id,
+            'include_background' => 1
+        ]));
+        $response->assertStatus(200);
+    }
 }

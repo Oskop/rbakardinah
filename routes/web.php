@@ -53,6 +53,8 @@ Route::get('submissions/{submission}/documents/{type}/history', [\App\Http\Contr
 Route::middleware(['auth', 'role:Operator'])->prefix('operator')->name('operator.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Operator\DashboardController::class, 'index'])->name('dashboard');
 
+    Route::get('submissions/{submission}/print-preview', [\App\Http\Controllers\Operator\SubmissionController::class, 'printPreview'])->name('submissions.print-preview');
+    Route::get('submissions/{submission}/export-pdf', [\App\Http\Controllers\Operator\SubmissionController::class, 'exportPdf'])->name('submissions.export-pdf');
     Route::resource('submissions', \App\Http\Controllers\Operator\SubmissionController::class);
     Route::post('submissions/{submission}/submit', [\App\Http\Controllers\Operator\SubmissionController::class, 'submit'])->name('submissions.submit');
     Route::put('submissions/{submission}/background', [\App\Http\Controllers\Operator\SubmissionController::class, 'updateBackground'])->name('submissions.update-background');

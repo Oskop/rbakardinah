@@ -4,7 +4,59 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Workboard RBA') }} - {{ $submission->header->year }} ({{ $submission->header->period->name }})
             </h2>
-            <div class="flex space-x-2">
+            <div class="flex space-x-2 items-center" x-data="{ openPrint: false }">
+                <!-- Dropdown Cetak RBA -->
+                <div class="relative">
+                    <button @click="openPrint = !openPrint" @click.away="openPrint = false" type="button"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded text-sm inline-flex items-center gap-1.5 shadow-sm transition-all">
+                        <span>🖨️ Cetak Rincian</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <!-- Dropdown Menu -->
+                    <div x-show="openPrint" x-transition:enter="transition ease-out duration-100"
+                        x-transition:enter-start="transform opacity-0 scale-95"
+                        x-transition:enter-end="transform opacity-100 scale-100"
+                        class="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 z-50 py-2 divide-y divide-gray-100"
+                        style="display: none;">
+                        
+                        <!-- Option 1: Dengan Latar Belakang -->
+                        <div class="px-3 py-2">
+                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">1. Dengan Latar Belakang</div>
+                            <div class="flex flex-col gap-1">
+                                <a href="{{ route('operator.submissions.print-preview', ['submission' => $submission->id, 'include_background' => 1]) }}" target="_blank"
+                                    class="text-xs text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 px-2.5 py-1.5 rounded-lg flex items-center justify-between transition-colors">
+                                    <span>🌐 Pratinjau Web / Browser</span>
+                                    <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-mono">HTML</span>
+                                </a>
+                                <a href="{{ route('operator.submissions.export-pdf', ['submission' => $submission->id, 'include_background' => 1]) }}" target="_blank"
+                                    class="text-xs text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 px-2.5 py-1.5 rounded-lg flex items-center justify-between transition-colors">
+                                    <span>📄 Unduh Dokumen PDF</span>
+                                    <span class="text-[10px] bg-red-100 text-red-800 px-1.5 py-0.5 rounded font-mono">mPDF</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Option 2: Tanpa Latar Belakang -->
+                        <div class="px-3 py-2">
+                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">2. Tanpa Latar Belakang</div>
+                            <div class="flex flex-col gap-1">
+                                <a href="{{ route('operator.submissions.print-preview', ['submission' => $submission->id, 'include_background' => 0]) }}" target="_blank"
+                                    class="text-xs text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 px-2.5 py-1.5 rounded-lg flex items-center justify-between transition-colors">
+                                    <span>🌐 Pratinjau Web / Browser</span>
+                                    <span class="text-[10px] bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded font-mono">HTML</span>
+                                </a>
+                                <a href="{{ route('operator.submissions.export-pdf', ['submission' => $submission->id, 'include_background' => 0]) }}" target="_blank"
+                                    class="text-xs text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 px-2.5 py-1.5 rounded-lg flex items-center justify-between transition-colors">
+                                    <span>📄 Unduh Dokumen PDF</span>
+                                    <span class="text-[10px] bg-red-100 text-red-800 px-1.5 py-0.5 rounded font-mono">mPDF</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 @php
                     $hasOpenPagu = \App\Models\AccountCode::whereDoesntHave('accountPagus', function($q) use ($submission) {
                         $q->where('rba_header_id', $submission->rba_header_id)->where('nominal_pagu', '>', 0);
