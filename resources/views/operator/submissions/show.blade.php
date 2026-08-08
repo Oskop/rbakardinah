@@ -23,36 +23,20 @@
                         
                         <!-- Option 1: Dengan Latar Belakang -->
                         <div class="px-3 py-2">
-                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">1. Dengan Latar Belakang</div>
-                            <div class="flex flex-col gap-1">
-                                <a href="{{ route('operator.submissions.print-preview', ['submission' => $submission->id, 'include_background' => 1]) }}" target="_blank"
-                                    class="text-xs text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 px-2.5 py-1.5 rounded-lg flex items-center justify-between transition-colors">
-                                    <span>🌐 Pratinjau Web / Browser</span>
-                                    <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-mono">HTML</span>
-                                </a>
-                                <a href="{{ route('operator.submissions.export-pdf', ['submission' => $submission->id, 'include_background' => 1]) }}" target="_blank"
-                                    class="text-xs text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 px-2.5 py-1.5 rounded-lg flex items-center justify-between transition-colors">
-                                    <span>📄 Unduh Dokumen PDF</span>
-                                    <span class="text-[10px] bg-red-100 text-red-800 px-1.5 py-0.5 rounded font-mono">mPDF</span>
-                                </a>
-                            </div>
+                            <a href="{{ route('operator.submissions.print-preview', ['submission' => $submission->id, 'include_background' => 1]) }}" target="_blank"
+                                class="text-xs font-semibold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 p-2 rounded-lg flex items-center justify-between transition-colors">
+                                <span>📄 Cetak Dengan Latar Belakang</span>
+                                <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-mono">HTML</span>
+                            </a>
                         </div>
 
                         <!-- Option 2: Tanpa Latar Belakang -->
                         <div class="px-3 py-2">
-                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">2. Tanpa Latar Belakang</div>
-                            <div class="flex flex-col gap-1">
-                                <a href="{{ route('operator.submissions.print-preview', ['submission' => $submission->id, 'include_background' => 0]) }}" target="_blank"
-                                    class="text-xs text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 px-2.5 py-1.5 rounded-lg flex items-center justify-between transition-colors">
-                                    <span>🌐 Pratinjau Web / Browser</span>
-                                    <span class="text-[10px] bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded font-mono">HTML</span>
-                                </a>
-                                <a href="{{ route('operator.submissions.export-pdf', ['submission' => $submission->id, 'include_background' => 0]) }}" target="_blank"
-                                    class="text-xs text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 px-2.5 py-1.5 rounded-lg flex items-center justify-between transition-colors">
-                                    <span>📄 Unduh Dokumen PDF</span>
-                                    <span class="text-[10px] bg-red-100 text-red-800 px-1.5 py-0.5 rounded font-mono">mPDF</span>
-                                </a>
-                            </div>
+                            <a href="{{ route('operator.submissions.print-preview', ['submission' => $submission->id, 'include_background' => 0]) }}" target="_blank"
+                                class="text-xs font-semibold text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 p-2 rounded-lg flex items-center justify-between transition-colors">
+                                <span>📄 Cetak Tanpa Latar Belakang</span>
+                                <span class="text-[10px] bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded font-mono">HTML</span>
+                            </a>
                         </div>
                     </div>
                 </div>

@@ -201,10 +201,9 @@
         }
 
         .badge {
-            display: inline-block;
-            padding: 2px 6px;
             font-size: 8.5px;
             font-weight: 700;
+            padding: 2px 4px;
             border-radius: 3px;
             text-transform: uppercase;
         }
@@ -303,8 +302,6 @@
 
             .btn-print { background-color: #2563eb; color: #ffffff; }
             .btn-print:hover { background-color: #1d4ed8; }
-            .btn-pdf { background-color: #059669; color: #ffffff; }
-            .btn-pdf:hover { background-color: #047857; }
             .btn-back { background-color: #475569; color: #ffffff; }
             .btn-back:hover { background-color: #334155; }
 
@@ -332,20 +329,17 @@
 </head>
 <body>
 
-    <!-- Developer Web Preview Action Bar -->
+    <!-- Web Print Toolbar -->
     <div class="no-print-bar">
         <div>
-            <h3>🖨️ Pratinjau Laporan Rincian Belanja RBA</h3>
+            <h3>🖨️ Pratinjau Cetak Laporan Rincian Belanja RBA</h3>
         </div>
         <div style="display: flex; gap: 10px;">
             <a href="{{ route('operator.submissions.show', $submission->id) }}" class="btn-action btn-back">
                 ← Kembali ke Workboard
             </a>
-            <a href="{{ route('operator.submissions.export-pdf', ['submission' => $submission->id, 'include_background' => $includeBackground ? 1 : 0]) }}" class="btn-action btn-pdf">
-                📄 Unduh PDF (mPDF Engine)
-            </a>
             <button onclick="window.print()" class="btn-action btn-print">
-                🖨️ Cetak via Browser
+                🖨️ Cetak Dokumen (Ctrl+P)
             </button>
         </div>
     </div>
@@ -356,7 +350,7 @@
             <table class="kop-table">
                 <tr>
                     <td class="kop-logo">
-                        <img src="{{ public_path('images/LogoSipakar.png') }}" alt="Logo SIPAKAR" onerror="this.src='{{ asset('images/LogoSipakar.png') }}';">
+                        <img src="{{ asset('images/LogoSipakar.png') }}" alt="Logo SIPAKAR">
                     </td>
                     <td class="kop-text">
                         <div class="kop-instansi">PEMERINTAH KOTA TEGAL</div>
