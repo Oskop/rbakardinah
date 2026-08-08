@@ -93,6 +93,79 @@ class ReviewController extends Controller
         return view('supervisor.submissions.show', compact('submission', 'pagus', 'headerTotals', 'operators', 'documents', 'previousPagus'));
     }
 
+    public function printPreview(Request $request, RbaSubmission $submission)
+    {
+        if ($submission->unit_id !== Auth::user()->unit_id) {
+            abort(403);
+        }
+
+        $includeBackground = $request->get('include_background', '1') == '1';
+        $operatorIdsRaw = $request->get('operator_ids', []);
+        
+        $selectedOperatorIds = [];
+        if (is_array($operatorIdsRaw)) {
+            $selectedOperatorIds = array_filter(array_map('intval', $operatorIdsRaw));
+        } elseif (is_string($operatorIdsRaw) && trim($operatorIdsRaw) !== '') {
+            $selectedOperatorIds = array_filter(array_map('intval', explode(',', $operatorIdsRaw)));
+        }
+
+        $allOperators = \App\Models\User::where('unit_id', Auth::user()->unit_id)
+            ->where('role', 'Operator')
+            ->orderBy('name')
+            ->get();
+
+        $submission->load([
+            'details' => function ($query) use ($selectedOperatorIds) {
+                $query->with(['accountCode', 'creator']);
+                if (!empty($selectedOperatorIds)) {
+                    $query->whereIn('created_by', $selectedOperatorIds);
+                }
+            },
+            'header.period',
+            'unit'
+        ]);
+
+        $currentHeader = $submission->header;
+        $currentYear = $currentHeader->year;
+        $currentPeriodName = $currentHeader->period->name ?? '';
+
+        $previousHeader = null;
+        if (stripos($currentPeriodName, 'Perubahan') !== false) {
+            $previousHeader = RbaHeader::where('year', $currentYear)
+                ->where('id', '!=', $currentHeader->id)
+                ->whereHas('period', function ($q) {
+                    $q->where('name', 'like', '%Murni%');
+                })
+                ->first();
+        } else {
+            $previousHeader = RbaHeader::where('year', $currentYear - 1)
+                ->whereHas('period', function ($q) {
+                    $q->where('name', 'like', '%Perubahan%');
+                })
+                ->first();
+        }
+
+        if (!$previousHeader) {
+            $previousHeader = RbaHeader::where('id', '<', $currentHeader->id)
+                ->orderByDesc('year')
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        $previousPagus = $previousHeader
+            ? RbaAccountPagu::where('rba_header_id', $previousHeader->id)->get()->keyBy('account_code_id')
+            : collect();
+
+        if (empty($selectedOperatorIds) || count($selectedOperatorIds) === $allOperators->count()) {
+            $operatorFilterLabel = 'Semua Operator (' . $allOperators->count() . ' Operator)';
+        } else {
+            $filteredOperatorNames = $allOperators->whereIn('id', $selectedOperatorIds)->pluck('name')->toArray();
+            $operatorFilterLabel = implode(', ', $filteredOperatorNames);
+        }
+
+        return view('reports.supervisor_rba_print', compact('submission', 'includeBackground', 'previousPagus', 'allOperators', 'selectedOperatorIds', 'operatorFilterLabel'));
+    }
+
     public function validate(RbaSubmission $submission)
     {
         if ($submission->unit_id !== Auth::user()->unit_id) {
