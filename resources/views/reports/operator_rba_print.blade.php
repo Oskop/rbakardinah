@@ -363,7 +363,7 @@
 
         <!-- Judul Laporan -->
         <div class="report-title">
-            <h2>USULAN RINCIAN BELANJA RENCANA BISNIS DAN ANGGARAN (RBA)</h2>
+            <h2>USULAN RINCIAN RENCANA BELANJA DAN ANGGARAN (RBA)</h2>
             <p>TAHUN ANGGARAN {{ $submission->header->year ?? date('Y') }}</p>
         </div>
 
