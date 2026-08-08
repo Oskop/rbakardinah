@@ -182,4 +182,34 @@ class RbaDetailFeaturesTest extends TestCase
         ]));
         $response->assertStatus(200);
     }
+
+    public function test_operator_can_preview_rba_final_print_report()
+    {
+        \App\Models\RbaAccountPagu::create([
+            'rba_header_id' => $this->submission->rba_header_id,
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 50000000
+        ]);
+
+        RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Testing RBA Final',
+            'volume' => 1,
+            'satuan' => 'Pkt',
+            'harga_satuan' => 45000000,
+            'nominal_request' => 45000000,
+            'created_by' => $this->operator->id
+        ]);
+
+        $response = $this->actingAs($this->operator)->get(route('operator.submissions.print-preview-final', [
+            'submission' => $this->submission->id,
+            'include_background' => 1
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('USULAN RINCIAN RENCANA BELANJA DAN ANGGARAN DAN PAGU FINAL (RBA FINAL)');
+        $response->assertSee('PAGU FINAL (Rp)');
+        $response->assertSee('Rp 50.000.000');
+    }
 }

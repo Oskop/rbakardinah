@@ -56,6 +56,7 @@ Route::middleware(['auth', 'role:Operator'])->prefix('operator')->name('operator
     Route::get('/dashboard', [\App\Http\Controllers\Operator\DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('submissions/{submission}/print-preview', [\App\Http\Controllers\Operator\SubmissionController::class, 'printPreview'])->name('submissions.print-preview');
+    Route::get('submissions/{submission}/print-preview-final', [\App\Http\Controllers\Operator\SubmissionController::class, 'printPreviewFinal'])->name('submissions.print-preview-final');
     Route::get('submissions/{submission}/export-pdf', [\App\Http\Controllers\Operator\SubmissionController::class, 'exportPdf'])->name('submissions.export-pdf');
     Route::resource('submissions', \App\Http\Controllers\Operator\SubmissionController::class);
     Route::post('submissions/{submission}/submit', [\App\Http\Controllers\Operator\SubmissionController::class, 'submit'])->name('submissions.submit');

@@ -163,6 +163,54 @@ class SubmissionController extends Controller
         return view('reports.operator_rba_print', compact('submission', 'includeBackground', 'previousPagus'));
     }
 
+    public function printPreviewFinal(Request $request, RbaSubmission $submission)
+    {
+        if ($submission->unit_id !== Auth::user()->unit_id) {
+            abort(403);
+        }
+
+        $includeBackground = $request->get('include_background', '1') == '1';
+
+        $submission->load(['details' => function ($query) {
+            $query->where('created_by', Auth::id());
+        }, 'details.accountCode', 'header.period', 'unit']);
+
+        $pagus = RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)->get()->keyBy('account_code_id');
+
+        $currentHeader = $submission->header;
+        $currentYear = $currentHeader->year;
+        $currentPeriodName = $currentHeader->period->name ?? '';
+
+        $previousHeader = null;
+        if (stripos($currentPeriodName, 'Perubahan') !== false) {
+            $previousHeader = RbaHeader::where('year', $currentYear)
+                ->where('id', '!=', $currentHeader->id)
+                ->whereHas('period', function ($q) {
+                    $q->where('name', 'like', '%Murni%');
+                })
+                ->first();
+        } else {
+            $previousHeader = RbaHeader::where('year', $currentYear - 1)
+                ->whereHas('period', function ($q) {
+                    $q->where('name', 'like', '%Perubahan%');
+                })
+                ->first();
+        }
+
+        if (!$previousHeader) {
+            $previousHeader = RbaHeader::where('id', '<', $currentHeader->id)
+                ->orderByDesc('year')
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        $previousPagus = $previousHeader
+            ? RbaAccountPagu::where('rba_header_id', $previousHeader->id)->get()->keyBy('account_code_id')
+            : collect();
+
+        return view('reports.operator_rba_final_print', compact('submission', 'includeBackground', 'pagus', 'previousPagus'));
+    }
+
     public function exportPdf(Request $request, RbaSubmission $submission)
     {
         return $this->printPreview($request, $submission);
