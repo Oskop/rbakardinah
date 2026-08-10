@@ -397,8 +397,8 @@
         @if($includeBackground)
             <div class="section-header">{{ $sectionIndex++ }}. LATAR BELAKANG SUB-UNIT</div>
             <div class="background-box">
-                @if(!empty($submission->background))
-                    {{ $submission->background }}
+                @if(!empty($filteredBackground ?? $submission->background))
+                    {{ $filteredBackground ?? $submission->background }}
                 @else
                     <em>(Latar belakang belum diisi oleh Sub-Unit)</em>
                 @endif

@@ -4,11 +4,11 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Review Usulan RBA') }} - {{ $submission->header->year }} ({{ $submission->header->period->name }})
             </h2>
-            <div class="flex space-x-2 items-center" x-data="{ openPrintModal: false, operatorScope: 'all', selectedOperators: [] }">
+            <div class="flex space-x-2 items-center" x-data="{ openPrintModal: false, printType: 'usulan', operatorScope: 'all', selectedOperators: [] }">
                 <!-- Button Trigger Cetak Rincian -->
                 <button @click="openPrintModal = true" type="button"
                     class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded text-sm inline-flex items-center gap-1.5 shadow-sm transition-all">
-                    <span>🖨️ Cetak Rincian Usulan</span>
+                    <span>🖨️ Cetak Rincian Usulan / RBA Final</span>
                 </button>
 
                 @if($submission->status_submission === 'Pending Supervisor')
@@ -29,20 +29,41 @@
                         <div x-show="openPrintModal" x-transition:enter="ease-out duration-300"
                             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                            class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
+                            class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-gray-100">
                             
-                            <form action="{{ route('supervisor.submissions.print-preview', $submission->id) }}" method="GET" target="_blank" @submit="openPrintModal = false">
+                            <form :action="printType === 'final' ? '{{ route('supervisor.submissions.print-preview-final', $submission->id) }}' : '{{ route('supervisor.submissions.print-preview', $submission->id) }}'" method="GET" target="_blank" @submit="openPrintModal = false">
                                 <div class="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center justify-between text-white">
                                     <h3 class="text-base font-bold flex items-center gap-2">
-                                        <span>🖨️ Opsi Cetak Usulan Rincian Belanja</span>
+                                        <span>🖨️ Opsi Konfigurasi Cetak Supervisor</span>
                                     </h3>
                                     <button type="button" @click="openPrintModal = false" class="text-gray-400 hover:text-white font-bold text-xl">&times;</button>
                                 </div>
 
                                 <div class="p-6 space-y-5">
-                                    <!-- 1. Opsi Latar Belakang -->
+                                    <!-- 1. Jenis Dokumen Laporan -->
                                     <div>
-                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">1. Latar Belakang Sub-Unit</label>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">1. Jenis Dokumen Laporan</label>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <label :class="printType === 'usulan' ? 'border-emerald-500 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-500/20' : 'border-gray-200 bg-slate-50 text-gray-700 hover:border-emerald-300'" class="flex flex-col gap-1 p-3 rounded-xl border cursor-pointer transition-all">
+                                                <div class="flex items-center gap-2">
+                                                    <input type="radio" x-model="printType" value="usulan" class="text-emerald-600 focus:ring-emerald-500">
+                                                    <span class="text-xs font-bold">Usulan Rincian Belanja</span>
+                                                </div>
+                                                <span class="text-[10px] text-gray-500 pl-5">Laporan usulan standar tanpa kolom Pagu Final.</span>
+                                            </label>
+                                            <label :class="printType === 'final' ? 'border-indigo-500 bg-indigo-50 text-indigo-900 ring-2 ring-indigo-500/20' : 'border-gray-200 bg-slate-50 text-gray-700 hover:border-indigo-300'" class="flex flex-col gap-1 p-3 rounded-xl border cursor-pointer transition-all">
+                                                <div class="flex items-center gap-2">
+                                                    <input type="radio" x-model="printType" value="final" class="text-indigo-600 focus:ring-indigo-500">
+                                                    <span class="text-xs font-bold text-indigo-900">Rincian Belanja & Pagu (RBA Final)</span>
+                                                </div>
+                                                <span class="text-[10px] text-gray-500 pl-5">Laporan RBA Final bersandingan dengan nominal Pagu.</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- 2. Opsi Latar Belakang -->
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">2. Latar Belakang Sub-Unit</label>
                                         <div class="grid grid-cols-2 gap-3">
                                             <label class="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 hover:border-emerald-500 cursor-pointer bg-slate-50 text-xs font-semibold text-gray-700">
                                                 <input type="radio" name="include_background" value="1" checked class="text-emerald-600 focus:ring-emerald-500">
@@ -55,9 +76,9 @@
                                         </div>
                                     </div>
 
-                                    <!-- 2. Opsi Filter Operator -->
+                                    <!-- 3. Opsi Filter Operator -->
                                     <div>
-                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">2. Filter Operator Penyusun</label>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">3. Filter Operator Penyusun</label>
                                         <div class="space-y-2 mb-3">
                                             <label class="flex items-center gap-2 text-xs font-semibold text-gray-800 cursor-pointer">
                                                 <input type="radio" x-model="operatorScope" value="all" class="text-emerald-600 focus:ring-emerald-500">

@@ -130,7 +130,11 @@ class ReviewTest extends TestCase
             'created_by' => $operator2->id
         ]);
 
-        // Test Print All Operators
+        $this->submission->update([
+            'background' => "Operator Satu: Latar belakang khusus Operator Satu\nOperator Dua: Latar belakang khusus Operator Dua"
+        ]);
+
+        // Test Print All Operators (With Background)
         $resAll = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.print-preview', [
             'submission' => $this->submission->id,
             'include_background' => 1
@@ -139,8 +143,10 @@ class ReviewTest extends TestCase
         $resAll->assertSee('Item Op 1');
         $resAll->assertSee('Item Op 2');
         $resAll->assertSee('Semua Operator');
+        $resAll->assertSee('Latar belakang khusus Operator Satu');
+        $resAll->assertSee('Latar belakang khusus Operator Dua');
 
-        // Test Filter Single Operator (Operator 1)
+        // Test Filter Single Operator (Operator 1) - Only Operator 1 background should appear
         $resOp1 = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.print-preview', [
             'submission' => $this->submission->id,
             'include_background' => 1,
@@ -150,5 +156,74 @@ class ReviewTest extends TestCase
         $resOp1->assertSee('Item Op 1');
         $resOp1->assertDontSee('Item Op 2');
         $resOp1->assertSee('Operator Satu');
+        $resOp1->assertSee('Latar belakang khusus Operator Satu');
+        $resOp1->assertDontSee('Latar belakang khusus Operator Dua');
+    }
+
+    public function test_supervisor_can_preview_rba_final_print_report_with_pagu_and_operator_filters()
+    {
+        $operator1 = User::factory()->create(['role' => 'Operator', 'unit_id' => $this->supervisor->unit_id, 'name' => 'Operator Alpha']);
+        $operator2 = User::factory()->create(['role' => 'Operator', 'unit_id' => $this->supervisor->unit_id, 'name' => 'Operator Beta']);
+
+        $this->submission->update([
+            'background' => "Operator Alpha: Latar belakang khusus Alpha\nOperator Beta: Latar belakang khusus Beta"
+        ]);
+
+        RbaAccountPagu::create([
+            'rba_header_id' => $this->submission->rba_header_id,
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 50000000
+        ]);
+
+        RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Laptop Op Alpha',
+            'volume' => 1,
+            'satuan' => 'Unit',
+            'harga_satuan' => 15000000,
+            'nominal_request' => 15000000,
+            'created_by' => $operator1->id
+        ]);
+
+        RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Printer Op Beta',
+            'volume' => 1,
+            'satuan' => 'Unit',
+            'harga_satuan' => 5000000,
+            'nominal_request' => 5000000,
+            'created_by' => $operator2->id
+        ]);
+
+        // 1. Test Print RBA Final All Operators (Both backgrounds should appear)
+        $resAll = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.print-preview-final', [
+            'submission' => $this->submission->id,
+            'include_background' => 1
+        ]));
+        $resAll->assertStatus(200);
+        $resAll->assertSee('USULAN RINCIAN RENCANA BELANJA DAN ANGGARAN DAN PAGU FINAL (RBA FINAL)');
+        $resAll->assertSee('PAGU FINAL (Rp)');
+        $resAll->assertSee('50.000.000');
+        $resAll->assertSee('Laptop Op Alpha');
+        $resAll->assertSee('Printer Op Beta');
+        $resAll->assertSee('Operator Alpha');
+        $resAll->assertSee('Operator Beta');
+        $resAll->assertSee('Latar belakang khusus Alpha');
+        $resAll->assertSee('Latar belakang khusus Beta');
+
+        // 2. Test Print RBA Final Filter Single Operator (Only Operator Alpha background should appear)
+        $resAlpha = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.print-preview-final', [
+            'submission' => $this->submission->id,
+            'include_background' => 1,
+            'operator_ids' => [$operator1->id]
+        ]));
+        $resAlpha->assertStatus(200);
+        $resAlpha->assertSee('Laptop Op Alpha');
+        $resAlpha->assertDontSee('Printer Op Beta');
+        $resAlpha->assertSee('Operator Alpha');
+        $resAlpha->assertSee('Latar belakang khusus Alpha');
+        $resAlpha->assertDontSee('Latar belakang khusus Beta');
     }
 }

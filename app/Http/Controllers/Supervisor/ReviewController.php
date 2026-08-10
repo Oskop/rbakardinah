@@ -99,7 +99,6 @@ class ReviewController extends Controller
             abort(403);
         }
 
-        $includeBackground = $request->get('include_background', '1') == '1';
         $operatorIdsRaw = $request->get('operator_ids', []);
         
         $selectedOperatorIds = [];
@@ -114,6 +113,8 @@ class ReviewController extends Controller
             ->orderBy('name')
             ->get();
 
+        $includeBackgroundOption = $request->get('include_background', '1') == '1';
+
         $submission->load([
             'details' => function ($query) use ($selectedOperatorIds) {
                 $query->with(['accountCode', 'creator']);
@@ -124,6 +125,9 @@ class ReviewController extends Controller
             'header.period',
             'unit'
         ]);
+
+        $filteredBackground = $this->getFilteredBackground($submission, $selectedOperatorIds, $allOperators, $includeBackgroundOption);
+        $includeBackground = !empty($filteredBackground);
 
         $currentHeader = $submission->header;
         $currentYear = $currentHeader->year;
@@ -163,7 +167,133 @@ class ReviewController extends Controller
             $operatorFilterLabel = implode(', ', $filteredOperatorNames);
         }
 
-        return view('reports.supervisor_rba_print', compact('submission', 'includeBackground', 'previousPagus', 'allOperators', 'selectedOperatorIds', 'operatorFilterLabel'));
+        return view('reports.supervisor_rba_print', compact('submission', 'filteredBackground', 'includeBackground', 'previousPagus', 'allOperators', 'selectedOperatorIds', 'operatorFilterLabel'));
+    }
+
+    public function printPreviewFinal(Request $request, RbaSubmission $submission)
+    {
+        if ($submission->unit_id !== Auth::user()->unit_id) {
+            abort(403);
+        }
+
+        $operatorIdsRaw = $request->get('operator_ids', []);
+        
+        $selectedOperatorIds = [];
+        if (is_array($operatorIdsRaw)) {
+            $selectedOperatorIds = array_filter(array_map('intval', $operatorIdsRaw));
+        } elseif (is_string($operatorIdsRaw) && trim($operatorIdsRaw) !== '') {
+            $selectedOperatorIds = array_filter(array_map('intval', explode(',', $operatorIdsRaw)));
+        }
+
+        $allOperators = \App\Models\User::where('unit_id', Auth::user()->unit_id)
+            ->where('role', 'Operator')
+            ->orderBy('name')
+            ->get();
+
+        $includeBackgroundOption = $request->get('include_background', '1') == '1';
+
+        $submission->load([
+            'details' => function ($query) use ($selectedOperatorIds) {
+                $query->with(['accountCode', 'creator']);
+                if (!empty($selectedOperatorIds)) {
+                    $query->whereIn('created_by', $selectedOperatorIds);
+                }
+            },
+            'header.period',
+            'unit'
+        ]);
+
+        $filteredBackground = $this->getFilteredBackground($submission, $selectedOperatorIds, $allOperators, $includeBackgroundOption);
+        $includeBackground = !empty($filteredBackground);
+
+        $pagus = RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)->get()->keyBy('account_code_id');
+
+        $currentHeader = $submission->header;
+        $currentYear = $currentHeader->year;
+        $currentPeriodName = $currentHeader->period->name ?? '';
+
+        $previousHeader = null;
+        if (stripos($currentPeriodName, 'Perubahan') !== false) {
+            $previousHeader = RbaHeader::where('year', $currentYear)
+                ->where('id', '!=', $currentHeader->id)
+                ->whereHas('period', function ($q) {
+                    $q->where('name', 'like', '%Murni%');
+                })
+                ->first();
+        } else {
+            $previousHeader = RbaHeader::where('year', $currentYear - 1)
+                ->whereHas('period', function ($q) {
+                    $q->where('name', 'like', '%Perubahan%');
+                })
+                ->first();
+        }
+
+        if (!$previousHeader) {
+            $previousHeader = RbaHeader::where('id', '<', $currentHeader->id)
+                ->orderByDesc('year')
+                ->orderByDesc('id')
+                ->first();
+        }
+
+        $previousPagus = $previousHeader
+            ? RbaAccountPagu::where('rba_header_id', $previousHeader->id)->get()->keyBy('account_code_id')
+            : collect();
+
+        if (empty($selectedOperatorIds) || count($selectedOperatorIds) === $allOperators->count()) {
+            $operatorFilterLabel = 'Semua Operator (' . $allOperators->count() . ' Operator)';
+        } else {
+            $filteredOperatorNames = $allOperators->whereIn('id', $selectedOperatorIds)->pluck('name')->toArray();
+            $operatorFilterLabel = implode(', ', $filteredOperatorNames);
+        }
+
+        return view('reports.supervisor_rba_final_print', compact('submission', 'pagus', 'filteredBackground', 'includeBackground', 'previousPagus', 'allOperators', 'selectedOperatorIds', 'operatorFilterLabel'));
+    }
+
+    private function getFilteredBackground(RbaSubmission $submission, array $selectedOperatorIds, $allOperators, bool $includeBackgroundRequested): ?string
+    {
+        if (!$includeBackgroundRequested || empty($submission->background)) {
+            return null;
+        }
+
+        $isAllOperators = empty($selectedOperatorIds) || count($selectedOperatorIds) === $allOperators->count();
+        if ($isAllOperators) {
+            return $submission->background;
+        }
+
+        $unselectedOperatorNames = $allOperators->whereNotIn('id', $selectedOperatorIds)->pluck('name')->toArray();
+
+        $hasDetailsForSelected = $submission->details->whereIn('created_by', $selectedOperatorIds)->count() > 0;
+        if (!$hasDetailsForSelected) {
+            return null;
+        }
+
+        $lines = preg_split('/\r\n|\r|\n/', $submission->background);
+        $keptLines = [];
+
+        foreach ($lines as $line) {
+            $trimmedLine = trim($line);
+            if ($trimmedLine === '') {
+                continue;
+            }
+
+            $containsUnselected = false;
+            foreach ($unselectedOperatorNames as $unselectedName) {
+                if (stripos($trimmedLine, $unselectedName) !== false) {
+                    $containsUnselected = true;
+                    break;
+                }
+            }
+
+            if (!$containsUnselected) {
+                $keptLines[] = $line;
+            }
+        }
+
+        if (!empty($keptLines)) {
+            return implode("\n", $keptLines);
+        }
+
+        return $submission->background;
     }
 
     public function validate(RbaSubmission $submission)

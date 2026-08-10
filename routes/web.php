@@ -38,6 +38,7 @@ Route::middleware(['auth', 'role:Supervisor'])->prefix('supervisor')->name('supe
     Route::resource('users', \App\Http\Controllers\Supervisor\UserController::class);
     Route::get('submissions', [\App\Http\Controllers\Supervisor\ReviewController::class, 'index'])->name('submissions.index');
     Route::get('submissions/{submission}/print-preview', [\App\Http\Controllers\Supervisor\ReviewController::class, 'printPreview'])->name('submissions.print-preview');
+    Route::get('submissions/{submission}/print-preview-final', [\App\Http\Controllers\Supervisor\ReviewController::class, 'printPreviewFinal'])->name('submissions.print-preview-final');
     Route::get('submissions/{submission}', [\App\Http\Controllers\Supervisor\ReviewController::class, 'show'])->name('submissions.show');
     Route::post('submissions/{submission}/validate', [\App\Http\Controllers\Supervisor\ReviewController::class, 'validate'])->name('submissions.validate');
     Route::post('details/{detail}/toggle-validation', [\App\Http\Controllers\Supervisor\ReviewController::class, 'toggleDetailValidation'])->name('details.toggle-validation');
