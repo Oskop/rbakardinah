@@ -26,6 +26,7 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::resource('account-codes', \App\Http\Controllers\AccountCodeController::class);
     Route::resource('periods', \App\Http\Controllers\RbaPeriodController::class);
     Route::get('headers/{header}/print-preview', [\App\Http\Controllers\RbaHeaderController::class, 'printPreview'])->name('headers.print-preview');
+    Route::get('headers/{header}/print-preview-final', [\App\Http\Controllers\RbaHeaderController::class, 'printPreviewFinal'])->name('headers.print-preview-final');
     Route::resource('headers', \App\Http\Controllers\RbaHeaderController::class);
     Route::post('headers/{header}/toggle-status', [\App\Http\Controllers\RbaHeaderController::class, 'toggleStatus'])->name('headers.toggle-status');
     Route::get('headers/{header}/pagu', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'index'])->name('headers.pagu.index');
