@@ -89,12 +89,6 @@
                             class="text-sm font-semibold leading-6 text-slate-700 hover:text-indigo-600 transition-colors">
                             Masuk
                         </a>
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}"
-                                class="px-6 py-2.5 text-sm font-semibold text-white bg-indigo-600 rounded-full hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all active:scale-95">
-                                Daftar Akun
-                            </a>
-                        @endif
                     @endauth
                 </div>
             @endif

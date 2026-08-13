@@ -69,14 +69,5 @@
                 Masuk Sekarang
             </button>
         </div>
-
-        @if (Route::has('register'))
-            <p class="text-center text-sm text-slate-600 mt-8">
-                Belum punya akun? 
-                <a href="{{ route('register') }}" class="font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
-                    Daftar di sini
-                </a>
-            </p>
-        @endif
     </form>
 </x-guest-layout>
