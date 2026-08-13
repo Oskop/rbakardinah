@@ -29,10 +29,10 @@
                         </x-nav-link>
                         <x-nav-link :href="route('admin.account-codes.index')"
                             :active="request()->routeIs('admin.account-codes.*')">
-                            {{ __('Account Codes') }}
+                            {{ __('Nomor Rekening') }}
                         </x-nav-link>
                         <x-nav-link :href="route('admin.periods.index')" :active="request()->routeIs('admin.periods.*')">
-                            {{ __('Periods') }}
+                            {{ __('Periode') }}
                         </x-nav-link>
                         <x-nav-link :href="route('admin.headers.index')" :active="request()->routeIs('admin.headers.*')">
                             {{ __('RBA Headers') }}
