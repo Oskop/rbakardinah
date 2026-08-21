@@ -27,10 +27,16 @@
                                         {{ $attachment->created_at->format('d M Y, H:i') }}</div>
                                     <div class="text-xs text-gray-500">Oleh: {{ $attachment->user->name }}</div>
                                 </div>
-                                <a href="{{ Storage::url($attachment->file_path) }}" target="_blank"
-                                    class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-4 rounded text-sm transition shadow">
-                                    Lihat PDF
-                                </a>
+                                @if(\Illuminate\Support\Facades\Storage::disk('public')->exists($attachment->file_path))
+                                    <a href="{{ Storage::url($attachment->file_path) }}" target="_blank"
+                                        class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-4 rounded text-sm transition shadow">
+                                        Lihat PDF
+                                    </a>
+                                @else
+                                    <span class="bg-amber-100 border border-amber-300 text-amber-800 py-1 px-3 rounded text-xs font-semibold cursor-help" title="File PDF fisik tidak ditemukan di storage server. Minta Operator unggah ulang.">
+                                        ⚠️ File Tidak Ditemukan
+                                    </span>
+                                @endif
                             </div>
                         @endforeach
                     </div>

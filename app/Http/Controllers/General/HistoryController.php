@@ -10,9 +10,9 @@ class HistoryController extends Controller
 {
     public function show(RbaDetail $detail)
     {
-        // Basic authorization: check if user belongs to the same unit OR is Admin
+        // Basic authorization: check if user belongs to the same unit OR is Admin / Supervisor
         $user = \Auth::user();
-        if ($user->role !== 'Administrator' && $user->unit_id !== $detail->submission->unit_id) {
+        if ($user->role !== 'Administrator' && $user->role !== 'Supervisor' && $user->unit_id !== $detail->submission->unit_id) {
             abort(403);
         }
 

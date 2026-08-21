@@ -284,9 +284,15 @@
                                         <td class="px-4 py-2 text-sm text-center">
                                             @php $latest = $detail->latestAttachment(); @endphp
                                             @if($latest)
-                                                <a href="{{ Storage::url($latest->file_path) }}" target="_blank" class="text-blue-600 hover:underline text-xs">
-                                                    PDF V{{ $latest->version_number }}
-                                                </a>
+                                                @if(\Illuminate\Support\Facades\Storage::disk('public')->exists($latest->file_path))
+                                                    <a href="{{ Storage::url($latest->file_path) }}" target="_blank" class="text-blue-600 hover:underline text-xs font-bold">
+                                                        PDF V{{ $latest->version_number }}
+                                                    </a>
+                                                @else
+                                                    <span class="text-amber-600 font-bold text-[10px] bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded cursor-help" title="File PDF fisik tidak ditemukan di storage server. Minta Operator unggah ulang.">
+                                                        ⚠️ File Tidak Ditemukan (V{{ $latest->version_number }})
+                                                    </span>
+                                                @endif
                                             @endif
                                         </td>
                                         <td class="px-4 py-2 text-sm text-center">
@@ -405,13 +411,19 @@
 
                                                 @if($latestVersion)
                                                     <div class="mb-4">
-                                                        <a href="{{ \Illuminate\Support\Facades\Storage::url($latestVersion->file_path) }}" target="_blank"
-                                                            class="text-indigo-600 hover:underline text-xs font-semibold inline-flex items-center space-x-1">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                            </svg>
-                                                            <span>Unduh Versi Terbaru (V{{ $latestVersion->version_number }})</span>
-                                                        </a>
+                                                        @if(\Illuminate\Support\Facades\Storage::disk('public')->exists($latestVersion->file_path))
+                                                            <a href="{{ \Illuminate\Support\Facades\Storage::url($latestVersion->file_path) }}" target="_blank"
+                                                                class="text-indigo-600 hover:underline text-xs font-semibold inline-flex items-center space-x-1">
+                                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                                </svg>
+                                                                <span>Unduh Versi Terbaru (V{{ $latestVersion->version_number }})</span>
+                                                            </a>
+                                                        @else
+                                                            <span class="text-amber-600 font-bold text-xs bg-amber-50 border border-amber-200 px-2 py-1 rounded inline-flex items-center space-x-1 cursor-help" title="File PDF fisik tidak ditemukan di storage server. Minta Operator unggah ulang.">
+                                                                <span>⚠️ File fisik tidak ditemukan</span>
+                                                            </span>
+                                                        @endif
                                                     </div>
                                                     <div class="text-xs text-gray-500 mb-1">
                                                         Diunggah oleh: <strong class="text-gray-700">{{ $latestVersion->uploader->name }}</strong>
