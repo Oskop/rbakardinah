@@ -32,11 +32,6 @@
         <div>
             <div class="flex items-center justify-between mb-1.5">
                 <label for="password" class="block text-sm font-semibold text-slate-700">Kata Sandi</label>
-                @if (Route::has('password.request'))
-                    <a class="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors" href="{{ route('password.request') }}">
-                        Lupa sandi?
-                    </a>
-                @endif
             </div>
             <div class="relative group">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
