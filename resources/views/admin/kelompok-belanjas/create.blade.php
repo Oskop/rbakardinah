@@ -33,9 +33,9 @@
 
                         <div class="flex items-center justify-end mt-4">
                             <a href="{{ route('admin.kelompok-belanja.index') }}"
-                                class="text-gray-600 hover:text-gray-900 mr-4">Cancel</a>
+                                class="text-gray-600 hover:text-gray-900 mr-4">Batal</a>
                             <x-primary-button>
-                                {{ __('Create Group') }}
+                                {{ __('Buat Kelompok') }}
                             </x-primary-button>
                         </div>
                     </form>
