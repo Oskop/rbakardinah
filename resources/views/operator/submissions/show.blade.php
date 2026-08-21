@@ -280,10 +280,16 @@
                                             <td class="px-4 py-2 text-sm text-center">
                                                 @php $latest = $detail->latestAttachment(); @endphp
                                                 @if($latest)
-                                                    <a href="{{ Storage::url($latest->file_path) }}" target="_blank"
-                                                        class="text-blue-600 hover:underline text-xs">
-                                                        PDF V{{ $latest->version_number }}
-                                                    </a>
+                                                    @if(\Illuminate\Support\Facades\Storage::disk('public')->exists($latest->file_path))
+                                                        <a href="{{ Storage::url($latest->file_path) }}" target="_blank"
+                                                            class="text-blue-600 hover:underline text-xs font-bold">
+                                                            PDF V{{ $latest->version_number }}
+                                                        </a>
+                                                    @else
+                                                        <span class="text-amber-600 font-bold text-[10px] bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded cursor-help" title="File PDF fisik tidak ditemukan di storage server. Silakan unggah versi baru.">
+                                                            ⚠️ Missing (V{{ $latest->version_number }})
+                                                        </span>
+                                                    @endif
                                                 @endif
                                             </td>
                                             <td class="px-4 py-2 text-sm">
