@@ -12,6 +12,16 @@
                     <form action="{{ route('admin.kelompok-belanja.store') }}" method="POST">
                         @csrf
                         <div class="mb-4">
+                            <label for="kode" class="block text-sm font-medium text-gray-700">Kode Kelompok</label>
+                            <input type="text" name="kode" id="kode" value="{{ old('kode') }}"
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                required placeholder="e.g. 5.1.04">
+                            @error('kode')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="mb-4">
                             <label for="name" class="block text-sm font-medium text-gray-700">Group Name</label>
                             <input type="text" name="name" id="name" value="{{ old('name') }}"
                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"

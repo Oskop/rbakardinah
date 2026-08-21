@@ -29,6 +29,7 @@ class KelompokBelanjaController extends Controller
     public function store(\Illuminate\Http\Request $request)
     {
         $validated = $request->validate([
+            'kode' => 'required|string|max:50|unique:kelompok_belanjas,kode',
             'name' => 'required|string|max:150|unique:kelompok_belanjas,name',
         ]);
 
@@ -51,6 +52,7 @@ class KelompokBelanjaController extends Controller
     public function update(\Illuminate\Http\Request $request, \App\Models\KelompokBelanja $kelompokBelanja)
     {
         $validated = $request->validate([
+            'kode' => 'required|string|max:50|unique:kelompok_belanjas,kode,' . $kelompokBelanja->id,
             'name' => 'required|string|max:150|unique:kelompok_belanjas,name,' . $kelompokBelanja->id,
         ]);
 
