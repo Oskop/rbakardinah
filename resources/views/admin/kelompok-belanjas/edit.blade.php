@@ -13,7 +13,7 @@
                         @csrf
                         @method('PUT')
                         <div class="mb-4">
-                            <label for="kode" class="block text-sm font-medium text-gray-700">Kode Kelompok</label>
+                            <label for="kode" class="block text-sm font-medium text-gray-700">Kode Kelompok Belanja</label>
                             <input type="text" name="kode" id="kode" value="{{ old('kode', $kelompokBelanja->kode) }}"
                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                 required>
@@ -23,7 +23,7 @@
                         </div>
 
                         <div class="mb-4">
-                            <label for="name" class="block text-sm font-medium text-gray-700">Group Name</label>
+                            <label for="name" class="block text-sm font-medium text-gray-700">Nama Kelompok Belanja</label>
                             <input type="text" name="name" id="name" value="{{ old('name', $kelompokBelanja->name) }}"
                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                 required>
