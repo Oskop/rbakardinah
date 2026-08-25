@@ -412,4 +412,56 @@ class RbaDetailTest extends TestCase
         $this->assertNull($freshDetail->validated_by);
         $this->assertFalse($freshDetail->is_submitted);
     }
+
+    public function test_uploading_revision_pdf_on_rejected_detail_resets_status_to_draft()
+    {
+        $supervisor = User::factory()->create(['role' => 'Supervisor', 'unit_id' => $this->operator->unit_id]);
+
+        // 1. Rejected detail
+        $detail = RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Rejected Proposal Item',
+            'volume' => 2,
+            'satuan' => 'Unit',
+            'harga_satuan' => 100000,
+            'nominal_request' => 200000,
+            'is_submitted' => false,
+            'is_validated' => false,
+            'is_rejected' => true,
+            'rejected_at' => now(),
+            'rejected_by' => $supervisor->id,
+            'rejection_reason' => 'Perbaiki lampiran spesifikasi teknis',
+            'created_by' => $this->operator->id
+        ]);
+
+        $fileV1 = UploadedFile::fake()->create('v1.pdf', 100);
+        $detail->attachments()->create([
+            'file_path' => $fileV1->store('attachments', 'public'),
+            'version_number' => 1,
+            'uploaded_by' => $this->operator->id,
+        ]);
+
+        // 2. Operator uploads revised PDF (version 2)
+        $fileV2 = UploadedFile::fake()->create('v2_revisi.pdf', 100);
+        $response = $this->actingAs($this->operator)->post(route('operator.details.upload-version', $detail), [
+            'attachment' => $fileV2,
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $fresh = $detail->fresh();
+        $this->assertFalse($fresh->is_rejected);
+        $this->assertNull($fresh->rejected_at);
+        $this->assertNull($fresh->rejected_by);
+        $this->assertNull($fresh->rejection_reason);
+        $this->assertFalse($fresh->is_validated);
+        $this->assertFalse($fresh->is_submitted);
+        $this->assertEquals(2, $fresh->attachments()->count());
+
+        // 3. Operator can submit the item
+        $resSubmit = $this->actingAs($this->operator)->post(route('operator.details.submit-item', $detail));
+        $resSubmit->assertSessionHas('success');
+        $this->assertTrue($detail->fresh()->is_submitted);
+    }
 }

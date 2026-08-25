@@ -163,21 +163,19 @@ class DetailController extends Controller
             'uploaded_by' => Auth::id(),
         ]);
 
-        // If pagu is not established yet, uploading a new version resets validation status
-        $isPaguEstablished = \App\Models\RbaAccountPagu::where('rba_header_id', $detail->submission->rba_header_id)
-            ->where('account_code_id', $detail->account_code_id)
-            ->exists();
+        // Reset validation and rejection status back to Draft
+        $detail->update([
+            'is_validated' => false,
+            'validated_at' => null,
+            'validated_by' => null,
+            'is_submitted' => false,
+            'is_rejected' => false,
+            'rejected_at' => null,
+            'rejected_by' => null,
+            'rejection_reason' => null,
+        ]);
 
-        if (!$isPaguEstablished) {
-            $detail->update([
-                'is_validated' => false,
-                'validated_at' => null,
-                'validated_by' => null,
-                'is_submitted' => false,
-            ]);
-        }
-
-        return back()->with('success', "New version (V{$newVersion}) uploaded successfully.");
+        return back()->with('success', "Versi PDF baru (V{$newVersion}) berhasil diunggah. Status usulan kembali menjadi Draft (silakan klik Ajukan ke Supervisor).");
     }
 
     public function submitItem(RbaDetail $detail)
