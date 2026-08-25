@@ -105,6 +105,94 @@ class PaguTest extends TestCase
         $response->assertStatus(403);
     }
 
+    public function test_admin_cannot_set_pagu_if_operator_details_not_validated_by_supervisor()
+    {
+        $supervisor = User::factory()->create([
+            'name' => 'Budi Santoso',
+            'role' => 'Supervisor',
+            'unit_id' => $this->operator->unit_id
+        ]);
+
+        $submission = RbaSubmission::create([
+            'rba_header_id' => $this->header->id,
+            'unit_id' => $this->operator->unit_id,
+            'status_submission' => 'Draft',
+            'background' => 'Latar belakang unit testing'
+        ]);
+
+        $detail = RbaDetail::create([
+            'rba_submission_id' => $submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Pengadaan Obat Paracetamol',
+            'volume' => 10,
+            'satuan' => 'Box',
+            'harga_satuan' => 50000,
+            'nominal_request' => 500000,
+            'is_submitted' => true,
+            'is_validated' => false,
+            'created_by' => $this->operator->id
+        ]);
+
+        $response = $this->actingAs($this->admin)->post(route('admin.headers.pagu.store', $this->header), [
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 1000000
+        ]);
+
+        $response->assertSessionHas('error');
+        $errorMessage = session('error');
+        $this->assertStringContainsString($this->operator->name, $errorMessage);
+        $this->assertStringContainsString($supervisor->name, $errorMessage);
+        $this->assertStringContainsString('Pengadaan Obat Paracetamol', $errorMessage);
+
+        $this->assertDatabaseMissing('rba_account_pagus', [
+            'rba_header_id' => $this->header->id,
+            'account_code_id' => $this->accountCode->id,
+        ]);
+    }
+
+    public function test_admin_can_set_pagu_when_all_operator_details_are_validated()
+    {
+        $supervisor = User::factory()->create([
+            'name' => 'Budi Santoso',
+            'role' => 'Supervisor',
+            'unit_id' => $this->operator->unit_id
+        ]);
+
+        $submission = RbaSubmission::create([
+            'rba_header_id' => $this->header->id,
+            'unit_id' => $this->operator->unit_id,
+            'status_submission' => 'Validated',
+            'background' => 'Latar belakang unit testing'
+        ]);
+
+        $detail = RbaDetail::create([
+            'rba_submission_id' => $submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Pengadaan Obat Paracetamol',
+            'volume' => 10,
+            'satuan' => 'Box',
+            'harga_satuan' => 50000,
+            'nominal_request' => 500000,
+            'is_submitted' => true,
+            'is_validated' => true,
+            'validated_at' => now(),
+            'validated_by' => $supervisor->id,
+            'created_by' => $this->operator->id
+        ]);
+
+        $response = $this->actingAs($this->admin)->post(route('admin.headers.pagu.store', $this->header), [
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 1000000
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('rba_account_pagus', [
+            'rba_header_id' => $this->header->id,
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 1000000
+        ]);
+    }
+
     public function test_admin_can_cancel_pagu_for_account_code()
     {
         $this->header->accountPagus()->create([
