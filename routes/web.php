@@ -75,4 +75,12 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
 
+Route::get('/storage/{path}', function (string $path) {
+    $filePath = storage_path('app/public/' . $path);
+    if (!file_exists($filePath)) {
+        abort(404, 'Dokumen file tidak ditemukan di server.');
+    }
+    return response()->file($filePath);
+})->where('path', '.*')->name('storage.file');
+
 require __DIR__ . '/auth.php';
