@@ -34,8 +34,9 @@ class ReviewController extends Controller
             ->get();
 
         $submission->load([
-            'details.accountCode', 
-            'details.attachments', 
+            'details' => function ($query) {
+                $query->where('is_submitted', true)->with(['accountCode', 'attachments']);
+            },
             'header.period', 
             'documents' => function ($query) {
                 $query->with(['user', 'versions.uploader', 'latestVersion']);
@@ -85,6 +86,7 @@ class ReviewController extends Controller
         $headerTotals = \App\Models\RbaDetail::whereHas('submission', function ($q) use ($submission) {
             $q->where('rba_header_id', $submission->rba_header_id);
         })
+            ->where('is_submitted', true)
             ->selectRaw('account_code_id, SUM(nominal_request) as total')
             ->groupBy('account_code_id')
             ->get()
@@ -117,7 +119,7 @@ class ReviewController extends Controller
 
         $submission->load([
             'details' => function ($query) use ($selectedOperatorIds) {
-                $query->with(['accountCode', 'creator']);
+                $query->where('is_submitted', true)->with(['accountCode', 'creator']);
                 if (!empty($selectedOperatorIds)) {
                     $query->whereIn('created_by', $selectedOperatorIds);
                 }
@@ -194,7 +196,7 @@ class ReviewController extends Controller
 
         $submission->load([
             'details' => function ($query) use ($selectedOperatorIds) {
-                $query->with(['accountCode', 'creator']);
+                $query->where('is_submitted', true)->with(['accountCode', 'creator']);
                 if (!empty($selectedOperatorIds)) {
                     $query->whereIn('created_by', $selectedOperatorIds);
                 }
@@ -317,6 +319,10 @@ class ReviewController extends Controller
             abort(403);
         }
 
+        if (!$detail->is_submitted) {
+            return back()->with('error', 'Usulan rincian belanja ini belum diajukan oleh Operator.');
+        }
+
         // If supervisor is validating the item
         if (!$detail->is_validated) {
             if ($detail->isExceedingPagu() && !$detail->hasUploadedRevision()) {
@@ -342,6 +348,10 @@ class ReviewController extends Controller
     {
         if ($detail->submission->unit_id !== Auth::user()->unit_id) {
             abort(403);
+        }
+
+        if (!$detail->is_submitted) {
+            return back()->with('error', 'Usulan rincian belanja ini belum diajukan oleh Operator.');
         }
 
         $request->validate([

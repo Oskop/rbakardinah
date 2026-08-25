@@ -266,6 +266,7 @@ class RbaDetailTest extends TestCase
             'satuan' => 'Pkt',
             'harga_satuan' => 600000,
             'nominal_request' => 600000,
+            'is_submitted' => true,
             'created_by' => $this->operator->id,
         ]);
 
@@ -295,6 +296,8 @@ class RbaDetailTest extends TestCase
         $this->actingAs($this->operator)->post(route('operator.details.upload-version', $detail), [
             'attachment' => $fileV2,
         ]);
+
+        $this->actingAs($this->operator)->post(route('operator.details.submit-item', $detail));
 
         $response = $this->actingAs($supervisor)->post(route('supervisor.details.toggle-validation', $detail));
         $response->assertSessionHas('success');

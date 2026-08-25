@@ -92,6 +92,7 @@ class ReviewTest extends TestCase
             'satuan' => 'Bulan',
             'harga_satuan' => 2000000,
             'nominal_request' => 24000000,
+            'is_submitted' => true,
             'created_by' => $this->supervisor->id
         ]);
 
@@ -116,6 +117,7 @@ class ReviewTest extends TestCase
             'satuan' => 'Pkt',
             'harga_satuan' => 1000000,
             'nominal_request' => 1000000,
+            'is_submitted' => true,
             'created_by' => $operator1->id
         ]);
 
@@ -127,6 +129,7 @@ class ReviewTest extends TestCase
             'satuan' => 'Pkt',
             'harga_satuan' => 2000000,
             'nominal_request' => 2000000,
+            'is_submitted' => true,
             'created_by' => $operator2->id
         ]);
 
@@ -183,6 +186,7 @@ class ReviewTest extends TestCase
             'satuan' => 'Unit',
             'harga_satuan' => 15000000,
             'nominal_request' => 15000000,
+            'is_submitted' => true,
             'created_by' => $operator1->id
         ]);
 
@@ -194,6 +198,7 @@ class ReviewTest extends TestCase
             'satuan' => 'Unit',
             'harga_satuan' => 5000000,
             'nominal_request' => 5000000,
+            'is_submitted' => true,
             'created_by' => $operator2->id
         ]);
 
@@ -225,5 +230,113 @@ class ReviewTest extends TestCase
         $resAlpha->assertSee('Operator Alpha');
         $resAlpha->assertSee('Latar belakang khusus Alpha');
         $resAlpha->assertDontSee('Latar belakang khusus Beta');
+    }
+
+    public function test_supervisor_cannot_see_draft_unsubmitted_details()
+    {
+        $operator = User::factory()->create(['role' => 'Operator', 'unit_id' => $this->supervisor->unit_id]);
+
+        // 1. Create a Draft detail (is_submitted = false)
+        RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Draft Unsubmitted Item X123',
+            'volume' => 2,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 50000,
+            'nominal_request' => 100000,
+            'is_submitted' => false,
+            'created_by' => $operator->id
+        ]);
+
+        // 2. Create a Submitted detail (is_submitted = true)
+        RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Submitted Item Y456',
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 200000,
+            'nominal_request' => 200000,
+            'is_submitted' => true,
+            'created_by' => $operator->id
+        ]);
+
+        $response = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.show', $this->submission->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Submitted Item Y456');
+        $response->assertDontSee('Draft Unsubmitted Item X123');
+    }
+
+    public function test_detail_disappears_from_supervisor_when_edited_and_reappears_when_resubmitted()
+    {
+        $operator = User::factory()->create(['role' => 'Operator', 'unit_id' => $this->supervisor->unit_id]);
+
+        // 1. Initial submitted & validated detail
+        $detail = RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Original Validated Usulan',
+            'volume' => 5,
+            'satuan' => 'Unit',
+            'harga_satuan' => 100000,
+            'nominal_request' => 500000,
+            'is_submitted' => true,
+            'is_validated' => true,
+            'validated_at' => now(),
+            'validated_by' => $this->supervisor->id,
+            'created_by' => $operator->id
+        ]);
+
+        // Supervisor sees original detail
+        $res1 = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.show', $this->submission->id));
+        $res1->assertSee('Original Validated Usulan');
+
+        // 2. Operator edits the detail -> status becomes Draft (is_submitted = false)
+        $this->actingAs($operator)->put(route('operator.details.update', $detail), [
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Edited Draft Usulan In Progress',
+            'volume' => 10,
+            'satuan' => 'Unit',
+            'harga_satuan' => 100000,
+        ]);
+
+        // Supervisor should NOT see the draft edited detail
+        $res2 = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.show', $this->submission->id));
+        $res2->assertDontSee('Edited Draft Usulan In Progress');
+        $res2->assertDontSee('Original Validated Usulan');
+
+        // 3. Operator submits the edited item -> status becomes is_submitted = true
+        $this->actingAs($operator)->post(route('operator.details.submit-item', $detail));
+
+        // Supervisor sees the resubmitted detail
+        $res3 = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.show', $this->submission->id));
+        $res3->assertSee('Edited Draft Usulan In Progress');
+    }
+
+    public function test_supervisor_cannot_validate_or_reject_unsubmitted_detail()
+    {
+        $operator = User::factory()->create(['role' => 'Operator', 'unit_id' => $this->supervisor->unit_id]);
+
+        $detail = RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Draft Item',
+            'volume' => 1,
+            'satuan' => 'Unit',
+            'harga_satuan' => 100000,
+            'nominal_request' => 100000,
+            'is_submitted' => false,
+            'created_by' => $operator->id
+        ]);
+
+        $resValidate = $this->actingAs($this->supervisor)->post(route('supervisor.details.toggle-validation', $detail));
+        $resValidate->assertSessionHas('error', 'Usulan rincian belanja ini belum diajukan oleh Operator.');
+
+        $resReject = $this->actingAs($this->supervisor)->post(route('supervisor.details.reject', $detail), [
+            'rejection_reason' => 'Alasan penolakan'
+        ]);
+        $resReject->assertSessionHas('error', 'Usulan rincian belanja ini belum diajukan oleh Operator.');
     }
 }
