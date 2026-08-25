@@ -104,12 +104,20 @@ class RbaAccountPaguController extends Controller
                 $messageList = implode('<br>', $itemsInfo);
                 $errorMessage = "Pagu untuk rekening <strong>{$accountCode->code} ({$accountCode->name})</strong> tidak dapat ditetapkan karena terdapat " . count($unvalidatedDetails) . " usulan rincian belanja yang belum divalidasi oleh Supervisor:<br><br>{$messageList}";
 
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage,
+                        'items' => $itemsInfo,
+                    ], 422);
+                }
+
                 return redirect()->back()
                     ->with('error', $errorMessage)
                     ->withInput();
             }
 
-            RbaAccountPagu::updateOrCreate(
+            $pagu = RbaAccountPagu::updateOrCreate(
                 [
                     'rba_header_id' => $header->id,
                     'account_code_id' => $validated['account_code_id'],
@@ -120,7 +128,24 @@ class RbaAccountPaguController extends Controller
             );
 
             $formattedNominal = number_format($validated['nominal_pagu'], 0, ',', '.');
-            return redirect()->back()->with('success', "Pagu untuk rekening {$accountCode->code} ({$accountCode->name}) berhasil ditetapkan sebesar Rp {$formattedNominal}.");
+            $successMsg = "Pagu untuk rekening {$accountCode->code} ({$accountCode->name}) berhasil ditetapkan sebesar Rp {$formattedNominal}.";
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $successMsg,
+                    'data' => [
+                        'account_code_id' => $accountCode->id,
+                        'nominal_pagu' => (float)$pagu->nominal_pagu,
+                        'nominal_formatted' => $formattedNominal,
+                        'updated_at' => $pagu->updated_at->timezone('Asia/Jakarta')->format('d/m/Y H:i'),
+                        'destroy_url' => route('admin.headers.pagu.destroy', [$header, $accountCode]),
+                        'stats' => $this->getSummaryStats($header),
+                    ],
+                ]);
+            }
+
+            return redirect()->back()->with('success', $successMsg);
         }
 
         // Backward compatibility for batch array saving if ever called
@@ -158,6 +183,36 @@ class RbaAccountPaguController extends Controller
             ->where('account_code_id', $accountCode->id)
             ->delete();
 
-        return redirect()->back()->with('success', "Penetapan pagu untuk rekening {$accountCode->code} ({$accountCode->name}) berhasil dibatalkan.");
+        $successMsg = "Penetapan pagu untuk rekening {$accountCode->code} ({$accountCode->name}) berhasil dibatalkan.";
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $successMsg,
+                'data' => [
+                    'account_code_id' => $accountCode->id,
+                    'stats' => $this->getSummaryStats($header),
+                ],
+            ]);
+        }
+
+        return redirect()->back()->with('success', $successMsg);
+    }
+
+    private function getSummaryStats(RbaHeader $header)
+    {
+        $totalRekening = AccountCode::count();
+        $existingPagus = RbaAccountPagu::where('rba_header_id', $header->id)->get();
+        $ditetapkanCount = $existingPagus->count();
+        $belumDitetapkanCount = $totalRekening - $ditetapkanCount;
+        $totalPaguNominal = $existingPagus->sum('nominal_pagu');
+
+        return [
+            'total_rekening' => $totalRekening,
+            'ditetapkan_count' => $ditetapkanCount,
+            'belum_ditetapkan_count' => $belumDitetapkanCount,
+            'total_pagu_nominal' => $totalPaguNominal,
+            'total_pagu_formatted' => 'Rp ' . number_format($totalPaguNominal, 0, ',', '.'),
+        ];
     }
 }

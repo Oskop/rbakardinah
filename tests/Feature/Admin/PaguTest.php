@@ -287,4 +287,85 @@ class PaguTest extends TestCase
             'nominal_pagu' => 1000000
         ]);
     }
+
+    public function test_admin_can_save_pagu_via_ajax_without_page_reload()
+    {
+        $response = $this->actingAs($this->admin)->postJson(route('admin.headers.pagu.store', $this->header), [
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 25000000
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'data' => [
+                'account_code_id' => $this->accountCode->id,
+                'nominal_pagu' => 25000000,
+                'nominal_formatted' => '25.000.000',
+            ]
+        ]);
+
+        $this->assertDatabaseHas('rba_account_pagus', [
+            'rba_header_id' => $this->header->id,
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 25000000
+        ]);
+    }
+
+    public function test_admin_can_delete_pagu_via_ajax_without_page_reload()
+    {
+        $this->header->accountPagus()->create([
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 5000000
+        ]);
+
+        $response = $this->actingAs($this->admin)->deleteJson(route('admin.headers.pagu.destroy', [$this->header, $this->accountCode]));
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'data' => [
+                'account_code_id' => $this->accountCode->id,
+            ]
+        ]);
+
+        $this->assertDatabaseMissing('rba_account_pagus', [
+            'rba_header_id' => $this->header->id,
+            'account_code_id' => $this->accountCode->id,
+        ]);
+    }
+
+    public function test_ajax_save_pagu_fails_with_422_when_unvalidated_details_exist()
+    {
+        $submission = RbaSubmission::create([
+            'rba_header_id' => $this->header->id,
+            'unit_id' => $this->operator->unit_id,
+            'status_submission' => 'Draft',
+            'background' => 'Testing Unvalidated'
+        ]);
+
+        RbaDetail::create([
+            'rba_submission_id' => $submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Unvalidated Detail Item',
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 100000,
+            'nominal_request' => 100000,
+            'is_submitted' => true,
+            'is_validated' => false,
+            'created_by' => $this->operator->id
+        ]);
+
+        $response = $this->actingAs($this->admin)->postJson(route('admin.headers.pagu.store', $this->header), [
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 1000000
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJson([
+            'success' => false
+        ]);
+        $this->assertStringContainsString('Unvalidated Detail Item', $response->json('message'));
+    }
 }
