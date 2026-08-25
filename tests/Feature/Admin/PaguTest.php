@@ -45,15 +45,14 @@ class PaguTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_set_pagu_global()
+    public function test_admin_can_set_pagu_per_account_code()
     {
         $response = $this->actingAs($this->admin)->post(route('admin.headers.pagu.store', $this->header), [
-            'pagus' => [
-                $this->accountCode->id => 1000000
-            ]
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 1000000
         ]);
 
-        $response->assertRedirect(route('admin.headers.show', $this->header));
+        $response->assertSessionHasNoErrors();
         $this->assertDatabaseHas('rba_account_pagus', [
             'rba_header_id' => $this->header->id,
             'account_code_id' => $this->accountCode->id,
@@ -61,12 +60,27 @@ class PaguTest extends TestCase
         ]);
     }
 
-    public function test_setting_pagu_locks_operator_nominal_edits()
+    public function test_admin_can_set_pagu_zero_and_it_is_considered_established()
     {
-        // 1. Set Pagu
+        $response = $this->actingAs($this->admin)->post(route('admin.headers.pagu.store', $this->header), [
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 0
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('rba_account_pagus', [
+            'rba_header_id' => $this->header->id,
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 0
+        ]);
+    }
+
+    public function test_setting_pagu_zero_locks_operator_from_creating_detail()
+    {
+        // 1. Set Pagu = 0
         $this->header->accountPagus()->create([
             'account_code_id' => $this->accountCode->id,
-            'nominal_pagu' => 500000
+            'nominal_pagu' => 0
         ]);
 
         // 2. Try to create detail as Operator for this account
@@ -87,7 +101,23 @@ class PaguTest extends TestCase
             'attachment' => \Illuminate\Http\UploadedFile::fake()->create('test.pdf', 100)
         ]);
 
-        // Should be forbidden by Policy
+        // Should be forbidden by Policy even when nominal_pagu is 0
         $response->assertStatus(403);
+    }
+
+    public function test_admin_can_cancel_pagu_for_account_code()
+    {
+        $this->header->accountPagus()->create([
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 500000
+        ]);
+
+        $response = $this->actingAs($this->admin)->delete(route('admin.headers.pagu.destroy', [$this->header, $this->accountCode]));
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseMissing('rba_account_pagus', [
+            'rba_header_id' => $this->header->id,
+            'account_code_id' => $this->accountCode->id,
+        ]);
     }
 }

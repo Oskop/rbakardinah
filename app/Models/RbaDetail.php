@@ -89,7 +89,7 @@ class RbaDetail extends Model
             ->where('account_code_id', $this->account_code_id)
             ->first();
 
-        if (!$pagu || $pagu->nominal_pagu <= 0) {
+        if (!$pagu) {
             return false;
         }
 

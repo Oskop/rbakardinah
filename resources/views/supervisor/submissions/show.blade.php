@@ -225,8 +225,9 @@
                             <tbody class="divide-y divide-gray-200" x-ref="tbody">
                                 @forelse($submission->details as $detail)
                                     @php
-                                        $paguValue = isset($pagus[$detail->account_code_id]) ? $pagus[$detail->account_code_id]->nominal_pagu : 0;
-                                        $awalValue = isset($previousPagus[$detail->account_code_id]) ? $previousPagus[$detail->account_code_id]->nominal_pagu : 0;
+                                        $isPaguEstablished = isset($pagus[$detail->account_code_id]);
+                                        $paguValue = $isPaguEstablished ? (float)$pagus[$detail->account_code_id]->nominal_pagu : 0;
+                                        $awalValue = isset($previousPagus[$detail->account_code_id]) ? (float)$previousPagus[$detail->account_code_id]->nominal_pagu : 0;
                                     @endphp
                                     <tr x-show="!search || $el.innerText.toLowerCase().includes(search.toLowerCase())"
                                         data-usulan="{{ $detail->nominal_request }}"
@@ -254,14 +255,14 @@
                                         </td>
                                         <td class="px-4 py-2 text-sm text-right">Rp {{ number_format($detail->nominal_request, 0, ',', '.') }}</td>
                                         <td class="px-4 py-2 text-sm text-right">
-                                            @if($paguValue > 0)
+                                            @if($isPaguEstablished)
                                                 Rp {{ number_format($paguValue, 0, ',', '.') }}
                                             @else
                                                 <span class="text-gray-400">-</span>
                                             @endif
                                         </td>
                                         <td class="px-4 py-2 text-sm">
-                                            @if($paguValue > 0)
+                                            @if($isPaguEstablished)
                                                 @php 
                                                     $total = $headerTotals[$detail->account_code_id]->total ?? 0;
                                                     $isExceeding = $total > $paguValue;

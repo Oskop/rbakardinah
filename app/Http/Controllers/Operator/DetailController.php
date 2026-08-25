@@ -30,7 +30,6 @@ class DetailController extends Controller
 
         // Only show account codes that are NOT locked by pagu
         $lockedAccountIds = \App\Models\RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)
-            ->where('nominal_pagu', '>', 0)
             ->pluck('account_code_id');
 
         $accountCodes = AccountCode::whereNotIn('id', $lockedAccountIds)->get();
@@ -46,7 +45,6 @@ class DetailController extends Controller
         Gate::authorize('update', $detail);
 
         $lockedAccountIds = \App\Models\RbaAccountPagu::where('rba_header_id', $detail->submission->rba_header_id)
-            ->where('nominal_pagu', '>', 0)
             ->pluck('account_code_id');
 
         $accountCodes = AccountCode::whereNotIn('id', $lockedAccountIds)->get();
