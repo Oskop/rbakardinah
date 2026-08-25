@@ -31,6 +31,7 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::post('headers/{header}/toggle-status', [\App\Http\Controllers\RbaHeaderController::class, 'toggleStatus'])->name('headers.toggle-status');
     Route::get('headers/{header}/pagu', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'index'])->name('headers.pagu.index');
     Route::post('headers/{header}/pagu', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'store'])->name('headers.pagu.store');
+    Route::delete('headers/{header}/pagu/{accountCode}', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'destroy'])->name('headers.pagu.destroy');
 });
 
 Route::middleware(['auth', 'role:Supervisor'])->prefix('supervisor')->name('supervisor.')->group(function () {
