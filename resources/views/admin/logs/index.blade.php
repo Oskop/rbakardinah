@@ -27,7 +27,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             <!-- Summary Stats Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-bold text-xl">
                         📊
