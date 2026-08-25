@@ -19,12 +19,7 @@ class RbaDetailPolicy
             return Response::deny('You do not own this RBA detail.');
         }
 
-        // 2. Already submitted items (that are not rejected) are locked
-        if ($rbaDetail->is_submitted && !$rbaDetail->is_rejected) {
-            return Response::deny('Cannot update detail if it is already submitted and not rejected.');
-        }
-
-        // 3. Check if Pagu has been established for this account and header
+        // 2. Check if Pagu has been established for this account and header
         if ($this->isPaguIssued($rbaDetail->submission->rba_header_id, $rbaDetail->account_code_id)) {
             return Response::deny('Cannot update nominal after Pagu has been established for this account.');
         }

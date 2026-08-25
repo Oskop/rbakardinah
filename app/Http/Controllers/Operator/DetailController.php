@@ -69,10 +69,20 @@ class DetailController extends Controller
 
         Gate::authorize('update', $detail);
 
+        // Reset status to Draft so the supervisor must re-validate the post-edit usulan
+        $validated['is_validated'] = false;
+        $validated['validated_at'] = null;
+        $validated['validated_by'] = null;
+        $validated['is_submitted'] = false;
+        $validated['is_rejected'] = false;
+        $validated['rejected_at'] = null;
+        $validated['rejected_by'] = null;
+        $validated['rejection_reason'] = null;
+
         $detail->update($validated);
 
         return redirect()->route('operator.submissions.show', $detail->rba_submission_id)
-            ->with('success', 'RBA Detail updated successfully.');
+            ->with('success', 'RBA Detail berhasil diperbarui dan status kembali menjadi Draft (perlu diajukan dan divalidasi ulang oleh Supervisor).');
     }
 
     public function store(Request $request)
@@ -152,6 +162,20 @@ class DetailController extends Controller
             'version_number' => $newVersion,
             'uploaded_by' => Auth::id(),
         ]);
+
+        // If pagu is not established yet, uploading a new version resets validation status
+        $isPaguEstablished = \App\Models\RbaAccountPagu::where('rba_header_id', $detail->submission->rba_header_id)
+            ->where('account_code_id', $detail->account_code_id)
+            ->exists();
+
+        if (!$isPaguEstablished) {
+            $detail->update([
+                'is_validated' => false,
+                'validated_at' => null,
+                'validated_by' => null,
+                'is_submitted' => false,
+            ]);
+        }
 
         return back()->with('success', "New version (V{$newVersion}) uploaded successfully.");
     }

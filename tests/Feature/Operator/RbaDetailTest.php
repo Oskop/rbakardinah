@@ -369,4 +369,44 @@ class RbaDetailTest extends TestCase
             'version_number' => 2
         ]);
     }
+
+    public function test_editing_validated_detail_resets_status_to_draft()
+    {
+        $supervisor = User::factory()->create(['role' => 'Supervisor', 'unit_id' => $this->operator->unit_id]);
+
+        $detail = RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Original Description',
+            'volume' => 5,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 100000,
+            'nominal_request' => 500000,
+            'is_submitted' => true,
+            'is_validated' => true,
+            'validated_at' => now(),
+            'validated_by' => $supervisor->id,
+            'created_by' => $this->operator->id
+        ]);
+
+        $response = $this->actingAs($this->operator)->put(route('operator.details.update', $detail), [
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Updated Description Post Validation',
+            'volume' => 10,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 100000,
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('operator.submissions.show', $this->submission->id));
+
+        $freshDetail = $detail->fresh();
+        $this->assertEquals('Updated Description Post Validation', $freshDetail->description);
+        $this->assertEquals(10, $freshDetail->volume);
+        $this->assertEquals(1000000, $freshDetail->nominal_request);
+        $this->assertFalse($freshDetail->is_validated);
+        $this->assertNull($freshDetail->validated_at);
+        $this->assertNull($freshDetail->validated_by);
+        $this->assertFalse($freshDetail->is_submitted);
+    }
 }

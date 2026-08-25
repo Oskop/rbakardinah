@@ -208,4 +208,83 @@ class PaguTest extends TestCase
             'account_code_id' => $this->accountCode->id,
         ]);
     }
+
+    public function test_admin_cannot_set_pagu_after_operator_edits_validated_detail_until_revalidated()
+    {
+        $supervisor = User::factory()->create([
+            'name' => 'Budi Santoso',
+            'role' => 'Supervisor',
+            'unit_id' => $this->operator->unit_id
+        ]);
+
+        $submission = RbaSubmission::create([
+            'rba_header_id' => $this->header->id,
+            'unit_id' => $this->operator->unit_id,
+            'status_submission' => 'Validated',
+            'background' => 'Latar belakang unit testing'
+        ]);
+
+        // 1. Initial validated detail
+        $detail = RbaDetail::create([
+            'rba_submission_id' => $submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Pengadaan Obat Paracetamol',
+            'volume' => 10,
+            'satuan' => 'Box',
+            'harga_satuan' => 50000,
+            'nominal_request' => 500000,
+            'is_submitted' => true,
+            'is_validated' => true,
+            'validated_at' => now(),
+            'validated_by' => $supervisor->id,
+            'created_by' => $this->operator->id
+        ]);
+
+        // 2. Operator edits the detail
+        $this->actingAs($this->operator)->put(route('operator.details.update', $detail), [
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Pengadaan Obat Paracetamol Extra',
+            'volume' => 15,
+            'satuan' => 'Box',
+            'harga_satuan' => 60000,
+        ]);
+
+        $this->assertFalse($detail->fresh()->is_validated);
+
+        // 3. Admin attempts to set pagu -> should be rejected because detail is back to unvalidated
+        $response = $this->actingAs($this->admin)
+            ->from(route('admin.headers.pagu.index', $this->header))
+            ->post(route('admin.headers.pagu.store', $this->header), [
+                'account_code_id' => $this->accountCode->id,
+                'nominal_pagu' => 1000000
+            ]);
+
+        $response->assertSessionHas('error');
+        $this->assertDatabaseMissing('rba_account_pagus', [
+            'rba_header_id' => $this->header->id,
+            'account_code_id' => $this->accountCode->id,
+        ]);
+
+        // 4. Supervisor re-validates the edited detail
+        $detail->fresh()->update([
+            'is_validated' => true,
+            'validated_at' => now(),
+            'validated_by' => $supervisor->id,
+        ]);
+
+        // 5. Admin sets pagu -> should succeed
+        $responseSuccess = $this->actingAs($this->admin)
+            ->from(route('admin.headers.pagu.index', $this->header))
+            ->post(route('admin.headers.pagu.store', $this->header), [
+                'account_code_id' => $this->accountCode->id,
+                'nominal_pagu' => 1000000
+            ]);
+
+        $responseSuccess->assertSessionHas('success');
+        $this->assertDatabaseHas('rba_account_pagus', [
+            'rba_header_id' => $this->header->id,
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 1000000
+        ]);
+    }
 }
