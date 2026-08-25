@@ -23,9 +23,21 @@
         $totalPaguNominal = $existingPagus->sum('nominal_pagu');
         $totalUsulanAll = $requestStats->sum('total_nominal');
         $totalUnvalidatedAll = $requestStats->sum('unvalidated_count');
+
+        $initialPagusData = [];
+        foreach($accountCodes as $code) {
+            $isEst = $existingPagus->has($code->id);
+            $rec = $isEst ? $existingPagus->get($code->id) : null;
+            $initialPagusData[$code->id] = [
+                'isEstablished' => $isEst,
+                'destroyUrl' => route('admin.headers.pagu.destroy', [$header, $code]),
+                'updatedAt' => $isEst && $rec ? $rec->updated_at->timezone('Asia/Jakarta')->format('d/m/Y H:i') : '',
+                'accountName' => $code->code . ' (' . $code->name . ')'
+            ];
+        }
     @endphp
 
-    <div class="py-8" x-data="paguManager()">
+    <div class="py-8" x-data="paguManager({{ Js::from($initialPagusData) }})">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             @if (session('success'))
@@ -206,7 +218,7 @@
 
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-center">
                                             <div id="status-badge-{{ $code->id }}">
-                                                @if($isEstablished)
+                                                <template x-if="pagus[{{ $code->id }}]?.isEstablished">
                                                     <div class="inline-flex flex-col items-center">
                                                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                                                             <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,15 +226,16 @@
                                                             </svg>
                                                             Sudah Ditetapkan
                                                         </span>
-                                                        <span class="text-[10px] text-gray-400 mt-1">
-                                                            {{ $paguRecord->updated_at->timezone('Asia/Jakarta')->format('d/m/Y H:i') }}
+                                                        <span class="text-[10px] text-gray-400 mt-1" x-text="pagus[{{ $code->id }}]?.updatedAt">
+                                                            {{ $isEstablished && $paguRecord ? $paguRecord->updated_at->timezone('Asia/Jakarta')->format('d/m/Y H:i') : '' }}
                                                         </span>
                                                     </div>
-                                                @else
+                                                </template>
+                                                <template x-if="!pagus[{{ $code->id }}]?.isEstablished">
                                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
                                                         ⏳ Belum Ditetapkan
                                                     </span>
-                                                @endif
+                                                </template>
                                             </div>
                                         </td>
 
@@ -257,17 +270,15 @@
                                                     </button>
                                                 </form>
 
-                                                <div id="batal-container-{{ $code->id }}">
-                                                    @if($isEstablished)
-                                                        <button type="button"
-                                                            @click="cancelPagu({{ $code->id }}, '{{ $code->code }} ({{ $code->name }})', '{{ route('admin.headers.pagu.destroy', [$header, $code]) }}')"
-                                                            :disabled="loadingRows[{{ $code->id }}]"
-                                                            class="text-xs text-rose-600 hover:text-rose-800 font-bold px-2 py-1.5 rounded hover:bg-rose-50 transition"
-                                                            title="Batalkan penetapan pagu rekening ini">
-                                                            Batal
-                                                        </button>
-                                                    @endif
-                                                </div>
+                                                <template x-if="pagus[{{ $code->id }}]?.isEstablished">
+                                                    <button type="button"
+                                                        @click="cancelPagu({{ $code->id }})"
+                                                        :disabled="loadingRows[{{ $code->id }}]"
+                                                        class="text-xs text-rose-600 hover:text-rose-800 font-bold px-2 py-1.5 rounded hover:bg-rose-50 transition"
+                                                        title="Batalkan penetapan pagu rekening ini">
+                                                        Batal
+                                                    </button>
+                                                </template>
                                             </div>
                                             @if($hasUnvalidated)
                                                 <div class="text-[10px] text-rose-600 font-medium mt-1">
@@ -357,8 +368,9 @@
 
     @push('scripts')
     <script>
-        function paguManager() {
+        function paguManager(initialPagus) {
             return {
+                pagus: initialPagus || {},
                 searchQuery: '',
                 loadingRows: {},
                 toasts: [],
@@ -415,44 +427,18 @@
                         const result = await response.json();
 
                         if (response.ok && result.success) {
+                            // Update reactive item state
+                            if (this.pagus[accountId]) {
+                                this.pagus[accountId].isEstablished = true;
+                                this.pagus[accountId].updatedAt = result.data.updated_at;
+                                this.pagus[accountId].destroyUrl = result.data.destroy_url;
+                            }
+
                             // Update Stats
                             if (result.data && result.data.stats) {
                                 this.stats.ditetapkan_count = result.data.stats.ditetapkan_count;
                                 this.stats.belum_ditetapkan_count = result.data.stats.belum_ditetapkan_count;
                                 this.stats.total_pagu_formatted = result.data.stats.total_pagu_formatted;
-                            }
-
-                            // Update Badge in DOM
-                            const badgeEl = document.getElementById('status-badge-' + accountId);
-                            if (badgeEl) {
-                                badgeEl.innerHTML = `
-                                    <div class="inline-flex flex-col items-center">
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                            </svg>
-                                            Sudah Ditetapkan
-                                        </span>
-                                        <span class="text-[10px] text-gray-400 mt-1">
-                                            ${result.data.updated_at}
-                                        </span>
-                                    </div>
-                                `;
-                            }
-
-                            // Render Batal button if not exists
-                            const batalContainer = document.getElementById('batal-container-' + accountId);
-                            if (batalContainer && result.data.destroy_url) {
-                                const row = document.getElementById('row-' + accountId);
-                                const codeName = row ? row.querySelector('.font-bold').innerText : 'rekening ini';
-                                batalContainer.innerHTML = `
-                                    <button type="button"
-                                        onclick="window.dispatchPaguCancel(${accountId}, '${codeName}', '${result.data.destroy_url}')"
-                                        class="text-xs text-rose-600 hover:text-rose-800 font-bold px-2 py-1.5 rounded hover:bg-rose-50 transition"
-                                        title="Batalkan penetapan pagu rekening ini">
-                                        Batal
-                                    </button>
-                                `;
                             }
 
                             this.showToast(result.message, 'success');
@@ -471,15 +457,18 @@
                         this.loadingRows[accountId] = false;
                     }
                 },
-                async cancelPagu(accountId, accountName, destroyUrl) {
-                    if (!confirm(`Apakah Anda yakin ingin membatalkan penetapan pagu untuk rekening ${accountName}?`)) {
+                async cancelPagu(accountId) {
+                    const item = this.pagus[accountId];
+                    if (!item) return;
+
+                    if (!confirm(`Apakah Anda yakin ingin membatalkan penetapan pagu untuk rekening ${item.accountName}?`)) {
                         return;
                     }
 
                     this.loadingRows[accountId] = true;
 
                     try {
-                        const response = await fetch(destroyUrl, {
+                        const response = await fetch(item.destroyUrl, {
                             method: 'DELETE',
                             headers: {
                                 'Accept': 'application/json',
@@ -491,27 +480,17 @@
                         const result = await response.json();
 
                         if (response.ok && result.success) {
+                            // Update reactive item state
+                            if (this.pagus[accountId]) {
+                                this.pagus[accountId].isEstablished = false;
+                                this.pagus[accountId].updatedAt = '';
+                            }
+
                             // Update Stats
                             if (result.data && result.data.stats) {
                                 this.stats.ditetapkan_count = result.data.stats.ditetapkan_count;
                                 this.stats.belum_ditetapkan_count = result.data.stats.belum_ditetapkan_count;
                                 this.stats.total_pagu_formatted = result.data.stats.total_pagu_formatted;
-                            }
-
-                            // Update Badge in DOM
-                            const badgeEl = document.getElementById('status-badge-' + accountId);
-                            if (badgeEl) {
-                                badgeEl.innerHTML = `
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
-                                        ⏳ Belum Ditetapkan
-                                    </span>
-                                `;
-                            }
-
-                            // Remove Batal button
-                            const batalContainer = document.getElementById('batal-container-' + accountId);
-                            if (batalContainer) {
-                                batalContainer.innerHTML = '';
                             }
 
                             this.showToast(result.message, 'success');
@@ -527,14 +506,6 @@
                 }
             };
         }
-
-        // Global bridge for dynamically inserted Batal buttons
-        window.dispatchPaguCancel = function(accountId, accountName, destroyUrl) {
-            const manager = Alpine.$data(document.querySelector('[x-data]'));
-            if (manager && manager.cancelPagu) {
-                manager.cancelPagu(accountId, accountName, destroyUrl);
-            }
-        };
     </script>
     @endpush
 </x-app-layout>
