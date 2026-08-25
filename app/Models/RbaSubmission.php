@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Traits\LogsActivity;
 
 class RbaSubmission extends Model
 {
+    use LogsActivity;
+
     protected $fillable = ['rba_header_id', 'unit_id', 'status_submission', 'supervisor_note', 'background'];
 
     public function header(): BelongsTo

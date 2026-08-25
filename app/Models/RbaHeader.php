@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Traits\LogsActivity;
 
 class RbaHeader extends Model
 {
+    use LogsActivity;
+
     protected $fillable = ['period_id', 'admin_id', 'year', 'status_global'];
 
     public function period(): BelongsTo

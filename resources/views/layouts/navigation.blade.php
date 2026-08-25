@@ -37,6 +37,9 @@
                         <x-nav-link :href="route('admin.headers.index')" :active="request()->routeIs('admin.headers.*')">
                             {{ __('RBA Headers') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('admin.logs.index')" :active="request()->routeIs('admin.logs.*')">
+                            {{ __('Log Data') }}
+                        </x-nav-link>
                     @elseif(Auth::user()->role === 'Supervisor')
                         <x-nav-link :href="route('supervisor.submissions.index')"
                             :active="request()->routeIs('supervisor.submissions.*')">
@@ -130,6 +133,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('admin.headers.index')" :active="request()->routeIs('admin.headers.*')">
                 {{ __('RBA Headers') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.logs.index')" :active="request()->routeIs('admin.logs.*')">
+                {{ __('Log Data') }}
             </x-responsive-nav-link>
         @elseif(Auth::user()->role === 'Supervisor')
             <x-responsive-nav-link :href="route('supervisor.submissions.index')"

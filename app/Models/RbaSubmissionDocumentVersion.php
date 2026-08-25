@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\LogsActivity;
 
 class RbaSubmissionDocumentVersion extends Model
 {
+    use LogsActivity;
+
     protected $fillable = [
         'rba_submission_document_id',
         'file_path',
