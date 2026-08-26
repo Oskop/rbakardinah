@@ -373,14 +373,14 @@ class RbaDetailTest extends TestCase
         ]);
     }
 
-    public function test_editing_validated_detail_resets_status_to_draft()
+    public function test_operator_cannot_edit_or_upload_revision_on_validated_detail()
     {
         $supervisor = User::factory()->create(['role' => 'Supervisor', 'unit_id' => $this->operator->unit_id]);
 
         $detail = RbaDetail::create([
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
-            'description' => 'Original Description',
+            'description' => 'Original Validated Description',
             'volume' => 5,
             'satuan' => 'Pcs',
             'harga_satuan' => 100000,
@@ -392,25 +392,34 @@ class RbaDetailTest extends TestCase
             'created_by' => $this->operator->id
         ]);
 
-        $response = $this->actingAs($this->operator)->put(route('operator.details.update', $detail), [
+        // 1. Edit view should return 403 Forbidden
+        $responseEdit = $this->actingAs($this->operator)->get(route('operator.details.edit', $detail));
+        $responseEdit->assertStatus(403);
+
+        // 2. Update request should return 403 Forbidden
+        $responseUpdate = $this->actingAs($this->operator)->put(route('operator.details.update', $detail), [
             'account_code_id' => $this->accountCode->id,
-            'description' => 'Updated Description Post Validation',
+            'description' => 'Updated Description Attempt',
             'volume' => 10,
             'satuan' => 'Pcs',
             'harga_satuan' => 100000,
         ]);
+        $responseUpdate->assertStatus(403);
 
-        $response->assertSessionHasNoErrors();
-        $response->assertRedirect(route('operator.submissions.show', $this->submission->id));
+        // 3. Upload revision PDF on validated detail should return 403 Forbidden
+        $file = UploadedFile::fake()->create('revisi.pdf', 100);
+        $responseUpload = $this->actingAs($this->operator)->post(route('operator.details.upload-version', $detail), [
+            'attachment' => $file,
+        ]);
+        $responseUpload->assertStatus(403);
+
+        // 4. Delete on validated detail should return 403 Forbidden
+        $responseDelete = $this->actingAs($this->operator)->delete(route('operator.details.destroy', $detail));
+        $responseDelete->assertStatus(403);
 
         $freshDetail = $detail->fresh();
-        $this->assertEquals('Updated Description Post Validation', $freshDetail->description);
-        $this->assertEquals(10, $freshDetail->volume);
-        $this->assertEquals(1000000, $freshDetail->nominal_request);
-        $this->assertFalse($freshDetail->is_validated);
-        $this->assertNull($freshDetail->validated_at);
-        $this->assertNull($freshDetail->validated_by);
-        $this->assertFalse($freshDetail->is_submitted);
+        $this->assertEquals('Original Validated Description', $freshDetail->description);
+        $this->assertTrue($freshDetail->is_validated);
     }
 
     public function test_uploading_revision_pdf_on_rejected_detail_resets_status_to_draft()

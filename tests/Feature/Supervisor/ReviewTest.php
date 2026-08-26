@@ -269,31 +269,29 @@ class ReviewTest extends TestCase
         $response->assertDontSee('Draft Unsubmitted Item X123');
     }
 
-    public function test_detail_disappears_from_supervisor_when_edited_and_reappears_when_resubmitted()
+    public function test_detail_disappears_from_supervisor_when_rejected_detail_is_edited_and_reappears_when_resubmitted()
     {
         $operator = User::factory()->create(['role' => 'Operator', 'unit_id' => $this->supervisor->unit_id]);
 
-        // 1. Initial submitted & validated detail
+        // 1. Initial rejected detail
         $detail = RbaDetail::create([
             'rba_submission_id' => $this->submission->id,
             'account_code_id' => $this->accountCode->id,
-            'description' => 'Original Validated Usulan',
+            'description' => 'Original Rejected Usulan',
             'volume' => 5,
             'satuan' => 'Unit',
             'harga_satuan' => 100000,
             'nominal_request' => 500000,
-            'is_submitted' => true,
-            'is_validated' => true,
-            'validated_at' => now(),
-            'validated_by' => $this->supervisor->id,
+            'is_submitted' => false,
+            'is_validated' => false,
+            'is_rejected' => true,
+            'rejected_at' => now(),
+            'rejected_by' => $this->supervisor->id,
+            'rejection_reason' => 'Perbaiki volume',
             'created_by' => $operator->id
         ]);
 
-        // Supervisor sees original detail
-        $res1 = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.show', $this->submission->id));
-        $res1->assertSee('Original Validated Usulan');
-
-        // 2. Operator edits the detail -> status becomes Draft (is_submitted = false)
+        // 2. Operator edits the rejected detail -> status becomes Draft (is_submitted = false, is_rejected = false)
         $this->actingAs($operator)->put(route('operator.details.update', $detail), [
             'account_code_id' => $this->accountCode->id,
             'description' => 'Edited Draft Usulan In Progress',
@@ -302,10 +300,10 @@ class ReviewTest extends TestCase
             'harga_satuan' => 100000,
         ]);
 
-        // Supervisor should NOT see the draft edited detail
+        // Supervisor should NOT see the draft unsubmitted detail
         $res2 = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.show', $this->submission->id));
         $res2->assertDontSee('Edited Draft Usulan In Progress');
-        $res2->assertDontSee('Original Validated Usulan');
+        $res2->assertDontSee('Original Rejected Usulan');
 
         // 3. Operator submits the edited item -> status becomes is_submitted = true
         $this->actingAs($operator)->post(route('operator.details.submit-item', $detail));

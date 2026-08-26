@@ -19,7 +19,12 @@ class RbaDetailPolicy
             return Response::deny('You do not own this RBA detail.');
         }
 
-        // 2. Check if Pagu has been established for this account and header
+        // 2. Check if already validated by supervisor
+        if ($rbaDetail->is_validated) {
+            return Response::deny('Usulan rincian belanja yang sudah divalidasi oleh Supervisor tidak dapat diedit.');
+        }
+
+        // 3. Check if Pagu has been established for this account and header
         if ($this->isPaguIssued($rbaDetail->submission->rba_header_id, $rbaDetail->account_code_id)) {
             return Response::deny('Cannot update nominal after Pagu has been established for this account.');
         }
@@ -77,7 +82,12 @@ class RbaDetailPolicy
             return Response::deny('You do not own this RBA detail.');
         }
 
-        // 2. If pagu is not issued, they can upload version as long as it's not locked by submission status (or they can upload revisions to rejected items)
+        // 2. Check if already validated by supervisor
+        if ($rbaDetail->is_validated) {
+            return Response::deny('Usulan rincian belanja yang sudah divalidasi oleh Supervisor tidak dapat diunggah revisi PDF.');
+        }
+
+        // 3. If pagu is not issued, they can upload version as long as it's not locked by submission status (or they can upload revisions to rejected items)
         if (!$this->isPaguIssued($rbaDetail->submission->rba_header_id, $rbaDetail->account_code_id)) {
             if ($rbaDetail->is_submitted && !$rbaDetail->is_rejected) {
                 return Response::deny('Cannot update detail attachment if it is already submitted and not rejected.');
@@ -85,7 +95,7 @@ class RbaDetailPolicy
             return Response::allow();
         }
 
-        // 3. If pagu is issued, they can ONLY upload version if the nominal request exceeds the pagu
+        // 4. If pagu is issued, they can ONLY upload version if the nominal request exceeds the pagu
         if ($rbaDetail->isExceedingPagu()) {
             return Response::allow();
         }

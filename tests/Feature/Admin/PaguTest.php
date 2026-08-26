@@ -209,7 +209,7 @@ class PaguTest extends TestCase
         ]);
     }
 
-    public function test_admin_cannot_set_pagu_after_operator_edits_validated_detail_until_revalidated()
+    public function test_admin_cannot_set_pagu_when_operator_has_rejected_or_unvalidated_detail_until_validated()
     {
         $supervisor = User::factory()->create([
             'name' => 'Budi Santoso',
@@ -220,11 +220,11 @@ class PaguTest extends TestCase
         $submission = RbaSubmission::create([
             'rba_header_id' => $this->header->id,
             'unit_id' => $this->operator->unit_id,
-            'status_submission' => 'Validated',
+            'status_submission' => 'Draft',
             'background' => 'Latar belakang unit testing'
         ]);
 
-        // 1. Initial validated detail
+        // 1. Initial rejected detail
         $detail = RbaDetail::create([
             'rba_submission_id' => $submission->id,
             'account_code_id' => $this->accountCode->id,
@@ -233,14 +233,16 @@ class PaguTest extends TestCase
             'satuan' => 'Box',
             'harga_satuan' => 50000,
             'nominal_request' => 500000,
-            'is_submitted' => true,
-            'is_validated' => true,
-            'validated_at' => now(),
-            'validated_by' => $supervisor->id,
+            'is_submitted' => false,
+            'is_validated' => false,
+            'is_rejected' => true,
+            'rejected_at' => now(),
+            'rejected_by' => $supervisor->id,
+            'rejection_reason' => 'Perbaiki volume',
             'created_by' => $this->operator->id
         ]);
 
-        // 2. Operator edits the detail
+        // 2. Operator edits the rejected detail
         $this->actingAs($this->operator)->put(route('operator.details.update', $detail), [
             'account_code_id' => $this->accountCode->id,
             'description' => 'Pengadaan Obat Paracetamol Extra',
@@ -267,6 +269,7 @@ class PaguTest extends TestCase
 
         // 4. Supervisor re-validates the edited detail
         $detail->fresh()->update([
+            'is_submitted' => true,
             'is_validated' => true,
             'validated_at' => now(),
             'validated_by' => $supervisor->id,

@@ -311,11 +311,16 @@
                                                         $hasRevision = $detail->hasUploadedRevision();
                                                     @endphp
 
-                                                    @if(!$isItemLockedByPagu)
+                                                    @if($detail->is_validated)
+                                                        <div class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded justify-center">
+                                                            <span>🔒</span>
+                                                            <span>Tervalidasi (Terkunci)</span>
+                                                        </div>
+                                                    @elseif(!$isItemLockedByPagu)
                                                         <div class="flex flex-wrap items-center gap-1.5">
                                                             <a href="{{ route('operator.details.edit', $detail) }}"
                                                                 class="text-indigo-600 hover:text-indigo-900 text-[10px] font-bold border border-indigo-200 px-2 py-1 rounded bg-indigo-50"
-                                                                title="Edit rincian belanja (status akan kembali ke Draft)">Edit</a>
+                                                                title="Edit rincian belanja">Edit</a>
                                                             
                                                             @if(!$detail->is_submitted || $detail->is_rejected)
                                                                 <form action="{{ route('operator.details.submit-item', $detail) }}" method="POST">
@@ -327,16 +332,14 @@
                                                                 </form>
                                                             @endif
 
-                                                            @if(!$detail->is_validated || !$detail->is_submitted || $detail->is_rejected)
-                                                                <form action="{{ route('operator.details.destroy', $detail) }}" method="POST" onsubmit="return confirm('Hapus rincian ini?')">
-                                                                    @csrf
-                                                                    @method('DELETE')
-                                                                    <button type="submit" 
-                                                                        class="text-red-600 hover:text-red-900 text-[10px] font-bold border border-red-200 px-2 py-1 rounded bg-red-50">
-                                                                        Hapus
-                                                                    </button>
-                                                                </form>
-                                                            @endif
+                                                            <form action="{{ route('operator.details.destroy', $detail) }}" method="POST" onsubmit="return confirm('Hapus rincian ini?')">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" 
+                                                                    class="text-red-600 hover:text-red-900 text-[10px] font-bold border border-red-200 px-2 py-1 rounded bg-red-50">
+                                                                    Hapus
+                                                                </button>
+                                                            </form>
                                                         </div>
 
                                                         <form action="{{ route('operator.details.upload-version', $detail) }}"
@@ -346,7 +349,7 @@
                                                             <input type="file" name="attachment" class="text-[10px] w-24" required>
                                                             <button type="submit"
                                                                 class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-[10px] font-bold"
-                                                                title="Unggah versi PDF baru (status akan kembali ke Draft)">Revisi</button>
+                                                                title="Unggah versi PDF baru">Revisi</button>
                                                         </form>
                                                     @else
                                                         <div class="flex flex-col items-center space-y-2">
