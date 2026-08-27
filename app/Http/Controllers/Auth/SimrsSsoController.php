@@ -8,7 +8,6 @@ use App\Http\Requests\Auth\SimrsSsoLoginRequest;
 use App\Services\Auth\Oidc\SimrsOidcService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 
 class SimrsSsoController extends Controller
 {
@@ -34,10 +33,17 @@ class SimrsSsoController extends Controller
                 $request->input('password_simrs')
             );
 
-            // 2. Synchronize / JIT Provision user into SIPAKAR
+            // 2. Fetch enriched employee profile from UserInfo endpoint (if available)
+            $userInfo = null;
+            if (!empty($tokenData['access_token'])) {
+                $userInfo = $this->oidcService->fetchUserInfo($tokenData['access_token']);
+            }
+
+            // 3. Synchronize / JIT Provision user into SIPAKAR with merged claims and UserInfo
             $user = $this->oidcService->syncUser(
                 $tokenData,
-                $request->input('username_simrs')
+                $request->input('username_simrs'),
+                $userInfo
             );
 
             if (!$user->is_active) {
@@ -46,18 +52,20 @@ class SimrsSsoController extends Controller
                 ])->withInput($request->only('username_simrs'));
             }
 
-            // 3. Save tokens into session for downstream SIMRS API communications
+            // 4. Save tokens and expiration into session for downstream SIMRS API communications & token refresh
+            $expiresIn = (int) ($tokenData['expires_in'] ?? 900);
             session([
                 'simrs_access_token' => $tokenData['access_token'] ?? null,
                 'simrs_refresh_token' => $tokenData['refresh_token'] ?? null,
-                'simrs_token_expires_in' => $tokenData['expires_in'] ?? null,
+                'simrs_token_expires_in' => $expiresIn,
+                'simrs_token_expires_at' => now()->addSeconds($expiresIn)->timestamp,
             ]);
 
-            // 4. Log in user & regenerate session
+            // 5. Log in user & regenerate session
             Auth::login($user, $request->boolean('remember'));
             $request->session()->regenerate();
 
-            // 5. Role-based redirect
+            // 6. Role-based redirect
             $url = match ($user->role) {
                 'Administrator' => route('admin.dashboard'),
                 'Supervisor' => route('supervisor.dashboard'),

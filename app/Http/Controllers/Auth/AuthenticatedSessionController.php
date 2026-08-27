@@ -44,6 +44,12 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Trigger Single Logout (SLO) at SIMRS OIDC Server if session contains a refresh token
+        $refreshToken = $request->session()->get('simrs_refresh_token');
+        if ($refreshToken && config('simrs_oidc.enabled')) {
+            app(\App\Services\Auth\Oidc\SimrsOidcService::class)->revokeToken($refreshToken);
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

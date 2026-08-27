@@ -22,6 +22,8 @@ return [
     */
     'base_url' => env('SIMRS_OIDC_BASE_URL', 'http://172.16.61.111:8080'),
     'token_endpoint' => env('SIMRS_OIDC_TOKEN_ENDPOINT', 'http://172.16.61.111:8080/oauth/v2/token'),
+    'userinfo_endpoint' => env('SIMRS_OIDC_USERINFO_ENDPOINT', 'http://172.16.61.111:8080/oauth/v2/userinfo'),
+    'logout_endpoint' => env('SIMRS_OIDC_LOGOUT_ENDPOINT', 'http://172.16.61.111:8080/oauth/v2/logout'),
     'client_id' => env('SIMRS_OIDC_CLIENT_ID', 'sipakar-client'),
     'client_secret' => env('SIMRS_OIDC_CLIENT_SECRET', 'sipakar-secret-key'),
     'scope' => env('SIMRS_OIDC_SCOPE', 'openid profile email simrs:pegawai'),

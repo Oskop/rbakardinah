@@ -240,4 +240,128 @@ class SimrsSsoTest extends TestCase
         $response->assertSee('Belum Ditugaskan ke Unit');
         $response->assertSee('Akun Anda Belum Terhubung ke Unit Kerja');
     }
+
+    public function test_sso_login_fetches_and_persists_userinfo_profile()
+    {
+        Config::set('simrs_oidc.enabled', true);
+
+        $idToken = $this->createMockJwt([
+            'sub' => '000000000624',
+            'nip' => 'raga.silinapas',
+        ]);
+
+        Http::fake([
+            config('simrs_oidc.token_endpoint') => Http::response([
+                'access_token' => 'mock_access_token_raga',
+                'token_type' => 'Bearer',
+                'expires_in' => 900,
+                'refresh_token' => 'mock_refresh_token_raga',
+                'id_token' => $idToken,
+                'scope' => 'openid profile email simrs:pegawai',
+            ], 200),
+            config('simrs_oidc.userinfo_endpoint') => Http::response([
+                'sub' => '000000000624',
+                'username' => 'raga.silinapas',
+                'name' => 'RAGA SILINAPAS, S.Kom.',
+                'nik' => '3327061903850007',
+                'sip' => 'SIP.440/001/2026',
+                'kategori_pegawai' => 'Non Medis',
+                'unit_id' => '000000000001',
+                'is_dpjp' => false,
+                'email' => 'raga@rs.co.id',
+                'kode_dpjp_bpjs' => '12903',
+            ], 200),
+        ]);
+
+        $response = $this->post(route('login.sso'), [
+            'username_simrs' => 'raga.silinapas',
+            'password_simrs' => 'password123',
+        ]);
+
+        $this->assertAuthenticated();
+        $user = auth()->user();
+        $this->assertEquals('RAGA SILINAPAS, S.Kom.', $user->name);
+        $this->assertEquals('raga@rs.co.id', $user->email);
+        $this->assertEquals('raga.silinapas', $user->nip);
+        $this->assertEquals('000000000624', $user->simrs_sub);
+        $this->assertEquals('3327061903850007', $user->simrs_metadata['nik']);
+        $this->assertEquals('SIP.440/001/2026', $user->simrs_metadata['sip']);
+        $this->assertEquals('Non Medis', $user->simrs_metadata['kategori_pegawai']);
+        $this->assertEquals(false, $user->simrs_metadata['is_dpjp']);
+
+        $this->assertNotNull(session('simrs_token_expires_at'));
+        $response->assertRedirect(route('operator.dashboard'));
+    }
+
+    public function test_sso_service_can_refresh_token_via_token_rotation()
+    {
+        Config::set('simrs_oidc.enabled', true);
+
+        Http::fake([
+            config('simrs_oidc.token_endpoint') => Http::response([
+                'access_token' => 'new_rotated_access_token_777',
+                'token_type' => 'Bearer',
+                'expires_in' => 900,
+                'refresh_token' => 'new_rotated_refresh_token_888',
+            ], 200),
+        ]);
+
+        session([
+            'simrs_access_token' => 'old_access_token_111',
+            'simrs_refresh_token' => 'old_refresh_token_222',
+        ]);
+
+        $service = app(\App\Services\Auth\Oidc\SimrsOidcService::class);
+        $result = $service->refreshToken();
+
+        $this->assertNotNull($result);
+        $this->assertEquals('new_rotated_access_token_777', $result['access_token']);
+        $this->assertEquals('new_rotated_access_token_777', session('simrs_access_token'));
+        $this->assertEquals('new_rotated_refresh_token_888', session('simrs_refresh_token'));
+    }
+
+    public function test_user_logout_triggers_single_logout_revocation_at_sso_server()
+    {
+        Config::set('simrs_oidc.enabled', true);
+
+        Http::fake([
+            config('simrs_oidc.logout_endpoint') => Http::response([
+                'success' => true,
+            ], 200),
+        ]);
+
+        $user = User::factory()->create(['role' => 'Operator']);
+
+        $response = $this->actingAs($user)
+            ->withSession(['simrs_refresh_token' => 'mock_token_to_revoke'])
+            ->post(route('logout'));
+
+        $this->assertGuest();
+        $response->assertRedirect('/');
+
+        Http::assertSent(function ($request) {
+            return $request->url() === config('simrs_oidc.logout_endpoint') &&
+                $request['refresh_token'] === 'mock_token_to_revoke';
+        });
+    }
+
+    public function test_user_logout_succeeds_even_if_sso_server_is_down()
+    {
+        Config::set('simrs_oidc.enabled', true);
+
+        Http::fake([
+            config('simrs_oidc.logout_endpoint') => function () {
+                throw new ConnectionException('Timeout contacting SSO server');
+            },
+        ]);
+
+        $user = User::factory()->create(['role' => 'Operator']);
+
+        $response = $this->actingAs($user)
+            ->withSession(['simrs_refresh_token' => 'mock_token_that_fails'])
+            ->post(route('logout'));
+
+        $this->assertGuest();
+        $response->assertRedirect('/');
+    }
 }
