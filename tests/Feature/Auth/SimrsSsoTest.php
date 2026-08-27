@@ -211,4 +211,15 @@ class SimrsSsoTest extends TestCase
         $this->assertAuthenticatedAs($admin);
         $response->assertRedirect(route('admin.dashboard'));
     }
+
+    public function test_login_screen_renders_with_vite_assets_and_tabs_properly()
+    {
+        Config::set('simrs_oidc.enabled', true);
+
+        $response = $this->get(route('login'));
+        $response->assertStatus(200);
+        $response->assertSee('Pegawai SIMRS (SSO)');
+        $response->assertSee('Akun Lokal SIPAKAR');
+        $response->assertSee('x-cloak');
+    }
 }
