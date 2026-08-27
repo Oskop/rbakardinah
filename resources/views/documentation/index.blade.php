@@ -31,7 +31,7 @@
                     </a>
                 </div>
 
-                @if(Auth::user()->role === 'Administrator')
+                @if(Auth::check() && Auth::user()->role === 'Administrator')
                     <a href="{{ route('admin.documentation.index') }}"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition shadow-sm"
                         title="Panel Kelola Dokumentasi Administrator">

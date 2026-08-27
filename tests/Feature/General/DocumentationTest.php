@@ -68,6 +68,17 @@ class DocumentationTest extends TestCase
         ]);
     }
 
+    public function test_unauthenticated_guest_can_access_documentation_reader()
+    {
+        $response = $this->get(route('documentation.index'));
+        $response->assertStatus(200);
+        $response->assertSee('Dokumentasi & Buku Panduan Sistem');
+        $response->assertSee('Tentang Aplikasi RBA');
+        $response->assertSee('Selamat datang di sistem RBA RSUD Kardinah.');
+        $response->assertSee('Masuk ke Akun');
+        $response->assertDontSee('Kelola Dokumentasi');
+    }
+
     public function test_all_authenticated_roles_can_access_documentation_reader()
     {
         // 1. Operator
@@ -75,12 +86,13 @@ class DocumentationTest extends TestCase
         $resOperator->assertStatus(200);
         $resOperator->assertSee('Dokumentasi & Buku Panduan Sistem');
         $resOperator->assertSee('Tentang Aplikasi RBA');
-        $resOperator->assertSee('Selamat datang di sistem RBA RSUD Kardinah.');
+        $resOperator->assertDontSee('Kelola Dokumentasi');
 
         // 2. Supervisor
         $resSupervisor = $this->actingAs($this->supervisor)->get(route('documentation.index'));
         $resSupervisor->assertStatus(200);
         $resSupervisor->assertSee('Tentang Aplikasi RBA');
+        $resSupervisor->assertDontSee('Kelola Dokumentasi');
 
         // 3. Admin
         $resAdmin = $this->actingAs($this->admin)->get(route('documentation.index'));
@@ -88,13 +100,7 @@ class DocumentationTest extends TestCase
         $resAdmin->assertSee('Kelola Dokumentasi');
     }
 
-    public function test_unauthenticated_user_redirected_to_login()
-    {
-        $response = $this->get(route('documentation.index'));
-        $response->assertRedirect(route('login'));
-    }
-
-    public function test_user_can_switch_article_and_view_specific_slug()
+    public function test_guest_can_switch_article_and_view_specific_slug()
     {
         $article2 = DocumentationArticle::create([
             'documentation_version_id' => $this->htmlVersion->id,
@@ -106,7 +112,7 @@ class DocumentationTest extends TestCase
             'content' => '<h2>Formulir Usulan</h2><p>Tata cara mengisi rincian biaya.</p>',
         ]);
 
-        $response = $this->actingAs($this->operator)->get(route('documentation.index', [
+        $response = $this->get(route('documentation.index', [
             'version' => 'v1.0.0',
             'article' => 'input-usulan-belanja',
         ]));
@@ -116,22 +122,22 @@ class DocumentationTest extends TestCase
         $response->assertSee('Tata cara mengisi rincian biaya.');
     }
 
-    public function test_user_can_access_pdf_manual_book_tab_and_download_pdf()
+    public function test_guest_can_access_pdf_manual_book_tab_and_download_pdf()
     {
-        $response = $this->actingAs($this->operator)->get(route('documentation.index', ['tab' => 'pdf']));
+        $response = $this->get(route('documentation.index', ['tab' => 'pdf']));
         $response->assertStatus(200);
         $response->assertSee('Manual Book PDF Resmi');
         $response->assertSee('Unduh Berkas PDF');
 
-        // Test download
-        $downloadRes = $this->actingAs($this->operator)->get(route('documentation.pdf.download', $this->pdfVersion));
+        // Test download without authentication
+        $downloadRes = $this->get(route('documentation.pdf.download', $this->pdfVersion));
         $downloadRes->assertStatus(200);
         $downloadRes->assertHeader('content-disposition', 'attachment; filename=Manual_Book_RBA_v1.0.0.pdf');
     }
 
-    public function test_user_can_preview_pdf_inline()
+    public function test_guest_can_preview_pdf_inline()
     {
-        $previewRes = $this->actingAs($this->operator)->get(route('documentation.pdf.preview', $this->pdfVersion));
+        $previewRes = $this->get(route('documentation.pdf.preview', $this->pdfVersion));
         $previewRes->assertStatus(200);
         $previewRes->assertHeader('content-type', 'application/pdf');
     }

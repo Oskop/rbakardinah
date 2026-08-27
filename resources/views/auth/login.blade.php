@@ -64,5 +64,13 @@
                 Masuk Sekarang
             </button>
         </div>
+
+        <div class="pt-4 border-t border-slate-100 text-center">
+            <a href="{{ route('documentation.index') }}"
+                class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors">
+                <span>📖</span>
+                <span>Butuh panduan penggunaan? Buka Dokumentasi</span>
+            </a>
+        </div>
     </form>
 </x-guest-layout>

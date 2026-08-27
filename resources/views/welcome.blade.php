@@ -77,8 +77,14 @@
                         class="text-indigo-600">SIPAKAR</span></span>
             </a>
 
-            @if (Route::has('login'))
-                <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 sm:gap-6">
+                <a href="{{ route('documentation.index') }}"
+                    class="text-sm font-semibold leading-6 text-slate-700 hover:text-indigo-600 transition-colors flex items-center gap-1.5">
+                    <span>📖</span>
+                    <span>Dokumentasi</span>
+                </a>
+
+                @if (Route::has('login'))
                     @auth
                         <a href="{{ url('/dashboard') }}"
                             class="px-6 py-2.5 text-sm font-semibold text-white bg-slate-900 rounded-full hover:bg-slate-800 shadow-xl shadow-slate-200 transition-all active:scale-95">
@@ -86,12 +92,12 @@
                         </a>
                     @else
                         <a href="{{ route('login') }}"
-                            class="text-sm font-semibold leading-6 text-slate-700 hover:text-indigo-600 transition-colors">
+                            class="px-5 py-2 text-sm font-bold text-white bg-indigo-600 rounded-full hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all active:scale-95">
                             Masuk
                         </a>
                     @endauth
-                </div>
-            @endif
+                @endif
+            </div>
         </nav>
 
         <!-- Hero Section -->
@@ -117,8 +123,8 @@
                         class="px-8 py-4 text-base font-bold text-white transition-all bg-indigo-600 rounded-2xl shadow-2xl shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-1 active:scale-95">
                         Mulai Sekarang
                     </a>
-                    <a href="#" class="text-sm font-bold leading-6 text-slate-900 group flex items-center gap-2">
-                        Pelajari lebih lanjut
+                    <a href="{{ route('documentation.index') }}" class="text-sm font-bold leading-6 text-slate-900 group flex items-center gap-2">
+                        Buku Panduan & Dokumentasi
                         <span class="group-hover:translate-x-1 transition-transform">→</span>
                     </a>
                 </div>

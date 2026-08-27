@@ -50,13 +50,11 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::delete('documentation/articles/{article}', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'destroyArticle'])->name('documentation.articles.destroy');
 });
 
-// General Documentation Reader Routes (All Authenticated Users)
-Route::middleware(['auth'])->group(function () {
-    Route::get('documentation', [\App\Http\Controllers\General\DocumentationController::class, 'index'])->name('documentation.index');
-    Route::get('documentation/pdf/preview/{version}', [\App\Http\Controllers\General\DocumentationController::class, 'previewPdf'])->name('documentation.pdf.preview');
-    Route::get('documentation/pdf/download/{version}', [\App\Http\Controllers\General\DocumentationController::class, 'downloadPdf'])->name('documentation.pdf.download');
-    Route::get('documentation/{version}/{slug}', [\App\Http\Controllers\General\DocumentationController::class, 'article'])->name('documentation.article');
-});
+// Public Documentation Reader Routes (No Login Required)
+Route::get('documentation', [\App\Http\Controllers\General\DocumentationController::class, 'index'])->name('documentation.index');
+Route::get('documentation/pdf/preview/{version}', [\App\Http\Controllers\General\DocumentationController::class, 'previewPdf'])->name('documentation.pdf.preview');
+Route::get('documentation/pdf/download/{version}', [\App\Http\Controllers\General\DocumentationController::class, 'downloadPdf'])->name('documentation.pdf.download');
+Route::get('documentation/{version}/{slug}', [\App\Http\Controllers\General\DocumentationController::class, 'article'])->name('documentation.article');
 
 Route::middleware(['auth', 'role:Supervisor'])->prefix('supervisor')->name('supervisor.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Supervisor\DashboardController::class, 'index'])->name('dashboard');
