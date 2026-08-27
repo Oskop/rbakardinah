@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Riwayat Versi Dokumen') }} {{ $type }} - {{ $submission->header->year }} ({{ $submission->unit->name }})
+                {{ __('Riwayat Versi Dokumen') }} {{ $type }} - {{ $submission->header->year }} ({{ $submission->unit?->name ?? 'Unit' }})
             </h2>
             <a href="{{ route('operator.submissions.show', $submission) }}"
                 class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded text-sm transition">

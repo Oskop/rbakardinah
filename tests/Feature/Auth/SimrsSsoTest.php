@@ -222,4 +222,22 @@ class SimrsSsoTest extends TestCase
         $response->assertSee('Akun Lokal SIPAKAR');
         $response->assertSee('x-cloak');
     }
+
+    public function test_sso_user_without_unit_id_can_access_submissions_index_without_error()
+    {
+        $userWithoutUnit = User::factory()->create([
+            'name' => 'Pegawai Baru SSO',
+            'email' => 'pegawai.baru@kardinah.tegal.go.id',
+            'nip' => '199501012024011001',
+            'role' => 'Operator',
+            'unit_id' => null,
+            'auth_provider' => 'simrs_oidc',
+        ]);
+
+        $response = $this->actingAs($userWithoutUnit)->get(route('operator.submissions.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Belum Ditugaskan ke Unit');
+        $response->assertSee('Akun Anda Belum Terhubung ke Unit Kerja');
+    }
 }
