@@ -29,20 +29,20 @@
 
         @if($oidcEnabled)
             <!-- TAB 1: FORM LOGIN SIMRS SSO -->
-            <form x-show="tab === 'simrs'" method="POST" action="{{ route('login.sso') }}" class="space-y-5">
+            <form x-cloak x-show="tab === 'simrs'" style="{{ $initialTab === 'simrs' ? '' : 'display: none;' }}" method="POST" action="{{ route('login.sso') }}" class="space-y-5">
                 @csrf
                 <input type="hidden" name="_login_tab" value="simrs">
 
                 <div class="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-xs text-indigo-900 flex items-start gap-2">
                     <span class="text-base flex-shrink-0">💡</span>
                     <p class="leading-relaxed">
-                        Masuk menggunakan <strong>NIP / Username</strong> dan <strong>Kata Sandi</strong> akun resmi SIMRS RSUD Kardinah Anda.
+                        Masuk menggunakan <strong>Username</strong> dan <strong>Kata Sandi</strong> akun resmi <strong>SIGITA SEHATI</strong>.
                     </p>
                 </div>
 
                 <!-- Username / NIP SIMRS -->
                 <div>
-                    <label for="username_simrs" class="block text-sm font-semibold text-slate-700 mb-1.5">NIP / Username SIMRS</label>
+                    <label for="username_simrs" class="block text-sm font-semibold text-slate-700 mb-1.5">Username SIGITA SEHATI</label>
                     <div class="relative group">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -56,7 +56,7 @@
                                required 
                                autofocus 
                                autocomplete="username"
-                               placeholder="Contoh: 198501012010011001 / username"
+                               placeholder="Contoh: nama.anda"
                                class="block w-full pl-11 pr-4 py-3 bg-white/50 border border-slate-200 rounded-2xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm text-sm"
                         >
                     </div>
@@ -65,7 +65,7 @@
 
                 <!-- Password SIMRS -->
                 <div>
-                    <label for="password_simrs" class="block text-sm font-semibold text-slate-700 mb-1.5">Kata Sandi SIMRS</label>
+                    <label for="password_simrs" class="block text-sm font-semibold text-slate-700 mb-1.5">Kata Sandi SIGITA SEHATI</label>
                     <div class="relative group">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,7 +102,7 @@
         @endif
 
         <!-- TAB 2: FORM LOGIN LOKAL SIPAKAR -->
-        <form x-show="!{{ $oidcEnabled ? 'true' : 'false' }} || tab === 'local'" method="POST" action="{{ route('login') }}" class="space-y-5">
+        <form x-cloak x-show="!{{ $oidcEnabled ? 'true' : 'false' }} || tab === 'local'" style="{{ (!$oidcEnabled || $initialTab === 'local') ? '' : 'display: none;' }}" method="POST" action="{{ route('login') }}" class="space-y-5">
             @csrf
             <input type="hidden" name="_login_tab" value="local">
 

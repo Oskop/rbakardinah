@@ -28,7 +28,14 @@
         }
     </script>
 
+    <!-- Scripts & Styles -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
     <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
         .glass {
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(16px);
