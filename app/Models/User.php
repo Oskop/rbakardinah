@@ -30,8 +30,12 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'simrs_sub',
+        'nip',
         'password',
         'role',
+        'auth_provider',
+        'simrs_metadata',
         'unit_id',
         'is_active',
     ];
@@ -57,6 +61,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'simrs_metadata' => 'array',
         ];
     }
 

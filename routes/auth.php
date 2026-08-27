@@ -16,6 +16,9 @@ Route::middleware('guest')->group(function () {
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
+
+    Route::post('login/sso', [\App\Http\Controllers\Auth\SimrsSsoController::class, 'login'])
+        ->name('login.sso');
 });
 
 Route::middleware('auth')->group(function () {
