@@ -33,6 +33,29 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::post('headers/{header}/pagu', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'store'])->name('headers.pagu.store');
     Route::delete('headers/{header}/pagu/{accountCode}', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'destroy'])->name('headers.pagu.destroy');
     Route::resource('logs', \App\Http\Controllers\Admin\ActivityLogController::class)->only(['index', 'show']);
+
+    // Documentation Management Routes
+    Route::get('documentation', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'index'])->name('documentation.index');
+    Route::get('documentation/versions/create', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'createVersion'])->name('documentation.versions.create');
+    Route::post('documentation/versions', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'storeVersion'])->name('documentation.versions.store');
+    Route::get('documentation/versions/{version}/edit', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'editVersion'])->name('documentation.versions.edit');
+    Route::put('documentation/versions/{version}', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'updateVersion'])->name('documentation.versions.update');
+    Route::delete('documentation/versions/{version}', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'destroyVersion'])->name('documentation.versions.destroy');
+    Route::post('documentation/versions/{version}/set-active', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'setActive'])->name('documentation.versions.set-active');
+    Route::get('documentation/versions/{version}/articles', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'articles'])->name('documentation.articles.index');
+    Route::get('documentation/versions/{version}/articles/create', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'createArticle'])->name('documentation.articles.create');
+    Route::post('documentation/versions/{version}/articles', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'storeArticle'])->name('documentation.articles.store');
+    Route::get('documentation/articles/{article}/edit', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'editArticle'])->name('documentation.articles.edit');
+    Route::put('documentation/articles/{article}', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'updateArticle'])->name('documentation.articles.update');
+    Route::delete('documentation/articles/{article}', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'destroyArticle'])->name('documentation.articles.destroy');
+});
+
+// General Documentation Reader Routes (All Authenticated Users)
+Route::middleware(['auth'])->group(function () {
+    Route::get('documentation', [\App\Http\Controllers\General\DocumentationController::class, 'index'])->name('documentation.index');
+    Route::get('documentation/pdf/preview/{version}', [\App\Http\Controllers\General\DocumentationController::class, 'previewPdf'])->name('documentation.pdf.preview');
+    Route::get('documentation/pdf/download/{version}', [\App\Http\Controllers\General\DocumentationController::class, 'downloadPdf'])->name('documentation.pdf.download');
+    Route::get('documentation/{version}/{slug}', [\App\Http\Controllers\General\DocumentationController::class, 'article'])->name('documentation.article');
 });
 
 Route::middleware(['auth', 'role:Supervisor'])->prefix('supervisor')->name('supervisor.')->group(function () {

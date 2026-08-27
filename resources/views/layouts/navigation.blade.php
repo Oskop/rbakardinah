@@ -55,6 +55,10 @@
                             {{ __('Workboard RBA') }}
                         </x-nav-link>
                     @endif
+
+                    <x-nav-link :href="route('documentation.index')" :active="request()->routeIs('documentation.*')">
+                        📖 {{ __('Dokumentasi') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -146,7 +150,16 @@
                 :active="request()->routeIs('supervisor.users.*')">
                 {{ __('Users') }}
             </x-responsive-nav-link>
+        @elseif(Auth::user()->role === 'Operator')
+            <x-responsive-nav-link :href="route('operator.submissions.index')"
+                :active="request()->routeIs('operator.submissions.*')">
+                {{ __('Workboard RBA') }}
+            </x-responsive-nav-link>
         @endif
+
+        <x-responsive-nav-link :href="route('documentation.index')" :active="request()->routeIs('documentation.*')">
+            📖 {{ __('Dokumentasi') }}
+        </x-responsive-nav-link>
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">

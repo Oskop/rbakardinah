@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             KelompokBelanjaSeeder::class,
             AccountCodeSeeder::class,
             RbaPeriodSeeder::class,
+            DocumentationSeeder::class,
         ]);
 
         $users = [
