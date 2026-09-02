@@ -208,7 +208,7 @@
                                         <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Volume</th>
                                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Satuan</th>
                                         <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Harga Satuan</th>
-                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-right">Usulan (Unit)</th>
+                                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-right">Total</th>
                                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-right">Pagu No.Rek.</th>
                                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status Pagu</th>
                                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase text-center">PDF</th>
