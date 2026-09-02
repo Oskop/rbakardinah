@@ -32,4 +32,9 @@ class RbaSubmission extends Model
     {
         return $this->hasMany(RbaSubmissionDocument::class);
     }
+
+    public function operatorBackgrounds(): HasMany
+    {
+        return $this->hasMany(RbaSubmissionOperatorBackground::class);
+    }
 }

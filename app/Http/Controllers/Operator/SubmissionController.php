@@ -82,7 +82,17 @@ class SubmissionController extends Controller
             ->get()
             ->keyBy('account_code_id');
 
-        return view('operator.submissions.show', compact('submission', 'pagus', 'headerTotals', 'previousPagus'));
+        $myBgRecord = $submission->operatorBackgrounds()->where('user_id', Auth::id())->first();
+        $myBackground = $myBgRecord ? $myBgRecord->background : ($submission->operatorBackgrounds()->count() === 0 ? $submission->background : '');
+        $otherOperatorBackgrounds = $submission->operatorBackgrounds()
+            ->with('user')
+            ->where('user_id', '!=', Auth::id())
+            ->whereHas('user', function ($q) {
+                $q->where('is_active', true);
+            })
+            ->get();
+
+        return view('operator.submissions.show', compact('submission', 'pagus', 'headerTotals', 'previousPagus', 'myBackground', 'otherOperatorBackgrounds'));
     }
 
     public function submit(RbaSubmission $submission)
@@ -110,8 +120,29 @@ class SubmissionController extends Controller
             'background' => 'required|string',
         ]);
 
+        \App\Models\RbaSubmissionOperatorBackground::updateOrCreate(
+            ['rba_submission_id' => $submission->id, 'user_id' => Auth::id()],
+            ['background' => $request->background]
+        );
+
+        // Compile active operator backgrounds into submission->background for backward compatibility & print preview
+        $allOpBgs = $submission->operatorBackgrounds()
+            ->whereHas('user', function ($q) {
+                $q->where('is_active', true);
+            })
+            ->with('user')
+            ->get();
+
+        if ($allOpBgs->count() > 1) {
+            $compiled = $allOpBgs->map(function ($ob) {
+                return $ob->user->name . ":\n" . $ob->background;
+            })->join("\n\n");
+        } else {
+            $compiled = $allOpBgs->first()?->background ?? $request->background;
+        }
+
         $submission->update([
-            'background' => $request->background,
+            'background' => $compiled ?: $request->background,
         ]);
 
         return back()->with('success', 'Latar belakang RBA berhasil diperbarui.');

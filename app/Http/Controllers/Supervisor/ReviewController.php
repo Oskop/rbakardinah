@@ -30,6 +30,7 @@ class ReviewController extends Controller
 
         $operators = \App\Models\User::where('unit_id', Auth::user()->unit_id)
             ->where('role', 'Operator')
+            ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
@@ -40,10 +41,12 @@ class ReviewController extends Controller
             'header.period', 
             'documents' => function ($query) {
                 $query->with(['user', 'versions.uploader', 'latestVersion']);
-            }
+            },
+            'operatorBackgrounds.user'
         ]);
 
         $documents = $submission->documents->groupBy('user_id');
+        $operatorBackgrounds = $submission->operatorBackgrounds->keyBy('user_id');
 
         // Load pagu for indicators
         $pagus = RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)->get()->keyBy('account_code_id');
@@ -92,7 +95,7 @@ class ReviewController extends Controller
             ->get()
             ->keyBy('account_code_id');
 
-        return view('supervisor.submissions.show', compact('submission', 'pagus', 'headerTotals', 'operators', 'documents', 'previousPagus'));
+        return view('supervisor.submissions.show', compact('submission', 'pagus', 'headerTotals', 'operators', 'documents', 'previousPagus', 'operatorBackgrounds'));
     }
 
     public function printPreview(Request $request, RbaSubmission $submission)
@@ -112,6 +115,7 @@ class ReviewController extends Controller
 
         $allOperators = \App\Models\User::where('unit_id', Auth::user()->unit_id)
             ->where('role', 'Operator')
+            ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
@@ -189,6 +193,7 @@ class ReviewController extends Controller
 
         $allOperators = \App\Models\User::where('unit_id', Auth::user()->unit_id)
             ->where('role', 'Operator')
+            ->where('is_active', true)
             ->orderBy('name')
             ->get();
 

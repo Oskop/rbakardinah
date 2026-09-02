@@ -337,4 +337,105 @@ class ReviewTest extends TestCase
         ]);
         $resReject->assertSessionHas('error', 'Usulan rincian belanja ini belum diajukan oleh Operator.');
     }
+
+    public function test_supervisor_can_see_distinct_background_cards_for_each_active_operator()
+    {
+        $operator1 = User::factory()->create([
+            'role' => 'Operator',
+            'unit_id' => $this->supervisor->unit_id,
+            'name' => 'Operator Alpha',
+            'is_active' => true,
+        ]);
+
+        $operator2 = User::factory()->create([
+            'role' => 'Operator',
+            'unit_id' => $this->supervisor->unit_id,
+            'name' => 'Operator Beta',
+            'is_active' => true,
+        ]);
+
+        $inactiveOperator = User::factory()->create([
+            'role' => 'Operator',
+            'unit_id' => $this->supervisor->unit_id,
+            'name' => 'Operator Nonaktif',
+            'is_active' => false,
+        ]);
+
+        \App\Models\RbaSubmissionOperatorBackground::create([
+            'rba_submission_id' => $this->submission->id,
+            'user_id' => $operator1->id,
+            'background' => 'Latar Belakang Ruang Bedah oleh Alpha',
+        ]);
+
+        \App\Models\RbaSubmissionOperatorBackground::create([
+            'rba_submission_id' => $this->submission->id,
+            'user_id' => $inactiveOperator->id,
+            'background' => 'Latar Belakang Operator Nonaktif',
+        ]);
+
+        $response = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.show', $this->submission->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Latar Belakang RBA per Operator');
+        
+        // Active operator 1: has background
+        $response->assertSee('Operator Alpha');
+        $response->assertSee('Latar Belakang Ruang Bedah oleh Alpha');
+        $response->assertSee('Latar Belakang Terisi');
+
+        // Active operator 2: has not filled background
+        $response->assertSee('Operator Beta');
+        $response->assertSee('Belum Mengisi');
+
+        // Inactive operator must NOT be shown!
+        $response->assertDontSee('Operator Nonaktif');
+        $response->assertDontSee('Latar Belakang Operator Nonaktif');
+    }
+
+    public function test_operator_can_save_and_update_their_own_background_without_affecting_other_operators()
+    {
+        $operator1 = User::factory()->create([
+            'role' => 'Operator',
+            'unit_id' => $this->supervisor->unit_id,
+            'name' => 'Operator Satu',
+            'is_active' => true,
+        ]);
+
+        $operator2 = User::factory()->create([
+            'role' => 'Operator',
+            'unit_id' => $this->supervisor->unit_id,
+            'name' => 'Operator Dua',
+            'is_active' => true,
+        ]);
+
+        // Operator 1 updates their background
+        $this->actingAs($operator1)->put(route('operator.submissions.update-background', $this->submission->id), [
+            'background' => 'Latar Belakang Khusus Operator Satu',
+        ]);
+
+        // Operator 2 updates their background
+        $this->actingAs($operator2)->put(route('operator.submissions.update-background', $this->submission->id), [
+            'background' => 'Latar Belakang Khusus Operator Dua',
+        ]);
+
+        $bgOp1 = \App\Models\RbaSubmissionOperatorBackground::where('rba_submission_id', $this->submission->id)
+            ->where('user_id', $operator1->id)
+            ->first();
+        $bgOp2 = \App\Models\RbaSubmissionOperatorBackground::where('rba_submission_id', $this->submission->id)
+            ->where('user_id', $operator2->id)
+            ->first();
+
+        $this->assertNotNull($bgOp1);
+        $this->assertEquals('Latar Belakang Khusus Operator Satu', $bgOp1->background);
+
+        $this->assertNotNull($bgOp2);
+        $this->assertEquals('Latar Belakang Khusus Operator Dua', $bgOp2->background);
+
+        // Compiled background on submission
+        $compiled = $this->submission->fresh()->background;
+        $this->assertStringContainsString('Operator Satu:', $compiled);
+        $this->assertStringContainsString('Latar Belakang Khusus Operator Satu', $compiled);
+        $this->assertStringContainsString('Operator Dua:', $compiled);
+        $this->assertStringContainsString('Latar Belakang Khusus Operator Dua', $compiled);
+    }
 }

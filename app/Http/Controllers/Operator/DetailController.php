@@ -23,7 +23,8 @@ class DetailController extends Controller
             abort(403);
         }
 
-        if (empty($submission->background)) {
+        $hasBackground = $submission->operatorBackgrounds()->where('user_id', Auth::id())->exists() || !empty($submission->background);
+        if (!$hasBackground) {
             return redirect()->route('operator.submissions.show', $submission->id)
                 ->with('error', 'Sebelum menginput rincian belanja, Anda wajib mengisi data latar belakang terlebih dahulu.');
         }
@@ -105,7 +106,8 @@ class DetailController extends Controller
             abort(403);
         }
 
-        if (empty($submission->background)) {
+        $hasBackground = $submission->operatorBackgrounds()->where('user_id', Auth::id())->exists() || !empty($submission->background);
+        if (!$hasBackground) {
             return redirect()->route('operator.submissions.show', $submission->id)
                 ->with('error', 'Sebelum menginput rincian belanja, Anda wajib mengisi data latar belakang terlebih dahulu.');
         }

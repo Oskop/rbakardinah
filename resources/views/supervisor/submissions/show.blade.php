@@ -139,15 +139,93 @@
                 </div>
             @endif
 
-            <!-- Latar Belakang Section -->
-            @if(!empty($submission->background))
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                    <div class="p-6 text-gray-900">
-                        <h3 class="font-bold text-lg text-gray-800 mb-2">Latar Belakang RBA</h3>
-                        <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ $submission->background }}</p>
+            <!-- Latar Belakang RBA per Operator Section -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80 mb-6">
+                <div class="p-6">
+                    <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
+                        <div class="flex items-center gap-2.5">
+                            <span class="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </span>
+                            <div>
+                                <h3 class="font-extrabold text-base text-gray-900">Latar Belakang RBA per Operator</h3>
+                                <p class="text-xs text-slate-500">Rincian justifikasi dan latar belakang usulan belanja dari masing-masing operator aktif di unit ini</p>
+                            </div>
+                        </div>
+                        <div class="text-xs font-semibold px-3 py-1 bg-slate-100 text-slate-700 rounded-full">
+                            {{ $operators->count() }} Operator Aktif
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        @forelse($operators as $op)
+                            @php
+                                $opBg = isset($operatorBackgrounds) ? $operatorBackgrounds->get($op->id) : null;
+                            @endphp
+                            <div class="border rounded-xl overflow-hidden transition-all {{ $opBg ? 'border-emerald-200 bg-emerald-50/20' : 'border-slate-200 bg-slate-50/50' }}">
+                                <div class="p-4 flex items-center justify-between bg-white border-b border-inherit">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 font-black text-sm flex items-center justify-center shadow-inner">
+                                            {{ strtoupper(substr($op->name, 0, 2)) }}
+                                        </div>
+                                        <div>
+                                            <h4 class="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                                <span>{{ $op->name }}</span>
+                                                @if($op->nip)
+                                                    <span class="text-[11px] font-normal font-mono text-gray-500">({{ $op->nip }})</span>
+                                                @endif
+                                            </h4>
+                                            <p class="text-[11px] text-gray-400">{{ $op->email }}</p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        @if($opBg)
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">
+                                                <span>✓</span>
+                                                <span>Latar Belakang Terisi</span>
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
+                                                <span>⚠️</span>
+                                                <span>Belum Mengisi</span>
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="p-4">
+                                    @if($opBg)
+                                        <div class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed bg-white p-3.5 rounded-lg border border-slate-200">
+                                            {{ $opBg->background }}
+                                        </div>
+                                        @if($opBg->updated_at)
+                                            <div class="mt-2 text-[11px] text-gray-400 text-right">
+                                                Terakhir diperbarui: {{ $opBg->updated_at->format('d M Y, H:i') }}
+                                            </div>
+                                        @endif
+                                    @else
+                                        <p class="text-xs text-gray-400 italic py-2">
+                                            Operator ini belum mengisi data latar belakang untuk periode usulan ini.
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-sm text-gray-500 italic text-center py-4">Belum ada operator aktif terdaftar pada unit kerja ini.</p>
+                        @endforelse
+
+                        {{-- Fallback jika ada Latar Belakang lama yang tersimpan langsung di submission --}}
+                        @if((!isset($operatorBackgrounds) || $operatorBackgrounds->isEmpty()) && !empty($submission->background))
+                            <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                                <h5 class="text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Latar Belakang Unit (Data Tersimpan):</h5>
+                                <p class="text-sm text-blue-950 whitespace-pre-wrap">{{ $submission->background }}</p>
+                            </div>
+                        @endif
                     </div>
                 </div>
-            @endif
+            </div>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">

@@ -99,9 +99,19 @@
             <!-- Latar Belakang Section -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6 text-gray-900">
-                    <h3 class="font-bold text-lg text-gray-800 mb-4">Latar Belakang RBA</h3>
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-bold text-lg text-gray-800">
+                            Latar Belakang RBA Anda <span class="text-xs font-normal text-gray-500 font-mono">({{ Auth::user()->name }})</span>
+                        </h3>
+                        @if(!empty($myBackground))
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">
+                                <span>✓</span>
+                                <span>Latar Belakang Anda Tersimpan</span>
+                            </span>
+                        @endif
+                    </div>
                     
-                    @if(empty($submission->background))
+                    @if(empty($myBackground))
                         <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
                             <div class="flex">
                                 <div class="flex-shrink-0">
@@ -111,7 +121,7 @@
                                 </div>
                                 <div class="ml-3">
                                     <p class="text-sm text-yellow-700">
-                                        Anda belum mengisi data Latar Belakang. Anda **wajib** mengisi Latar Belakang terlebih dahulu sebelum dapat menambahkan rincian belanja.
+                                        Anda belum mengisi data Latar Belakang Anda. Anda **wajib** mengisi Latar Belakang terlebih dahulu sebelum dapat menambahkan rincian belanja.
                                     </p>
                                 </div>
                             </div>
@@ -124,17 +134,42 @@
                         <div class="mb-4">
                             <textarea name="background" rows="4" 
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" 
-                                placeholder="Tuliskan latar belakang RBA secara lengkap di sini..." 
-                                {{ $submission->header->status_global === 'Locked' ? 'readonly' : '' }} required>{{ old('background', $submission->background) }}</textarea>
+                                placeholder="Tuliskan latar belakang usulan RBA Anda secara spesifik di sini..." 
+                                {{ $submission->header->status_global === 'Locked' ? 'readonly' : '' }} required>{{ old('background', $myBackground ?? $submission->background) }}</textarea>
                         </div>
                         @if($submission->header->status_global !== 'Locked')
                             <div class="flex justify-end">
                                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm shadow-md transition duration-150 ease-in-out">
-                                    {{ empty($submission->background) ? 'Simpan Latar Belakang' : 'Perbarui Latar Belakang' }}
+                                    {{ empty($myBackground) ? 'Simpan Latar Belakang' : 'Perbarui Latar Belakang' }}
                                 </button>
                             </div>
                         @endif
                     </form>
+
+                    {{-- Referensi Latar Belakang Rekan Operator Lain --}}
+                    @if(isset($otherOperatorBackgrounds) && $otherOperatorBackgrounds->isNotEmpty())
+                        <div x-data="{ openOthers: false }" class="mt-6 pt-4 border-t border-gray-200">
+                            <button type="button" @click="openOthers = !openOthers" class="flex items-center justify-between w-full text-left text-xs font-bold text-gray-700 hover:text-indigo-600 transition-colors">
+                                <span class="flex items-center gap-1.5">
+                                    <span>👥</span>
+                                    <span>Lihat Latar Belakang Rekan Operator Lain di Unit Ini ({{ $otherOperatorBackgrounds->count() }})</span>
+                                </span>
+                                <span x-text="openOthers ? '▲ Tutup' : '▼ Lihat'" class="text-[11px] text-indigo-600 font-semibold"></span>
+                            </button>
+                            
+                            <div x-show="openOthers" x-transition class="mt-3 space-y-3">
+                                @foreach($otherOperatorBackgrounds as $otherBg)
+                                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5">
+                                        <div class="flex items-center justify-between mb-1.5 pb-1.5 border-b border-slate-200 text-xs font-bold text-slate-800">
+                                            <span>{{ $otherBg->user->name }}</span>
+                                            <span class="text-[10px] text-gray-400 font-normal">Diperbarui: {{ $otherBg->updated_at->format('d M Y, H:i') }}</span>
+                                        </div>
+                                        <p class="text-xs text-gray-600 whitespace-pre-wrap">{{ $otherBg->background }}</p>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
 
