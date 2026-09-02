@@ -254,7 +254,7 @@
                     </svg>
                 </div>
                 <div class="relative z-10">
-                    <h3 class="text-xl font-extrabold tracking-tight">Selamat Datang, {{ Auth::user()->name }} 👋</h3>
+                    <h3 class="text-xl font-extrabold tracking-tight text-white">Selamat Datang, {{ Auth::user()->name }} 👋</h3>
                     <p class="text-indigo-100 text-sm mt-1 max-w-2xl leading-relaxed">
                         Pantau rekapitulasi seluruh RBA Rumah Sakit. Pilih dokumen RBA untuk melihat rincian total
                         usulan belanja <strong>masing-masing Operator</strong> dalam format <strong>Tabel</strong>

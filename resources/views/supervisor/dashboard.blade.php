@@ -265,7 +265,7 @@
                     </svg>
                 </div>
                 <div class="relative z-10">
-                    <h3 class="text-xl font-extrabold tracking-tight">Selamat Datang Supervisor,
+                    <h3 class="text-xl font-extrabold tracking-tight text-white">Selamat Datang Supervisor,
                         {{ Auth::user()->name }} 👋
                     </h3>
                     <p class="text-emerald-100 text-sm mt-1 max-w-2xl leading-relaxed">

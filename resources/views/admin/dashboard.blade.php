@@ -243,7 +243,7 @@
                     </svg>
                 </div>
                 <div class="relative z-10">
-                    <h3 class="text-xl font-extrabold tracking-tight">Selamat Datang Administrator,
+                    <h3 class="text-xl font-extrabold tracking-tight text-white">Selamat Datang Administrator,
                         {{ Auth::user()->name }} 🛡️
                     </h3>
                     <p class="text-slate-200 text-sm mt-1 max-w-2xl leading-relaxed">
