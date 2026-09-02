@@ -139,48 +139,112 @@
                 </div>
             @endif
 
-            <!-- Latar Belakang RBA per Operator Section -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80 mb-6">
+            <!-- Latar Belakang RBA per Operator Section (Accordion / Buka-Tutup) -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80 mb-6"
+                x-data="{
+                    sectionOpen: true,
+                    openOperators: {},
+                    toggleOperator(id) {
+                        this.openOperators[id] = !this.openOperators[id];
+                    },
+                    isOpen(id) {
+                        return !!this.openOperators[id];
+                    },
+                    toggleAll(openState) {
+                        @foreach($operators as $op)
+                            this.openOperators[{{ $op->id }}] = openState;
+                        @endforeach
+                    }
+                }"
+                x-init="
+                    @foreach($operators as $op)
+                        openOperators[{{ $op->id }}] = false;
+                    @endforeach
+                ">
                 <div class="p-6">
-                    <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
-                        <div class="flex items-center gap-2.5">
+                    <!-- Main Header Bar -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-5 border-b border-slate-100 gap-3">
+                        <div class="flex items-center gap-2.5 cursor-pointer select-none" @click="sectionOpen = !sectionOpen" title="Klik untuk meminimalkan/membuka panel latar belakang">
                             <span class="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                             </span>
                             <div>
-                                <h3 class="font-extrabold text-base text-gray-900">Latar Belakang RBA per Operator</h3>
+                                <h3 class="font-extrabold text-base text-gray-900 flex items-center gap-2">
+                                    <span>Latar Belakang RBA per Operator</span>
+                                    <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" :class="sectionOpen ? 'rotate-180 text-emerald-600' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </h3>
                                 <p class="text-xs text-slate-500">Rincian justifikasi dan latar belakang usulan belanja dari masing-masing operator aktif di unit ini</p>
                             </div>
                         </div>
-                        <div class="text-xs font-semibold px-3 py-1 bg-slate-100 text-slate-700 rounded-full">
-                            {{ $operators->count() }} Operator Aktif
+
+                        <!-- Action Controls Toolbar -->
+                        <div class="flex items-center gap-2 self-start sm:self-auto">
+                            <span class="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full">
+                                {{ $operators->count() }} Operator Aktif
+                            </span>
+
+                            <div class="flex items-center gap-1.5 pl-2 border-l border-slate-200" x-show="sectionOpen">
+                                <button type="button" @click="toggleAll(true)" 
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors" 
+                                    title="Buka semua kartu latar belakang operator">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                    <span>Buka Semua</span>
+                                </button>
+                                <button type="button" @click="toggleAll(false)" 
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors" 
+                                    title="Tutup semua kartu latar belakang operator">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                    </svg>
+                                    <span>Tutup Semua</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="space-y-4">
+                    <!-- Accordion Items Container -->
+                    <div x-show="sectionOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" class="space-y-3">
                         @forelse($operators as $op)
                             @php
                                 $opBg = isset($operatorBackgrounds) ? $operatorBackgrounds->get($op->id) : null;
                             @endphp
-                            <div class="border rounded-xl overflow-hidden transition-all {{ $opBg ? 'border-emerald-200 bg-emerald-50/20' : 'border-slate-200 bg-slate-50/50' }}">
-                                <div class="p-4 flex items-center justify-between bg-white border-b border-inherit">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 font-black text-sm flex items-center justify-center shadow-inner">
+                            <div class="border rounded-xl overflow-hidden transition-all duration-200 {{ $opBg ? 'border-emerald-200/80 hover:border-emerald-300' : 'border-slate-200 hover:border-slate-300' }}">
+                                <!-- Operator Card Clickable Header -->
+                                <button type="button" 
+                                    @click="toggleOperator({{ $op->id }})" 
+                                    class="w-full text-left p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white hover:bg-slate-50/80 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 font-black text-sm flex items-center justify-center shadow-inner flex-shrink-0">
                                             {{ strtoupper(substr($op->name, 0, 2)) }}
                                         </div>
-                                        <div>
-                                            <h4 class="text-sm font-bold text-gray-900 flex items-center gap-2">
-                                                <span>{{ $op->name }}</span>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <h4 class="text-sm font-bold text-gray-900 truncate">
+                                                    {{ $op->name }}
+                                                </h4>
                                                 @if($op->nip)
-                                                    <span class="text-[11px] font-normal font-mono text-gray-500">({{ $op->nip }})</span>
+                                                    <span class="text-[11px] font-normal font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">({{ $op->nip }})</span>
                                                 @endif
-                                            </h4>
-                                            <p class="text-[11px] text-gray-400">{{ $op->email }}</p>
+                                            </div>
+                                            
+                                            <!-- Collapsed Preview Snippet -->
+                                            <div class="text-xs text-gray-500 truncate mt-0.5" x-show="!isOpen({{ $op->id }})">
+                                                @if($opBg)
+                                                    <span class="italic text-gray-600">"{{ \Illuminate\Support\Str::limit($opBg->background, 85) }}"</span>
+                                                @else
+                                                    <span class="text-gray-400 italic">Belum mengisi latar belakang</span>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
-                                    <div>
+
+                                    <div class="flex items-center gap-3 self-end md:self-center flex-shrink-0">
                                         @if($opBg)
                                             <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200">
                                                 <span>✓</span>
@@ -192,23 +256,41 @@
                                                 <span>Belum Mengisi</span>
                                             </span>
                                         @endif
-                                    </div>
-                                </div>
 
-                                <div class="p-4">
+                                        <div class="flex items-center gap-1 text-xs font-semibold text-slate-500 pl-2 border-l border-slate-200">
+                                            <span class="hidden sm:inline text-[11px]" x-text="isOpen({{ $op->id }}) ? 'Tutup' : 'Buka'"></span>
+                                            <svg class="w-4 h-4 transition-transform duration-200" :class="isOpen({{ $op->id }}) ? 'rotate-180 text-emerald-600' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                <!-- Operator Card Collapsible Content -->
+                                <div x-show="isOpen({{ $op->id }})" 
+                                    x-transition:enter="transition ease-out duration-200" 
+                                    x-transition:enter-start="opacity-0 -translate-y-2" 
+                                    x-transition:enter-end="opacity-100 translate-y-0"
+                                    class="p-4 border-t border-slate-100 bg-slate-50/50">
                                     @if($opBg)
-                                        <div class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed bg-white p-3.5 rounded-lg border border-slate-200">
+                                        <div class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                                             {{ $opBg->background }}
                                         </div>
                                         @if($opBg->updated_at)
-                                            <div class="mt-2 text-[11px] text-gray-400 text-right">
-                                                Terakhir diperbarui: {{ $opBg->updated_at->format('d M Y, H:i') }}
+                                            <div class="mt-2 text-[11px] text-gray-400 text-right flex items-center justify-end gap-1">
+                                                <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span>Terakhir diperbarui: {{ $opBg->updated_at->format('d M Y, H:i') }}</span>
                                             </div>
                                         @endif
                                     @else
-                                        <p class="text-xs text-gray-400 italic py-2">
-                                            Operator ini belum mengisi data latar belakang untuk periode usulan ini.
-                                        </p>
+                                        <div class="p-4 bg-amber-50/50 border border-amber-200/70 rounded-xl text-xs text-amber-800 flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                                            </svg>
+                                            <span>Operator ini belum mengisi data latar belakang usulan RBA untuk periode ini.</span>
+                                        </div>
                                     @endif
                                 </div>
                             </div>

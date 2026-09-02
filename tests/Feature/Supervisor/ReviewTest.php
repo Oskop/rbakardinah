@@ -438,4 +438,35 @@ class ReviewTest extends TestCase
         $this->assertStringContainsString('Operator Dua:', $compiled);
         $this->assertStringContainsString('Latar Belakang Khusus Operator Dua', $compiled);
     }
+
+    public function test_supervisor_view_contains_collapsible_accordion_controls_for_operator_backgrounds()
+    {
+        $operator = User::factory()->create([
+            'role' => 'Operator',
+            'unit_id' => $this->supervisor->unit_id,
+            'name' => 'Operator Gamma',
+            'is_active' => true,
+        ]);
+
+        \App\Models\RbaSubmissionOperatorBackground::create([
+            'rba_submission_id' => $this->submission->id,
+            'user_id' => $operator->id,
+            'background' => 'Latar Belakang Operasional Gamma yang sangat detail dan komprehensif untuk pengadaan alat medis.',
+        ]);
+
+        $response = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.show', $this->submission->id));
+
+        $response->assertStatus(200);
+        // Verify presence of accordion toolbar buttons
+        $response->assertSee('Buka Semua');
+        $response->assertSee('Tutup Semua');
+        // Verify presence of Alpine.js accordion directives
+        $response->assertSee('toggleOperator(' . $operator->id . ')');
+        $response->assertSee('isOpen(' . $operator->id . ')');
+        $response->assertSee('toggleAll(true)');
+        $response->assertSee('toggleAll(false)');
+        // Verify presence of operator info and content
+        $response->assertSee('Operator Gamma');
+        $response->assertSee('Latar Belakang Operasional Gamma');
+    }
 }
