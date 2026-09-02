@@ -177,4 +177,95 @@ class AdminDashboardTest extends TestCase
         $resUnit1->assertDontSee('Item Farmasi');
         $resUnit1->assertSee('Unit Rawat Inap');
     }
+
+    public function test_admin_can_view_unit_monitoring_with_supervisor_and_operator_progress()
+    {
+        $admin = User::factory()->create(['role' => 'Administrator']);
+        $unit = \App\Models\Unit::create(['code' => 'U01', 'name' => 'Unit Pelayanan Medis']);
+
+        $supervisor = User::factory()->create([
+            'role' => 'Supervisor',
+            'unit_id' => $unit->id,
+            'name' => 'Dr. Supervisor Medis',
+            'is_active' => true,
+        ]);
+
+        $operator = User::factory()->create([
+            'role' => 'Operator',
+            'unit_id' => $unit->id,
+            'name' => 'Operator Medis Alfa',
+            'is_active' => true,
+        ]);
+
+        $period = RbaPeriod::create(['name' => 'Murni']);
+        $header = RbaHeader::create([
+            'year' => 2026,
+            'period_id' => $period->id,
+            'admin_id' => $admin->id,
+            'status_global' => 'Draft'
+        ]);
+
+        $submission = \App\Models\RbaSubmission::create([
+            'rba_header_id' => $header->id,
+            'unit_id' => $unit->id,
+            'status_submission' => 'Pending Supervisor',
+        ]);
+
+        // Operator background
+        \App\Models\RbaSubmissionOperatorBackground::create([
+            'rba_submission_id' => $submission->id,
+            'user_id' => $operator->id,
+            'background' => 'Latar Belakang Pelayanan Medis Unit Alfa',
+        ]);
+
+        // KAK document
+        $doc = \App\Models\RbaSubmissionDocument::create([
+            'rba_submission_id' => $submission->id,
+            'user_id' => $operator->id,
+            'type' => 'KAK',
+        ]);
+        \App\Models\RbaSubmissionDocumentVersion::create([
+            'rba_submission_document_id' => $doc->id,
+            'file_path' => 'docs/kak.pdf',
+            'version_number' => 1,
+            'uploaded_by' => $operator->id,
+        ]);
+
+        $group = \App\Models\KelompokBelanja::create(['kode' => 'KB01', 'name' => 'Group']);
+        $ac = \App\Models\AccountCode::create(['kelompok_belanja_id' => $group->id, 'code' => '5.1.01', 'name' => 'Belanja Barang']);
+
+        \App\Models\RbaDetail::create([
+            'rba_submission_id' => $submission->id,
+            'account_code_id' => $ac->id,
+            'description' => 'Alat Medis Alfa',
+            'volume' => 1,
+            'satuan' => 'Set',
+            'harga_satuan' => 15000000,
+            'nominal_request' => 15000000,
+            'created_by' => $operator->id,
+            'is_submitted' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.headers.show', $header->id));
+
+        $response->assertStatus(200);
+
+        // Verify monitoring panel
+        $response->assertSee('Monitoring Penginputan Unit dan Progres RBA');
+        $response->assertSee('Unit Pelayanan Medis');
+        $response->assertSee('Dr. Supervisor Medis');
+        $response->assertSee('15.000.000');
+
+        // Verify operator metrics
+        $response->assertSee('Operator Medis Alfa');
+        $response->assertSee('Sudah Diisi');
+        $response->assertSee('KAK');
+        $response->assertSee('RAK');
+        $response->assertSee('RTP');
+
+        // Verify underlying RBA tree table is completely intact
+        $response->assertSee('KODE REKENING');
+        $response->assertSee('URAIAN BELANJA');
+        $response->assertSee('USULAN (Rp)');
+    }
 }

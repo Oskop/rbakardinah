@@ -70,7 +70,18 @@ class RbaHeaderController extends Controller
      */
     public function show(\App\Models\RbaHeader $header)
     {
-        $header->load(['submissions.unit', 'period', 'admin']);
+        $header->load([
+            'submissions.unit.users' => function ($q) {
+                $q->where('is_active', true)->orderBy('role')->orderBy('name');
+            },
+            'submissions.operatorBackgrounds',
+            'submissions.documents.latestVersion',
+            'submissions.details' => function ($q) {
+                $q->with(['attachments', 'creator', 'validator']);
+            },
+            'period',
+            'admin'
+        ]);
 
         // 1. Fetch all account codes
         $accountCodes = \App\Models\AccountCode::orderBy('code')->get();
@@ -78,7 +89,7 @@ class RbaHeaderController extends Controller
         // 2. Fetch all RBA details for this header
         $submissionIds = $header->submissions->pluck('id');
         $details = \App\Models\RbaDetail::whereIn('rba_submission_id', $submissionIds)
-            ->with(['creator', 'validator'])
+            ->with(['creator', 'validator', 'attachments'])
             ->get();
 
         // 3. Fetch all Global Pagu for this header
@@ -139,7 +150,82 @@ class RbaHeaderController extends Controller
         $units = \App\Models\Unit::orderBy('name')->get();
         $allOperators = \App\Models\User::where('role', 'Operator')->with('unit')->orderBy('name')->get();
 
-        return view('admin.headers.show', compact('header', 'reportData', 'totalUsulan', 'totalPagu', 'units', 'allOperators'));
+        // 4. Build Unit Monitoring Metrics (Supervisor & Operator Level)
+        $unitMonitoring = $header->submissions->map(function ($submission) {
+            $unit = $submission->unit;
+            $supervisors = $unit ? $unit->users->where('role', 'Supervisor')->values() : collect();
+            $operators = $unit ? $unit->users->where('role', 'Operator')->values() : collect();
+
+            $submissionDetails = $submission->details;
+            $totalNominalUnit = (float) $submissionDetails->sum('nominal_request');
+            $validatedDetailsCount = $submissionDetails->where('is_validated', true)->count();
+            $rejectedDetailsCount = $submissionDetails->where('is_rejected', true)->count();
+            $totalDetailsCount = $submissionDetails->count();
+
+            $operatorBackgrounds = $submission->operatorBackgrounds->keyBy('user_id');
+            $documentsByUser = $submission->documents->groupBy('user_id');
+
+            $operatorMetrics = $operators->map(function ($operator) use ($submission, $submissionDetails, $operatorBackgrounds, $documentsByUser) {
+                // 1. Status Latar Belakang
+                $hasOwnBg = $operatorBackgrounds->has($operator->id) && !empty(trim($operatorBackgrounds->get($operator->id)->background ?? ''));
+                $hasLegacyBg = !empty(trim($submission->background ?? ''));
+                $hasBackground = $hasOwnBg || ($operatorBackgrounds->isEmpty() && $hasLegacyBg);
+
+                // 2. Besar Nominal Usulan Operator
+                $opDetails = $submissionDetails->where('created_by', $operator->id);
+                $nominalUsulan = (float) $opDetails->sum('nominal_request');
+                $itemCount = $opDetails->count();
+
+                // 3. Kelengkapan Upload PDF-PDF
+                // a) KAK, RAK, RTP
+                $userDocs = $documentsByUser->get($operator->id, collect());
+                $kakDoc = $userDocs->firstWhere('type', 'KAK');
+                $rakDoc = $userDocs->firstWhere('type', 'RAK');
+                $rtpDoc = $userDocs->firstWhere('type', 'RTP');
+
+                $hasKak = $kakDoc && $kakDoc->latestVersion !== null;
+                $hasRak = $rakDoc && $rakDoc->latestVersion !== null;
+                $hasRtp = $rtpDoc && $rtpDoc->latestVersion !== null;
+                $mandatoryDocsCount = ($hasKak ? 1 : 0) + ($hasRak ? 1 : 0) + ($hasRtp ? 1 : 0);
+
+                // b) PDF Lampiran Rincian Belanja
+                $detailsWithPdf = $opDetails->filter(function ($d) {
+                    return $d->attachments && $d->attachments->isNotEmpty();
+                })->count();
+
+                $isAllComplete = $hasBackground && $mandatoryDocsCount === 3 && ($itemCount === 0 || $detailsWithPdf === $itemCount);
+
+                return [
+                    'operator' => $operator,
+                    'has_background' => $hasBackground,
+                    'background_text' => $hasOwnBg ? $operatorBackgrounds->get($operator->id)->background : null,
+                    'nominal_usulan' => $nominalUsulan,
+                    'item_count' => $itemCount,
+                    'has_kak' => $hasKak,
+                    'has_rak' => $hasRak,
+                    'has_rtp' => $hasRtp,
+                    'mandatory_docs_count' => $mandatoryDocsCount,
+                    'details_with_pdf_count' => $detailsWithPdf,
+                    'total_details_count' => $itemCount,
+                    'is_all_complete' => $isAllComplete,
+                ];
+            });
+
+            return [
+                'submission_id' => $submission->id,
+                'status_submission' => $submission->status_submission,
+                'unit' => $unit,
+                'supervisors' => $supervisors,
+                'total_nominal' => $totalNominalUnit,
+                'total_details' => $totalDetailsCount,
+                'validated_details' => $validatedDetailsCount,
+                'rejected_details' => $rejectedDetailsCount,
+                'operators_count' => $operators->count(),
+                'operators_monitoring' => $operatorMetrics,
+            ];
+        });
+
+        return view('admin.headers.show', compact('header', 'reportData', 'totalUsulan', 'totalPagu', 'units', 'allOperators', 'unitMonitoring'));
     }
 
     /**
