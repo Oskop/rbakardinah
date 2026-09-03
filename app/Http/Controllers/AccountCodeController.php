@@ -20,7 +20,7 @@ class AccountCodeController extends Controller
      */
     public function create()
     {
-        $groups = \App\Models\KelompokBelanja::all();
+        $groups = \App\Models\KelompokBelanja::where('is_active', true)->orderBy('kode')->get();
         return view('admin.account-codes.create', compact('groups'));
     }
 
@@ -53,7 +53,10 @@ class AccountCodeController extends Controller
      */
     public function edit(\App\Models\AccountCode $accountCode)
     {
-        $groups = \App\Models\KelompokBelanja::all();
+        $groups = \App\Models\KelompokBelanja::where('is_active', true)
+            ->orWhere('id', $accountCode->kelompok_belanja_id)
+            ->orderBy('kode')
+            ->get();
         return view('admin.account-codes.edit', compact('accountCode', 'groups'));
     }
 

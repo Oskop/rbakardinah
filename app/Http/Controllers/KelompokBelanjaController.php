@@ -11,7 +11,7 @@ class KelompokBelanjaController extends Controller
      */
     public function index()
     {
-        $groups = \App\Models\KelompokBelanja::all();
+        $groups = \App\Models\KelompokBelanja::withCount('accountCodes')->orderBy('kode')->get();
         return view('admin.kelompok-belanjas.index', compact('groups'));
     }
 
@@ -31,7 +31,12 @@ class KelompokBelanjaController extends Controller
         $validated = $request->validate([
             'kode' => 'required|string|max:50|unique:kelompok_belanjas,kode',
             'name' => 'required|string|max:150|unique:kelompok_belanjas,name',
+            'is_active' => 'sometimes|boolean',
         ]);
+
+        if (!isset($validated['is_active'])) {
+            $validated['is_active'] = true;
+        }
 
         \App\Models\KelompokBelanja::create($validated);
 
@@ -54,6 +59,7 @@ class KelompokBelanjaController extends Controller
         $validated = $request->validate([
             'kode' => 'required|string|max:50|unique:kelompok_belanjas,kode,' . $kelompokBelanja->id,
             'name' => 'required|string|max:150|unique:kelompok_belanjas,name,' . $kelompokBelanja->id,
+            'is_active' => 'sometimes|boolean',
         ]);
 
         $kelompokBelanja->update($validated);
@@ -62,17 +68,13 @@ class KelompokBelanjaController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Toggle Kelompok Belanja active status instead of permanent deletion.
      */
     public function destroy(\App\Models\KelompokBelanja $kelompokBelanja)
     {
-        // Check if there are account codes using this group
-        if ($kelompokBelanja->accountCodes()->count() > 0) {
-            return redirect()->route('admin.kelompok-belanja.index')->with('error', 'Cannot delete group that is currently used by Account Codes.');
-        }
+        $kelompokBelanja->update(['is_active' => !$kelompokBelanja->is_active]);
 
-        $kelompokBelanja->delete();
-
-        return redirect()->route('admin.kelompok-belanja.index')->with('success', 'Kelompok Belanja deleted successfully.');
+        $status = $kelompokBelanja->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        return redirect()->route('admin.kelompok-belanja.index')->with('success', "Kelompok Belanja {$kelompokBelanja->name} berhasil {$status}.");
     }
 }

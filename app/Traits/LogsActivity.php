@@ -121,6 +121,15 @@ trait LogsActivity
             return "{$actor} {$actionVerb} data Unit: \"{$unitName}\"";
         }
 
+        if ($modelName === 'KelompokBelanja') {
+            $groupName = ($model->kode ?? '') . ' - ' . ($model->name ?? ($model->getOriginal('name') ?? "#{$key}"));
+            if ($action === 'updated' && isset($new['is_active'])) {
+                $statusText = $new['is_active'] ? 'mengaktifkan' : 'menonaktifkan';
+                return "{$actor} {$statusText} Kelompok Belanja: \"{$groupName}\"";
+            }
+            return "{$actor} {$actionVerb} Kelompok Belanja: \"{$groupName}\"";
+        }
+
         if ($modelName === 'AccountCode') {
             $codeName = ($model->code ?? '') . ' - ' . ($model->name ?? "#{$key}");
             return "{$actor} {$actionVerb} Nomor Rekening: \"{$codeName}\"";
