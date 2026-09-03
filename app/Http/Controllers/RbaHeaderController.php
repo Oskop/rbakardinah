@@ -198,7 +198,7 @@ class RbaHeaderController extends Controller
                 return [
                     'operator' => $operator,
                     'has_background' => $hasBackground,
-                    'background_text' => $hasOwnBg ? $operatorBackgrounds->get($operator->id)->background : null,
+                    'background_text' => $hasOwnBg ? $operatorBackgrounds->get($operator->id)->background : ($hasLegacyBg ? $submission->background : null),
                     'nominal_usulan' => $nominalUsulan,
                     'item_count' => $itemCount,
                     'has_kak' => $hasKak,

@@ -256,9 +256,12 @@ class AdminDashboardTest extends TestCase
         $response->assertSee('Dr. Supervisor Medis');
         $response->assertSee('15.000.000');
 
-        // Verify operator metrics
+        // Verify operator metrics & interactive background modal
         $response->assertSee('Operator Medis Alfa');
         $response->assertSee('Sudah Diisi');
+        $response->assertSee('Klik untuk melihat isi latar belakang');
+        $response->assertSee('Latar Belakang Pelayanan Medis Unit Alfa');
+        $response->assertSee('Latar Belakang Usulan RBA');
         $response->assertSee('KAK');
         $response->assertSee('RAK');
         $response->assertSee('RTP');

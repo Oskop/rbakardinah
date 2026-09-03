@@ -190,6 +190,18 @@
                                 panelOpen: true,
                                 searchUnit: '',
                                 openUnits: {},
+                                bgModalOpen: false,
+                                modalOperatorName: '',
+                                modalOperatorNip: '',
+                                modalUnitName: '',
+                                modalBackgroundText: '',
+                                showBackground(opName, opNip, unitName, text) {
+                                    this.modalOperatorName = opName;
+                                    this.modalOperatorNip = opNip || '-';
+                                    this.modalUnitName = unitName;
+                                    this.modalBackgroundText = text || 'Belum ada isi latar belakang.';
+                                    this.bgModalOpen = true;
+                                },
                                 toggleUnit(id) {
                                     this.openUnits[id] = !this.openUnits[id];
                                 },
@@ -360,15 +372,19 @@
                                                                     </div>
                                                                 </td>
 
-                                                                <!-- Latar Belakang Status -->
+                                                                <!-- Latar Belakang Status (Clickable to View Content) -->
                                                                 <td class="px-3 py-2.5 text-center">
                                                                     @if($op['has_background'])
-                                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-800 border border-green-200" title="{{ $op['background_text'] }}">
-                                                                            <span>✓</span>
+                                                                        <button type="button" 
+                                                                            @click="showBackground('{{ addslashes($op['operator']->name) }}', '{{ addslashes($op['operator']->nip ?? '') }}', '{{ addslashes($m['unit']?->name ?? 'Unit') }}', {{ json_encode($op['background_text']) }})"
+                                                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-xs transition-all cursor-pointer group"
+                                                                            title="Klik untuk melihat isi latar belakang">
+                                                                            <span class="text-emerald-600">✓</span>
                                                                             <span>Sudah Diisi</span>
-                                                                        </span>
+                                                                            <span class="text-[10px] opacity-70 group-hover:opacity-100 ml-0.5">👁️</span>
+                                                                        </button>
                                                                     @else
-                                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                                                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
                                                                             <span>⚠️</span>
                                                                             <span>Belum Diisi</span>
                                                                         </span>
@@ -439,6 +455,69 @@
                                 @empty
                                     <p class="text-xs text-gray-500 italic text-center py-4">Belum ada unit yang terdaftar pada RBA periode ini.</p>
                                 @endforelse
+                            </div>
+
+                            <!-- Modal Detail Latar Belakang Operator -->
+                            <div x-show="bgModalOpen" 
+                                x-transition:enter="ease-out duration-300"
+                                x-transition:enter-start="opacity-0"
+                                x-transition:enter-end="opacity-100"
+                                x-transition:leave="ease-in duration-200"
+                                x-transition:leave-start="opacity-100"
+                                x-transition:leave-end="opacity-0"
+                                @keydown.escape.window="bgModalOpen = false"
+                                class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+                                <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                                    <!-- Backdrop -->
+                                    <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" @click="bgModalOpen = false"></div>
+
+                                    <!-- Modal Container -->
+                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                                    <div x-show="bgModalOpen" 
+                                        x-transition:enter="ease-out duration-300"
+                                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                                        x-transition:leave="ease-in duration-200"
+                                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                        class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-200">
+                                        
+                                        <!-- Modal Header -->
+                                        <div class="bg-gradient-to-r from-slate-900 to-indigo-950 px-6 py-4 flex items-center justify-between text-white">
+                                            <div class="flex items-center gap-2.5">
+                                                <span class="p-1.5 bg-white/10 rounded-lg text-lg">📄</span>
+                                                <div>
+                                                    <h3 class="text-sm font-bold text-white leading-tight">Latar Belakang Usulan RBA</h3>
+                                                    <p class="text-[11px] text-slate-300 mt-0.5">
+                                                        <span x-text="modalUnitName"></span> &bull; Operator: <span class="font-semibold text-white" x-text="modalOperatorName"></span> (<span x-text="modalOperatorNip"></span>)
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button type="button" @click="bgModalOpen = false" 
+                                                class="text-slate-400 hover:text-white rounded-lg p-1 transition-colors text-xl font-bold leading-none">&times;</button>
+                                        </div>
+
+                                        <!-- Modal Body (Background Text) -->
+                                        <div class="p-6 space-y-4">
+                                            <div class="flex items-center justify-between text-xs text-slate-500 pb-2 border-b border-slate-100">
+                                                <span class="font-bold uppercase tracking-wider text-[10px] text-indigo-700">Narasi Latar Belakang Usulan</span>
+                                                <span class="text-[11px] italic text-slate-400">Diinput oleh Operator</span>
+                                            </div>
+                                            
+                                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 max-h-96 overflow-y-auto shadow-inner text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-line font-sans"
+                                                x-text="modalBackgroundText">
+                                            </div>
+                                        </div>
+
+                                        <!-- Modal Footer -->
+                                        <div class="bg-slate-100/80 px-6 py-3 border-t border-slate-200 flex justify-end">
+                                            <button type="button" @click="bgModalOpen = false"
+                                                class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 shadow-sm hover:shadow transition-all">
+                                                Tutup
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
