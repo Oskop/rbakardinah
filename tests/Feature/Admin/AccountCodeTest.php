@@ -55,7 +55,7 @@ class AccountCodeTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.account-codes.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('Account Code Management');
+        $response->assertSee('Manajemen Nomor Rekening');
         $response->assertSee('Status');
         $response->assertSee('Kelompok Belanja');
         $response->assertSee('Belanja Alat Tulis Kantor');

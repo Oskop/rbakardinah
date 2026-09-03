@@ -40,7 +40,7 @@ class UnitManagementTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.units.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('Unit Management');
+        $response->assertSee('Manajemen Unit');
         $response->assertSee('Status');
         $response->assertSee('Pengguna Terdaftar');
         $response->assertSee('Unit Pelayanan Aktif');

@@ -47,7 +47,7 @@ class PeriodManagementTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.periods.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('RBA Period Management');
+        $response->assertSee('Manajemen Periode RBA');
         $response->assertSee('Perencanaan Murni 2026');
         $response->assertSee('Perubahan Masa Lalu Nonaktif');
         $response->assertSee('Active');
