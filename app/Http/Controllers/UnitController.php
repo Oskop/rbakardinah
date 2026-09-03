@@ -11,7 +11,7 @@ class UnitController extends Controller
      */
     public function index()
     {
-        $units = \App\Models\Unit::orderBy('name')->get();
+        $units = \App\Models\Unit::withCount('users')->orderBy('name')->get();
         return view('admin.units.index', compact('units'));
     }
 

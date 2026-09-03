@@ -42,12 +42,22 @@ class UnitManagementTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Unit Management');
         $response->assertSee('Status');
+        $response->assertSee('Pengguna Terdaftar');
         $response->assertSee('Unit Pelayanan Aktif');
         $response->assertSee('Unit Pelayanan Nonaktif');
         $response->assertSee('Active');
         $response->assertSee('Inactive');
         $response->assertSee('Nonaktifkan');
         $response->assertSee('Aktifkan');
+
+        // Verify DataTables & Filter Toolbar UI
+        $response->assertSee('Filter Kolom Unit Kerja');
+        $response->assertSee('id="units-table"', false);
+        $response->assertSee('id="filter-status"', false);
+        $response->assertSee('id="filter-users"', false);
+        $response->assertSee('id="btn-reset-filters"', false);
+        $response->assertSee('data-search="Active"', false);
+        $response->assertSee('data-search="Inactive"', false);
 
         // Verify there is no "Delete" button text
         $response->assertDontSee('Delete');
