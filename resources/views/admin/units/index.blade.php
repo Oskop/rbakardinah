@@ -32,31 +32,42 @@
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Name</th>
                                     <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status</th>
+                                    <th
                                         class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($units as $unit)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 font-mono">
                                             {{ $unit->code }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $unit->name }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">{{ $unit->name }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full {{ $unit->is_active ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-gray-100 text-gray-600 border border-gray-200' }}">
+                                                {{ $unit->is_active ? 'Active' : 'Inactive' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                             <a href="{{ route('admin.units.edit', $unit) }}"
-                                                class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                                                class="text-indigo-600 hover:text-indigo-900 font-semibold transition-colors mr-2">Edit</a>
                                             <form action="{{ route('admin.units.destroy', $unit) }}" method="POST"
                                                 class="inline-block"
-                                                onsubmit="return confirm('Are you sure you want to delete this unit?');">
+                                                onsubmit="return confirm('Apakah Anda yakin ingin ' + ({{ $unit->is_active ? 'true' : 'false' }} ? 'menonaktifkan' : 'mengaktifkan') + ' unit kerja {{ addslashes($unit->name) }}?');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                                <button type="submit"
+                                                    class="{{ $unit->is_active ? 'text-amber-600 hover:text-amber-900 font-semibold' : 'text-green-600 hover:text-green-900 font-semibold' }} transition-colors">
+                                                    {{ $unit->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                                </button>
                                             </form>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="3" class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">No
+                                        <td colspan="4" class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">No
                                             units found.</td>
                                     </tr>
                                 @endforelse

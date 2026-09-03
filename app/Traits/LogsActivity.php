@@ -114,6 +114,10 @@ trait LogsActivity
 
         if ($modelName === 'Unit') {
             $unitName = $model->name ?? ($model->getOriginal('name') ?? "#{$key}");
+            if ($action === 'updated' && isset($new['is_active'])) {
+                $statusText = $new['is_active'] ? 'mengaktifkan' : 'menonaktifkan';
+                return "{$actor} {$statusText} Unit Kerja: \"{$unitName}\"";
+            }
             return "{$actor} {$actionVerb} data Unit: \"{$unitName}\"";
         }
 

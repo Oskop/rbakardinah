@@ -10,7 +10,19 @@ class Unit extends Model
 {
     use LogsActivity;
 
-    protected $fillable = ['code', 'name'];
+    protected $fillable = ['code', 'name', 'is_active'];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
 
     /**
      * Get the users associated with the unit.

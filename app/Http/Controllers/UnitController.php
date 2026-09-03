@@ -11,7 +11,7 @@ class UnitController extends Controller
      */
     public function index()
     {
-        $units = \App\Models\Unit::all();
+        $units = \App\Models\Unit::orderBy('name')->get();
         return view('admin.units.index', compact('units'));
     }
 
@@ -31,7 +31,12 @@ class UnitController extends Controller
         $validated = $request->validate([
             'code' => 'required|string|max:20|unique:units,code',
             'name' => 'required|string|max:100',
+            'is_active' => 'sometimes|boolean',
         ]);
+
+        if (!isset($validated['is_active'])) {
+            $validated['is_active'] = true;
+        }
 
         \App\Models\Unit::create($validated);
 
@@ -62,6 +67,7 @@ class UnitController extends Controller
         $validated = $request->validate([
             'code' => 'required|string|max:20|unique:units,code,' . $unit->id,
             'name' => 'required|string|max:100',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         $unit->update($validated);
@@ -70,12 +76,13 @@ class UnitController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Toggle unit active status instead of permanent deletion.
      */
     public function destroy(\App\Models\Unit $unit)
     {
-        $unit->delete();
+        $unit->update(['is_active' => !$unit->is_active]);
 
-        return redirect()->route('admin.units.index')->with('success', 'Unit deleted successfully.');
+        $status = $unit->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        return redirect()->route('admin.units.index')->with('success', "Unit {$unit->name} berhasil {$status}.");
     }
 }
