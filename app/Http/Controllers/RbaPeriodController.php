@@ -11,7 +11,7 @@ class RbaPeriodController extends Controller
      */
     public function index()
     {
-        $periods = \App\Models\RbaPeriod::all();
+        $periods = \App\Models\RbaPeriod::withCount('headers')->orderBy('name')->get();
         return view('admin.periods.index', compact('periods'));
     }
 
@@ -30,7 +30,12 @@ class RbaPeriodController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:rba_periods,name',
+            'is_active' => 'sometimes|boolean',
         ]);
+
+        if (!isset($validated['is_active'])) {
+            $validated['is_active'] = true;
+        }
 
         \App\Models\RbaPeriod::create($validated);
 
@@ -60,6 +65,7 @@ class RbaPeriodController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:rba_periods,name,' . $period->id,
+            'is_active' => 'sometimes|boolean',
         ]);
 
         $period->update($validated);
@@ -68,12 +74,13 @@ class RbaPeriodController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Toggle RBA Period active status instead of permanent deletion.
      */
     public function destroy(\App\Models\RbaPeriod $period)
     {
-        $period->delete();
+        $period->update(['is_active' => !$period->is_active]);
 
-        return redirect()->route('admin.periods.index')->with('success', 'RBA Period deleted successfully.');
+        $status = $period->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        return redirect()->route('admin.periods.index')->with('success', "Periode RBA {$period->name} berhasil {$status}.");
     }
 }

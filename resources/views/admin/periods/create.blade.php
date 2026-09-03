@@ -27,6 +27,16 @@
                             @enderror
                         </div>
 
+                        <div class="mb-4">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }}
+                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                <span class="ml-2 text-sm font-medium text-gray-700">Status Aktif (Active)</span>
+                            </label>
+                            <p class="text-xs text-gray-500 mt-1">Hilangkan centang jika ingin menambahkan periode ini sebagai nonaktif.</p>
+                        </div>
+
                         <div class="flex items-center justify-end mt-4">
                             <a href="{{ route('admin.periods.index') }}"
                                 class="text-sm text-gray-600 hover:text-gray-900 mr-4">Cancel</a>

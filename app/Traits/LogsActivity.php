@@ -139,6 +139,15 @@ trait LogsActivity
             return "{$actor} {$actionVerb} Nomor Rekening: \"{$codeName}\"";
         }
 
+        if ($modelName === 'RbaPeriod') {
+            $periodName = $model->name ?? ($model->getOriginal('name') ?? "#{$key}");
+            if ($action === 'updated' && isset($new['is_active'])) {
+                $statusText = $new['is_active'] ? 'mengaktifkan' : 'menonaktifkan';
+                return "{$actor} {$statusText} Periode RBA: \"{$periodName}\"";
+            }
+            return "{$actor} {$actionVerb} Periode RBA: \"{$periodName}\"";
+        }
+
         if ($modelName === 'RbaAttachment') {
             $ver = $model->version_number ?? '1';
             return "{$actor} {$actionVerb} lampiran PDF dokumen (Versi {$ver})";

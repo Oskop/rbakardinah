@@ -20,7 +20,7 @@ class RbaHeaderController extends Controller
      */
     public function create()
     {
-        $periods = \App\Models\RbaPeriod::all();
+        $periods = \App\Models\RbaPeriod::where('is_active', true)->orderBy('name')->get();
         return view('admin.headers.create', compact('periods'));
     }
 
