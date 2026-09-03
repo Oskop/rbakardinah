@@ -9,7 +9,19 @@ class AccountCode extends Model
 {
     use LogsActivity;
 
-    protected $fillable = ['kelompok_belanja_id', 'code', 'name'];
+    protected $fillable = ['kelompok_belanja_id', 'code', 'name', 'is_active'];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
 
     public function kelompokBelanja(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {

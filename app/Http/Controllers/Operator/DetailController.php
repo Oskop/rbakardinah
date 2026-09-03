@@ -29,11 +29,13 @@ class DetailController extends Controller
                 ->with('error', 'Sebelum menginput rincian belanja, Anda wajib mengisi data latar belakang terlebih dahulu.');
         }
 
-        // Only show account codes that are NOT locked by pagu
+        // Only show account codes that are active and NOT locked by pagu
         $lockedAccountIds = \App\Models\RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)
             ->pluck('account_code_id');
 
-        $accountCodes = AccountCode::whereNotIn('id', $lockedAccountIds)->get();
+        $accountCodes = AccountCode::where('is_active', true)
+            ->whereNotIn('id', $lockedAccountIds)
+            ->get();
         return view('operator.details.create', compact('submission', 'accountCodes'));
     }
 
@@ -48,7 +50,11 @@ class DetailController extends Controller
         $lockedAccountIds = \App\Models\RbaAccountPagu::where('rba_header_id', $detail->submission->rba_header_id)
             ->pluck('account_code_id');
 
-        $accountCodes = AccountCode::whereNotIn('id', $lockedAccountIds)->get();
+        $accountCodes = AccountCode::where(function ($q) use ($detail) {
+                $q->where('is_active', true)->orWhere('id', $detail->account_code_id);
+            })
+            ->whereNotIn('id', $lockedAccountIds)
+            ->get();
         return view('operator.details.edit', compact('detail', 'accountCodes'));
     }
 

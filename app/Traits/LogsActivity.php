@@ -131,7 +131,11 @@ trait LogsActivity
         }
 
         if ($modelName === 'AccountCode') {
-            $codeName = ($model->code ?? '') . ' - ' . ($model->name ?? "#{$key}");
+            $codeName = ($model->code ?? '') . ' - ' . ($model->name ?? ($model->getOriginal('name') ?? "#{$key}"));
+            if ($action === 'updated' && isset($new['is_active'])) {
+                $statusText = $new['is_active'] ? 'mengaktifkan' : 'menonaktifkan';
+                return "{$actor} {$statusText} Nomor Rekening: \"{$codeName}\"";
+            }
             return "{$actor} {$actionVerb} Nomor Rekening: \"{$codeName}\"";
         }
 

@@ -11,8 +11,9 @@ class AccountCodeController extends Controller
      */
     public function index()
     {
-        $accountCodes = \App\Models\AccountCode::with('kelompokBelanja')->get();
-        return view('admin.account-codes.index', compact('accountCodes'));
+        $accountCodes = \App\Models\AccountCode::with('kelompokBelanja')->orderBy('code')->get();
+        $kelompokBelanjas = \App\Models\KelompokBelanja::orderBy('kode')->get();
+        return view('admin.account-codes.index', compact('accountCodes', 'kelompokBelanjas'));
     }
 
     /**
@@ -33,7 +34,12 @@ class AccountCodeController extends Controller
             'kelompok_belanja_id' => 'required|exists:kelompok_belanjas,id',
             'code' => 'required|string|max:20|unique:account_codes,code',
             'name' => 'required|string|max:150',
+            'is_active' => 'sometimes|boolean',
         ]);
+
+        if (!isset($validated['is_active'])) {
+            $validated['is_active'] = true;
+        }
 
         \App\Models\AccountCode::create($validated);
 
@@ -69,6 +75,7 @@ class AccountCodeController extends Controller
             'kelompok_belanja_id' => 'required|exists:kelompok_belanjas,id',
             'code' => 'required|string|max:20|unique:account_codes,code,' . $accountCode->id,
             'name' => 'required|string|max:150',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         $accountCode->update($validated);
@@ -77,12 +84,13 @@ class AccountCodeController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Toggle Account Code active status instead of permanent deletion.
      */
     public function destroy(\App\Models\AccountCode $accountCode)
     {
-        $accountCode->delete();
+        $accountCode->update(['is_active' => !$accountCode->is_active]);
 
-        return redirect()->route('admin.account-codes.index')->with('success', 'Account Code deleted successfully.');
+        $status = $accountCode->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        return redirect()->route('admin.account-codes.index')->with('success', "Nomor Rekening {$accountCode->name} berhasil {$status}.");
     }
 }
