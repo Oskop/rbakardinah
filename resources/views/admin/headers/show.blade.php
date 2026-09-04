@@ -132,11 +132,16 @@
                                     </div>
                                 </div>
 
-                                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-2 border-t border-gray-100">
-                                    <button type="button" @click="openPrintModal = false" class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-200 rounded-xl transition-all">Batal</button>
-                                    <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all flex items-center gap-1.5">
-                                        <span>🌐 Buka Pratinjau Cetak</span>
-                                    </button>
+                                <div class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-100">
+                                    <a href="{{ route('reports.index', ['header_id' => $header->id]) }}" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1">
+                                        <span>📑 Buka di Menu Laporan</span>
+                                    </a>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" @click="openPrintModal = false" class="px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-200 rounded-xl transition-all">Batal</button>
+                                        <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all flex items-center gap-1.5">
+                                            <span>🌐 Buka Pratinjau Cetak</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </form>
                         </div>

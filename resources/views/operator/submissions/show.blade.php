@@ -54,6 +54,18 @@
                                 </a>
                             </div>
                         </div>
+
+                        <!-- Kategori 3: Akses Menu Laporan Lengkap -->
+                        <div class="px-3 py-2 bg-slate-50 rounded-b-xl">
+                            <a href="{{ route('reports.index', ['submission_id' => $submission->id]) }}"
+                                class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center justify-between group transition-colors">
+                                <span class="flex items-center gap-1.5">
+                                    <span>📑</span>
+                                    <span>Buka di Menu Laporan</span>
+                                </span>
+                                <span class="transform group-hover:translate-x-0.5 transition-transform">&rarr;</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
 

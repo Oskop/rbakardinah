@@ -55,6 +55,9 @@
                             <x-nav-link :href="route('admin.headers.index')" :active="request()->routeIs('admin.headers.*')">
                                 {{ __('RBA Headers') }}
                             </x-nav-link>
+                            <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                                {{ __('Laporan') }}
+                            </x-nav-link>
                             <x-nav-link :href="route('admin.logs.index')" :active="request()->routeIs('admin.logs.*')">
                                 {{ __('Log Data') }}
                             </x-nav-link>
@@ -62,6 +65,9 @@
                             <x-nav-link :href="route('supervisor.submissions.index')"
                                 :active="request()->routeIs('supervisor.submissions.*')">
                                 {{ __('Review RBA') }}
+                            </x-nav-link>
+                            <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                                {{ __('Laporan') }}
                             </x-nav-link>
                             <x-nav-link :href="route('supervisor.users.index')"
                                 :active="request()->routeIs('supervisor.users.*')">
@@ -71,6 +77,9 @@
                             <x-nav-link :href="route('operator.submissions.index')"
                                 :active="request()->routeIs('operator.submissions.*')">
                                 {{ __('Workboard RBA') }}
+                            </x-nav-link>
+                            <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                                {{ __('Laporan') }}
                             </x-nav-link>
                         @endif
                     @endauth
@@ -183,6 +192,9 @@
                 <x-responsive-nav-link :href="route('admin.headers.index')" :active="request()->routeIs('admin.headers.*')">
                     {{ __('RBA Headers') }}
                 </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                    {{ __('Laporan') }}
+                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.logs.index')" :active="request()->routeIs('admin.logs.*')">
                     {{ __('Log Data') }}
                 </x-responsive-nav-link>
@@ -190,6 +202,9 @@
                 <x-responsive-nav-link :href="route('supervisor.submissions.index')"
                     :active="request()->routeIs('supervisor.submissions.*')">
                     {{ __('Review RBA') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                    {{ __('Laporan') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('supervisor.users.index')"
                     :active="request()->routeIs('supervisor.users.*')">
@@ -199,6 +214,9 @@
                 <x-responsive-nav-link :href="route('operator.submissions.index')"
                     :active="request()->routeIs('operator.submissions.*')">
                     {{ __('Workboard RBA') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                    {{ __('Laporan') }}
                 </x-responsive-nav-link>
             @endif
         @endauth
