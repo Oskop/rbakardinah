@@ -270,5 +270,97 @@ class AdminDashboardTest extends TestCase
         $response->assertSee('KODE REKENING');
         $response->assertSee('URAIAN BELANJA');
         $response->assertSee('USULAN (Rp)');
+
+        // Verify Document and Proposal PDF modals triggers & titles
+        $response->assertSee('Dokumen Pokok RBA (KAK / RAK / RTP)');
+        $response->assertSee('PDF Lampiran Usulan Belanja');
+        $response->assertSee('showDocuments');
+        $response->assertSee('showProposalPdfs');
+    }
+
+    public function test_admin_can_view_document_and_proposal_pdf_modals_with_versioning()
+    {
+        $admin = User::factory()->create(['role' => 'Administrator']);
+        $unit = \App\Models\Unit::create(['code' => 'U01', 'name' => 'Unit Bedah Sentral']);
+        $supervisor = User::factory()->create(['role' => 'Supervisor', 'unit_id' => $unit->id, 'name' => 'Dr. Supervisor Bedah']);
+        $operator = User::factory()->create(['role' => 'Operator', 'unit_id' => $unit->id, 'name' => 'Operator Bedah']);
+
+        $period = RbaPeriod::create(['name' => 'Murni']);
+        $header = RbaHeader::create([
+            'year' => 2026,
+            'period_id' => $period->id,
+            'admin_id' => $admin->id,
+            'status_global' => 'Draft'
+        ]);
+
+        $submission = \App\Models\RbaSubmission::create([
+            'rba_header_id' => $header->id,
+            'unit_id' => $unit->id,
+            'status_submission' => 'Pending Supervisor',
+        ]);
+
+        // 1. Setup KAK Document with Version 1 and Version 2
+        $kakDoc = \App\Models\RbaSubmissionDocument::create([
+            'rba_submission_id' => $submission->id,
+            'user_id' => $operator->id,
+            'type' => 'KAK',
+        ]);
+        \App\Models\RbaSubmissionDocumentVersion::create([
+            'rba_submission_document_id' => $kakDoc->id,
+            'file_path' => 'documents/kak_v1.pdf',
+            'version_number' => 1,
+            'uploaded_by' => $operator->id,
+        ]);
+        \App\Models\RbaSubmissionDocumentVersion::create([
+            'rba_submission_document_id' => $kakDoc->id,
+            'file_path' => 'documents/kak_v2.pdf',
+            'version_number' => 2,
+            'uploaded_by' => $operator->id,
+        ]);
+
+        // 2. Setup Detail with Attachments V1 and V2
+        $group = \App\Models\KelompokBelanja::create(['kode' => 'KB01', 'name' => 'Group']);
+        $ac = \App\Models\AccountCode::create(['kelompok_belanja_id' => $group->id, 'code' => '5.1.02', 'name' => 'Belanja Pemeliharaan Bedah']);
+
+        $detail = \App\Models\RbaDetail::create([
+            'rba_submission_id' => $submission->id,
+            'account_code_id' => $ac->id,
+            'description' => 'Servis Meja Operasi',
+            'volume' => 1,
+            'satuan' => 'Unit',
+            'harga_satuan' => 25000000,
+            'nominal_request' => 25000000,
+            'created_by' => $operator->id,
+            'is_submitted' => true,
+        ]);
+
+        \App\Models\RbaAttachment::create([
+            'rba_detail_id' => $detail->id,
+            'file_path' => 'attachments/servis_v1.pdf',
+            'version_number' => 1,
+            'uploaded_by' => $operator->id,
+        ]);
+        \App\Models\RbaAttachment::create([
+            'rba_detail_id' => $detail->id,
+            'file_path' => 'attachments/servis_v2.pdf',
+            'version_number' => 2,
+            'uploaded_by' => $operator->id,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.headers.show', $header->id));
+
+        $response->assertStatus(200);
+
+        // Assert KAK Versioning in JSON payload
+        $response->assertSee('documents/kak_v1.pdf');
+        $response->assertSee('documents/kak_v2.pdf');
+        $response->assertSee('2 versi');
+
+        // Assert Proposal PDF Versioning in JSON payload
+        $response->assertSee('attachments/servis_v1.pdf');
+        $response->assertSee('attachments/servis_v2.pdf');
+        $response->assertSee('Servis Meja Operasi');
+        $response->assertSee('5.1.02');
+        $response->assertSee('1/1 PDF');
     }
 }

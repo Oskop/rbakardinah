@@ -75,9 +75,9 @@ class RbaHeaderController extends Controller
                 $q->where('is_active', true)->orderBy('role')->orderBy('name');
             },
             'submissions.operatorBackgrounds',
-            'submissions.documents.latestVersion',
+            'submissions.documents.versions.uploader',
             'submissions.details' => function ($q) {
-                $q->with(['attachments', 'creator', 'validator']);
+                $q->with(['attachments.uploader', 'accountCode', 'creator', 'validator']);
             },
             'period',
             'admin'
@@ -177,21 +177,88 @@ class RbaHeaderController extends Controller
                 $itemCount = $opDetails->count();
 
                 // 3. Kelengkapan Upload PDF-PDF
-                // a) KAK, RAK, RTP
+                // a) KAK, RAK, RTP (dengan riwayat versi)
                 $userDocs = $documentsByUser->get($operator->id, collect());
-                $kakDoc = $userDocs->firstWhere('type', 'KAK');
-                $rakDoc = $userDocs->firstWhere('type', 'RAK');
-                $rtpDoc = $userDocs->firstWhere('type', 'RTP');
+                $docTypes = ['KAK', 'RAK', 'RTP'];
+                $documentsData = [];
+                foreach ($docTypes as $docType) {
+                    $doc = $userDocs->firstWhere('type', $docType);
+                    $versionsList = [];
+                    if ($doc && $doc->versions) {
+                        $versionsList = $doc->versions->sortByDesc('version_number')->map(function ($v) {
+                            return [
+                                'version_number' => $v->version_number,
+                                'file_path' => $v->file_path,
+                                'file_url' => \Illuminate\Support\Facades\Storage::url($v->file_path),
+                                'uploaded_by' => $v->uploader?->name ?? 'Operator',
+                                'created_at' => $v->created_at ? $v->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i') . ' WIB' : '-',
+                            ];
+                        })->values()->all();
+                    }
+                    $documentsData[$docType] = [
+                        'type' => $docType,
+                        'has_doc' => !empty($versionsList),
+                        'versions_count' => count($versionsList),
+                        'latest_url' => !empty($versionsList) ? $versionsList[0]['file_url'] : null,
+                        'versions' => $versionsList,
+                    ];
+                }
 
-                $hasKak = $kakDoc && $kakDoc->latestVersion !== null;
-                $hasRak = $rakDoc && $rakDoc->latestVersion !== null;
-                $hasRtp = $rtpDoc && $rtpDoc->latestVersion !== null;
+                $hasKak = $documentsData['KAK']['has_doc'];
+                $hasRak = $documentsData['RAK']['has_doc'];
+                $hasRtp = $documentsData['RTP']['has_doc'];
                 $mandatoryDocsCount = ($hasKak ? 1 : 0) + ($hasRak ? 1 : 0) + ($hasRtp ? 1 : 0);
 
-                // b) PDF Lampiran Rincian Belanja
-                $detailsWithPdf = $opDetails->filter(function ($d) {
-                    return $d->attachments && $d->attachments->isNotEmpty();
-                })->count();
+                // b) PDF Lampiran Rincian Belanja (dengan riwayat versi)
+                $detailsWithPdf = 0;
+                $proposalDetailsData = $opDetails->map(function ($detail) use (&$detailsWithPdf) {
+                    $attachments = ($detail->attachments && $detail->attachments->isNotEmpty()) 
+                        ? $detail->attachments->sortByDesc('version_number')->map(function ($att) {
+                            return [
+                                'version_number' => $att->version_number,
+                                'file_path' => $att->file_path,
+                                'file_url' => \Illuminate\Support\Facades\Storage::url($att->file_path),
+                                'uploaded_by' => $att->uploader?->name ?? ($att->user?->name ?? 'Operator'),
+                                'created_at' => $att->created_at ? $att->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i') . ' WIB' : '-',
+                            ];
+                        })->values()->all() 
+                        : [];
+
+                    if (!empty($attachments)) {
+                        $detailsWithPdf++;
+                    }
+
+                    $statusLabel = 'Draft';
+                    $statusClass = 'bg-gray-100 text-gray-700 border-gray-200';
+                    if ($detail->is_validated) {
+                        $statusLabel = 'Divalidasi';
+                        $statusClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                    } elseif ($detail->is_rejected) {
+                        $statusLabel = 'Ditolak';
+                        $statusClass = 'bg-rose-50 text-rose-800 border-rose-200';
+                    } elseif ($detail->is_submitted) {
+                        $statusLabel = 'Pending Review';
+                        $statusClass = 'bg-amber-50 text-amber-800 border-amber-200';
+                    }
+
+                    return [
+                        'id' => $detail->id,
+                        'account_code' => $detail->accountCode?->code ?? '-',
+                        'account_name' => $detail->accountCode?->name ?? '-',
+                        'description' => $detail->description,
+                        'volume' => $detail->volume,
+                        'satuan' => $detail->satuan,
+                        'harga_satuan' => (float) $detail->harga_satuan,
+                        'nominal_request' => (float) $detail->nominal_request,
+                        'status_label' => $statusLabel,
+                        'status_class' => $statusClass,
+                        'has_pdf' => !empty($attachments),
+                        'attachments_count' => count($attachments),
+                        'latest_version' => !empty($attachments) ? $attachments[0]['version_number'] : null,
+                        'latest_url' => !empty($attachments) ? $attachments[0]['file_url'] : null,
+                        'attachments' => $attachments,
+                    ];
+                })->values()->all();
 
                 $isAllComplete = $hasBackground && $mandatoryDocsCount === 3 && ($itemCount === 0 || $detailsWithPdf === $itemCount);
 
@@ -205,8 +272,10 @@ class RbaHeaderController extends Controller
                     'has_rak' => $hasRak,
                     'has_rtp' => $hasRtp,
                     'mandatory_docs_count' => $mandatoryDocsCount,
+                    'documents_data' => $documentsData,
                     'details_with_pdf_count' => $detailsWithPdf,
                     'total_details_count' => $itemCount,
+                    'proposal_details_data' => $proposalDetailsData,
                     'is_all_complete' => $isAllComplete,
                 ];
             });

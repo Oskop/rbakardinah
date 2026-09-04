@@ -190,6 +190,8 @@
                                 panelOpen: true,
                                 searchUnit: '',
                                 openUnits: {},
+
+                                // Modal Latar Belakang
                                 bgModalOpen: false,
                                 modalOperatorName: '',
                                 modalOperatorNip: '',
@@ -202,6 +204,45 @@
                                     this.modalBackgroundText = text || 'Belum ada isi latar belakang.';
                                     this.bgModalOpen = true;
                                 },
+
+                                // Modal Dokumen Pokok (KAK / RAK / RTP)
+                                docModalOpen: false,
+                                activeDocType: 'KAK',
+                                modalDocsData: {},
+                                showDocuments(opName, opNip, unitName, docsData, defaultType = 'KAK') {
+                                    this.modalOperatorName = opName;
+                                    this.modalOperatorNip = opNip || '-';
+                                    this.modalUnitName = unitName;
+                                    this.modalDocsData = docsData || {};
+                                    this.activeDocType = defaultType;
+                                    this.docModalOpen = true;
+                                },
+
+                                // Modal PDF Lampiran Usulan Belanja
+                                proposalModalOpen: false,
+                                proposalSearch: '',
+                                modalProposalDetails: [],
+                                showProposalPdfs(opName, opNip, unitName, detailsList) {
+                                    this.modalOperatorName = opName;
+                                    this.modalOperatorNip = opNip || '-';
+                                    this.modalUnitName = unitName;
+                                    this.modalProposalDetails = detailsList || [];
+                                    this.proposalSearch = '';
+                                    this.proposalModalOpen = true;
+                                },
+
+                                get filteredProposalDetails() {
+                                    if (!this.proposalSearch) {
+                                        return this.modalProposalDetails;
+                                    }
+                                    const q = this.proposalSearch.toLowerCase();
+                                    return this.modalProposalDetails.filter(d => 
+                                        (d.account_code && d.account_code.toLowerCase().includes(q)) ||
+                                        (d.account_name && d.account_name.toLowerCase().includes(q)) ||
+                                        (d.description && d.description.toLowerCase().includes(q))
+                                    );
+                                },
+
                                 toggleUnit(id) {
                                     this.openUnits[id] = !this.openUnits[id];
                                 },
@@ -400,15 +441,24 @@
                                                                 <!-- Dokumen Pokok (KAK, RAK, RTP) -->
                                                                 <td class="px-3 py-2.5 text-center">
                                                                     <div class="inline-flex items-center gap-1">
-                                                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold {{ $op['has_kak'] ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-slate-100 text-slate-400 border border-slate-200' }}">
-                                                                            KAK
-                                                                        </span>
-                                                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold {{ $op['has_rak'] ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-slate-100 text-slate-400 border border-slate-200' }}">
-                                                                            RAK
-                                                                        </span>
-                                                                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold {{ $op['has_rtp'] ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-slate-100 text-slate-400 border border-slate-200' }}">
-                                                                            RTP
-                                                                        </span>
+                                                                        <button type="button" 
+                                                                            @click="showDocuments('{{ addslashes($op['operator']->name) }}', '{{ addslashes($op['operator']->nip ?? '') }}', '{{ addslashes($m['unit']?->name ?? 'Unit') }}', {{ json_encode($op['documents_data'], JSON_UNESCAPED_SLASHES) }}, 'KAK')"
+                                                                            class="px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer hover:shadow-xs {{ $op['has_kak'] ? 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200' : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200' }}"
+                                                                            title="Klik untuk melihat dokumen KAK ({{ $op['documents_data']['KAK']['versions_count'] }} versi)">
+                                                                            KAK @if($op['has_kak'])<span class="text-[8px]">👁️</span>@endif
+                                                                        </button>
+                                                                        <button type="button" 
+                                                                            @click="showDocuments('{{ addslashes($op['operator']->name) }}', '{{ addslashes($op['operator']->nip ?? '') }}', '{{ addslashes($m['unit']?->name ?? 'Unit') }}', {{ json_encode($op['documents_data'], JSON_UNESCAPED_SLASHES) }}, 'RAK')"
+                                                                            class="px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer hover:shadow-xs {{ $op['has_rak'] ? 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200' : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200' }}"
+                                                                            title="Klik untuk melihat dokumen RAK ({{ $op['documents_data']['RAK']['versions_count'] }} versi)">
+                                                                            RAK @if($op['has_rak'])<span class="text-[8px]">👁️</span>@endif
+                                                                        </button>
+                                                                        <button type="button" 
+                                                                            @click="showDocuments('{{ addslashes($op['operator']->name) }}', '{{ addslashes($op['operator']->nip ?? '') }}', '{{ addslashes($m['unit']?->name ?? 'Unit') }}', {{ json_encode($op['documents_data'], JSON_UNESCAPED_SLASHES) }}, 'RTP')"
+                                                                            class="px-1.5 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer hover:shadow-xs {{ $op['has_rtp'] ? 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200' : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200' }}"
+                                                                            title="Klik untuk melihat dokumen RTP ({{ $op['documents_data']['RTP']['versions_count'] }} versi)">
+                                                                            RTP @if($op['has_rtp'])<span class="text-[8px]">👁️</span>@endif
+                                                                        </button>
                                                                     </div>
                                                                     <div class="text-[10px] text-gray-400 mt-0.5 font-medium">{{ $op['mandatory_docs_count'] }}/3 Terunggah</div>
                                                                 </td>
@@ -416,10 +466,14 @@
                                                                 <!-- PDF Lampiran Usulan Belanja -->
                                                                 <td class="px-3 py-2.5 text-center font-medium">
                                                                     @if($op['total_details_count'] > 0)
-                                                                        <span class="inline-flex items-center gap-1 text-[11px] font-bold {{ $op['details_with_pdf_count'] === $op['total_details_count'] ? 'text-emerald-700' : 'text-amber-700' }}">
+                                                                        <button type="button"
+                                                                            @click="showProposalPdfs('{{ addslashes($op['operator']->name) }}', '{{ addslashes($op['operator']->nip ?? '') }}', '{{ addslashes($m['unit']?->name ?? 'Unit') }}', {{ json_encode($op['proposal_details_data'], JSON_UNESCAPED_SLASHES) }})"
+                                                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer hover:shadow-xs group {{ $op['details_with_pdf_count'] === $op['total_details_count'] ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100 hover:border-amber-300' }}"
+                                                                            title="Klik untuk melihat daftar usulan dan riwayat versi PDF lampiran">
                                                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                                                                             <span>{{ $op['details_with_pdf_count'] }}/{{ $op['total_details_count'] }} PDF</span>
-                                                                        </span>
+                                                                            <span class="text-[10px] opacity-70 group-hover:opacity-100">👁️</span>
+                                                                        </button>
                                                                     @else
                                                                         <span class="text-[10px] text-gray-400 italic">Belum ada usulan</span>
                                                                     @endif
@@ -512,6 +566,270 @@
                                         <!-- Modal Footer -->
                                         <div class="bg-slate-100/80 px-6 py-3 border-t border-slate-200 flex justify-end">
                                             <button type="button" @click="bgModalOpen = false"
+                                                class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 shadow-sm hover:shadow transition-all">
+                                                Tutup
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modal Detail Dokumen Pokok (KAK, RAK, RTP) dengan Versioning -->
+                            <div x-show="docModalOpen" 
+                                x-transition:enter="ease-out duration-300"
+                                x-transition:enter-start="opacity-0"
+                                x-transition:enter-end="opacity-100"
+                                x-transition:leave="ease-in duration-200"
+                                x-transition:leave-start="opacity-100"
+                                x-transition:leave-end="opacity-0"
+                                @keydown.escape.window="docModalOpen = false"
+                                class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+                                <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                                    <!-- Backdrop -->
+                                    <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" @click="docModalOpen = false"></div>
+
+                                    <!-- Modal Container -->
+                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                                    <div x-show="docModalOpen" 
+                                        x-transition:enter="ease-out duration-300"
+                                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                                        x-transition:leave="ease-in duration-200"
+                                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                        class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-200">
+                                        
+                                        <!-- Modal Header -->
+                                        <div class="bg-gradient-to-r from-slate-900 to-indigo-950 px-6 py-4 flex items-center justify-between text-white">
+                                            <div class="flex items-center gap-2.5">
+                                                <span class="p-1.5 bg-white/10 rounded-lg text-lg">📑</span>
+                                                <div>
+                                                    <h3 class="text-sm font-bold text-white leading-tight">Dokumen Pokok RBA (KAK / RAK / RTP)</h3>
+                                                    <p class="text-[11px] text-slate-300 mt-0.5">
+                                                        <span x-text="modalUnitName"></span> &bull; Operator: <span class="font-semibold text-white" x-text="modalOperatorName"></span> (<span x-text="modalOperatorNip"></span>)
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button type="button" @click="docModalOpen = false" 
+                                                class="text-slate-400 hover:text-white rounded-lg p-1 transition-colors text-xl font-bold leading-none">&times;</button>
+                                        </div>
+
+                                        <!-- Tabs Nav: KAK, RAK, RTP -->
+                                        <div class="bg-slate-100 px-6 pt-3 flex border-b border-slate-200 gap-2 overflow-x-auto">
+                                            <template x-for="dType in ['KAK', 'RAK', 'RTP']" :key="dType">
+                                                <button type="button" 
+                                                    @click="activeDocType = dType"
+                                                    class="px-3.5 py-2 text-xs font-bold rounded-t-xl transition-all border-t border-x flex items-center gap-1.5 whitespace-nowrap"
+                                                    :class="activeDocType === dType 
+                                                        ? 'bg-white text-indigo-700 border-slate-200 -mb-px shadow-xs' 
+                                                        : 'bg-transparent text-slate-500 border-transparent hover:text-slate-800 hover:bg-slate-200/50'">
+                                                    <span x-text="dType === 'KAK' ? 'Kerangka Acuan Kerja (KAK)' : (dType === 'RAK' ? 'Rencana Anggaran Kas (RAK)' : 'Rencana Tindak Pengendalian (RTP)')"></span>
+                                                    <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold"
+                                                        :class="(modalDocsData[dType]?.versions_count || 0) > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'"
+                                                        x-text="(modalDocsData[dType]?.versions_count || 0) + ' versi'">
+                                                    </span>
+                                                </button>
+                                            </template>
+                                        </div>
+
+                                        <!-- Modal Body (Version List) -->
+                                        <div class="p-6 max-h-[60vh] overflow-y-auto space-y-4">
+                                            <template x-if="modalDocsData[activeDocType]?.versions && modalDocsData[activeDocType].versions.length > 0">
+                                                <div class="space-y-3">
+                                                    <div class="text-xs text-slate-500 font-medium">
+                                                        Riwayat revisi dokumen <strong class="text-indigo-700 font-bold" x-text="activeDocType"></strong> yang telah diunggah:
+                                                    </div>
+                                                    <template x-for="(ver, index) in modalDocsData[activeDocType].versions" :key="ver.version_number">
+                                                        <div class="p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                                                            :class="index === 0 ? 'bg-indigo-50/50 border-indigo-200 shadow-xs' : 'bg-slate-50 border-slate-200'">
+                                                            <div>
+                                                                <div class="flex items-center gap-2">
+                                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase"
+                                                                        :class="index === 0 ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-200 text-slate-700'">
+                                                                        Versi <span x-text="ver.version_number"></span>
+                                                                        <template x-if="index === 0">
+                                                                            <span> (Terbaru)</span>
+                                                                        </template>
+                                                                    </span>
+                                                                    <span class="text-xs text-slate-500" x-text="ver.created_at"></span>
+                                                                </div>
+                                                                <div class="text-xs text-slate-600 mt-1.5 flex items-center gap-1">
+                                                                    <span>Diunggah oleh:</span>
+                                                                    <strong class="text-slate-800 font-semibold" x-text="ver.uploaded_by"></strong>
+                                                                </div>
+                                                            </div>
+
+                                                            <a :href="ver.file_url" target="_blank"
+                                                                class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm flex-shrink-0"
+                                                                :class="index === 0 ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-slate-700 hover:bg-slate-800'">
+                                                                <span>🌐 Buka PDF</span>
+                                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                                            </a>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="!modalDocsData[activeDocType]?.versions || modalDocsData[activeDocType].versions.length === 0">
+                                                <div class="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                                                    <span class="text-3xl block mb-2 opacity-50">📂</span>
+                                                    <h4 class="text-sm font-bold text-slate-700">Belum Ada Dokumen</h4>
+                                                    <p class="text-xs text-slate-400 mt-1">Dokumen <span class="font-bold uppercase" x-text="activeDocType"></span> belum diunggah oleh operator untuk usulan RBA ini.</p>
+                                                </div>
+                                            </template>
+                                        </div>
+
+                                        <!-- Modal Footer -->
+                                        <div class="bg-slate-100/80 px-6 py-3 border-t border-slate-200 flex justify-end">
+                                            <button type="button" @click="docModalOpen = false"
+                                                class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 shadow-sm hover:shadow transition-all">
+                                                Tutup
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modal Daftar PDF Lampiran Usulan Belanja dengan Versioning -->
+                            <div x-show="proposalModalOpen" 
+                                x-transition:enter="ease-out duration-300"
+                                x-transition:enter-start="opacity-0"
+                                x-transition:enter-end="opacity-100"
+                                x-transition:leave="ease-in duration-200"
+                                x-transition:leave-start="opacity-100"
+                                x-transition:leave-end="opacity-0"
+                                @keydown.escape.window="proposalModalOpen = false"
+                                class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+                                <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                                    <!-- Backdrop -->
+                                    <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-xs" @click="proposalModalOpen = false"></div>
+
+                                    <!-- Modal Container -->
+                                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                                    <div x-show="proposalModalOpen" 
+                                        x-transition:enter="ease-out duration-300"
+                                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                                        x-transition:leave="ease-in duration-200"
+                                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                        class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full border border-slate-200">
+                                        
+                                        <!-- Modal Header -->
+                                        <div class="bg-gradient-to-r from-slate-900 to-indigo-950 px-6 py-4 flex items-center justify-between text-white">
+                                            <div class="flex items-center gap-2.5">
+                                                <span class="p-1.5 bg-white/10 rounded-lg text-lg">📑</span>
+                                                <div>
+                                                    <h3 class="text-sm font-bold text-white leading-tight">PDF Lampiran Usulan Belanja</h3>
+                                                    <p class="text-[11px] text-slate-300 mt-0.5">
+                                                        <span x-text="modalUnitName"></span> &bull; Operator: <span class="font-semibold text-white" x-text="modalOperatorName"></span> (<span x-text="modalOperatorNip"></span>)
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button type="button" @click="proposalModalOpen = false" 
+                                                class="text-slate-400 hover:text-white rounded-lg p-1 transition-colors text-xl font-bold leading-none">&times;</button>
+                                        </div>
+
+                                        <!-- Subheader Filter & Search -->
+                                        <div class="bg-slate-100 px-6 py-3 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                            <div class="text-xs text-slate-600 font-medium">
+                                                Menampilkan <strong class="text-indigo-700" x-text="filteredProposalDetails.length"></strong> dari <span x-text="modalProposalDetails.length"></span> rincian usulan belanja
+                                            </div>
+                                            <div class="relative">
+                                                <input type="text" x-model="proposalSearch" placeholder="Cari kode rekening / uraian..." 
+                                                    class="text-xs border-slate-300 rounded-lg pl-8 pr-3 py-1.5 focus:ring-indigo-500 focus:border-indigo-500 w-60 shadow-xs bg-white">
+                                                <svg class="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+
+                                        <!-- Modal Body (Proposal Details with Attachments) -->
+                                        <div class="p-6 max-h-[60vh] overflow-y-auto space-y-4">
+                                            <template x-for="item in filteredProposalDetails" :key="item.id">
+                                                <div class="p-4 rounded-xl border border-slate-200 bg-white shadow-xs space-y-3">
+                                                    <!-- Item Header -->
+                                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                                                        <div class="flex items-center gap-2 flex-wrap">
+                                                            <span class="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200" x-text="item.account_code"></span>
+                                                            <h5 class="text-xs font-bold text-gray-900" x-text="item.account_name"></h5>
+                                                        </div>
+                                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border self-start sm:self-auto"
+                                                            :class="item.status_class" x-text="item.status_label"></span>
+                                                    </div>
+
+                                                    <!-- Description & Nominal -->
+                                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                                                        <div class="text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex-1">
+                                                            <div class="font-semibold text-slate-800" x-text="item.description"></div>
+                                                            <div class="text-[11px] text-slate-500 mt-0.5">
+                                                                Vol: <span class="font-semibold text-slate-700" x-text="item.volume"></span> <span x-text="item.satuan"></span> &times; Rp <span x-text="Number(item.harga_satuan).toLocaleString('id-ID')"></span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-right sm:pl-4">
+                                                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Nominal Usulan</div>
+                                                            <div class="text-sm font-extrabold text-indigo-700 font-mono">
+                                                                Rp <span x-text="Number(item.nominal_request).toLocaleString('id-ID')"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Versioning PDF Attachments List -->
+                                                    <div class="pt-2 border-t border-slate-100">
+                                                        <div class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center justify-between">
+                                                            <span>Riwayat Versi PDF Lampiran (<span x-text="item.attachments_count"></span> versi):</span>
+                                                        </div>
+
+                                                        <template x-if="item.attachments && item.attachments.length > 0">
+                                                            <div class="space-y-2">
+                                                                <template x-for="(att, aIdx) in item.attachments" :key="att.version_number">
+                                                                    <div class="flex items-center justify-between p-2.5 rounded-lg border text-xs"
+                                                                        :class="aIdx === 0 ? 'bg-indigo-50/40 border-indigo-200' : 'bg-slate-50 border-slate-200'">
+                                                                        <div class="flex items-center gap-2">
+                                                                            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase"
+                                                                                :class="aIdx === 0 ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700'">
+                                                                                V<span x-text="att.version_number"></span>
+                                                                                <template x-if="aIdx === 0">
+                                                                                    <span> (Terbaru)</span>
+                                                                                </template>
+                                                                            </span>
+                                                                            <span class="text-slate-500 text-[11px]" x-text="att.created_at"></span>
+                                                                            <span class="text-slate-400 hidden sm:inline">&bull;</span>
+                                                                            <span class="text-slate-600 text-[11px] hidden sm:inline">Oleh: <strong x-text="att.uploaded_by"></strong></span>
+                                                                        </div>
+                                                                        <a :href="att.file_url" target="_blank"
+                                                                            class="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold text-white transition-all shadow-2xs"
+                                                                            :class="aIdx === 0 ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-slate-700 hover:bg-slate-800'">
+                                                                            <span>🌐 Buka PDF</span>
+                                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                                                        </a>
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+                                                        </template>
+
+                                                        <template x-if="!item.attachments || item.attachments.length === 0">
+                                                            <div class="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+                                                                <span>⚠️</span>
+                                                                <span>Belum ada file PDF yang dilampirkan oleh operator untuk rincian belanja ini.</span>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="filteredProposalDetails.length === 0">
+                                                <div class="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                                                    <span class="text-3xl block mb-2 opacity-50">🔍</span>
+                                                    <h4 class="text-sm font-bold text-slate-700">Tidak Ada Rincian Usulan Ditemukan</h4>
+                                                    <p class="text-xs text-slate-400 mt-1" x-text="proposalSearch ? 'Tidak ada usulan belanja yang cocok dengan kata kunci pencarian.' : 'Operator ini belum menginput rincian belanja pada periode RBA ini.'"></p>
+                                                </div>
+                                            </template>
+                                        </div>
+
+                                        <!-- Modal Footer -->
+                                        <div class="bg-slate-100/80 px-6 py-3 border-t border-slate-200 flex justify-end">
+                                            <button type="button" @click="proposalModalOpen = false"
                                                 class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl border border-slate-300 shadow-sm hover:shadow transition-all">
                                                 Tutup
                                             </button>
