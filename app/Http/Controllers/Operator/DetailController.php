@@ -33,8 +33,10 @@ class DetailController extends Controller
         $lockedAccountIds = \App\Models\RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)
             ->pluck('account_code_id');
 
-        $accountCodes = AccountCode::where('is_active', true)
+        $accountCodes = AccountCode::with('kelompokBelanja')
+            ->where('is_active', true)
             ->whereNotIn('id', $lockedAccountIds)
+            ->orderBy('code')
             ->get();
         return view('operator.details.create', compact('submission', 'accountCodes'));
     }
@@ -50,10 +52,12 @@ class DetailController extends Controller
         $lockedAccountIds = \App\Models\RbaAccountPagu::where('rba_header_id', $detail->submission->rba_header_id)
             ->pluck('account_code_id');
 
-        $accountCodes = AccountCode::where(function ($q) use ($detail) {
+        $accountCodes = AccountCode::with('kelompokBelanja')
+            ->where(function ($q) use ($detail) {
                 $q->where('is_active', true)->orWhere('id', $detail->account_code_id);
             })
             ->whereNotIn('id', $lockedAccountIds)
+            ->orderBy('code')
             ->get();
         return view('operator.details.edit', compact('detail', 'accountCodes'));
     }
