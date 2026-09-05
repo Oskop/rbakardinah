@@ -60,10 +60,68 @@ class ReviewTest extends TestCase
 
     public function test_supervisor_can_validate_submission()
     {
+        $operator = User::factory()->create(['role' => 'Operator', 'unit_id' => $this->supervisor->unit_id]);
+        $detail = RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Usulan Alat Medis',
+            'volume' => 1,
+            'satuan' => 'Unit',
+            'harga_satuan' => 1000000,
+            'nominal_request' => 1000000,
+            'is_submitted' => true,
+            'is_validated' => true,
+            'created_by' => $operator->id
+        ]);
+
         $response = $this->actingAs($this->supervisor)->post(route('supervisor.submissions.validate', $this->submission));
 
         $response->assertRedirect(route('supervisor.submissions.index'));
         $this->assertEquals('Validated', $this->submission->fresh()->status_submission);
+    }
+
+    public function test_unit_status_automatically_becomes_validated_when_all_details_are_validated()
+    {
+        $operator = User::factory()->create(['role' => 'Operator', 'unit_id' => $this->supervisor->unit_id]);
+        $detail1 = RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Pertama',
+            'volume' => 1,
+            'satuan' => 'Unit',
+            'harga_satuan' => 500000,
+            'nominal_request' => 500000,
+            'is_submitted' => true,
+            'is_validated' => false,
+            'created_by' => $operator->id
+        ]);
+        $detail2 = RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Kedua',
+            'volume' => 2,
+            'satuan' => 'Unit',
+            'harga_satuan' => 250000,
+            'nominal_request' => 500000,
+            'is_submitted' => true,
+            'is_validated' => false,
+            'created_by' => $operator->id
+        ]);
+
+        $this->submission->syncValidationStatus();
+        $this->assertEquals('Pending Supervisor', $this->submission->fresh()->status_submission);
+
+        // 1. Supervisor validates first item -> status is still Pending Supervisor
+        $this->actingAs($this->supervisor)->post(route('supervisor.details.toggle-validation', $detail1));
+        $this->assertEquals('Pending Supervisor', $this->submission->fresh()->status_submission);
+
+        // 2. Supervisor validates second item -> status AUTOMATICALLY becomes Validated!
+        $this->actingAs($this->supervisor)->post(route('supervisor.details.toggle-validation', $detail2));
+        $this->assertEquals('Validated', $this->submission->fresh()->status_submission);
+
+        // 3. Supervisor cancels validation on first item -> status AUTOMATICALLY reverts to Pending Supervisor!
+        $this->actingAs($this->supervisor)->post(route('supervisor.details.toggle-validation', $detail1));
+        $this->assertEquals('Pending Supervisor', $this->submission->fresh()->status_submission);
     }
 
     public function test_supervisor_can_see_previous_period_pagu_in_awal_column()

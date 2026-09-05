@@ -29,6 +29,8 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::get('headers/{header}/print-preview-final', [\App\Http\Controllers\RbaHeaderController::class, 'printPreviewFinal'])->name('headers.print-preview-final');
     Route::resource('headers', \App\Http\Controllers\RbaHeaderController::class);
     Route::post('headers/{header}/toggle-status', [\App\Http\Controllers\RbaHeaderController::class, 'toggleStatus'])->name('headers.toggle-status');
+    Route::post('headers/{header}/sync-unit-statuses', [\App\Http\Controllers\RbaHeaderController::class, 'syncUnitStatuses'])->name('headers.sync-unit-statuses');
+    Route::post('submissions/{submission}/sync-status', [\App\Http\Controllers\RbaHeaderController::class, 'syncSingleSubmissionStatus'])->name('submissions.sync-status');
     Route::get('headers/{header}/pagu', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'index'])->name('headers.pagu.index');
     Route::post('headers/{header}/pagu', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'store'])->name('headers.pagu.store');
     Route::delete('headers/{header}/pagu/{accountCode}', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'destroy'])->name('headers.pagu.destroy');

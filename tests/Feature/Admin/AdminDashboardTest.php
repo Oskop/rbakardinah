@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\User;
+use App\Models\Unit;
 use App\Models\RbaHeader;
 use App\Models\RbaPeriod;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -362,5 +363,116 @@ class AdminDashboardTest extends TestCase
         $response->assertSee('Servis Meja Operasi');
         $response->assertSee('5.1.02');
         $response->assertSee('1/1 PDF');
+    }
+
+    public function test_admin_can_sync_all_unit_statuses_under_header()
+    {
+        $admin = User::factory()->create(['role' => 'Administrator', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Instalasi Bedah', 'code' => 'IB', 'is_active' => true]);
+        $operator = User::factory()->create(['role' => 'Operator', 'unit_id' => $unit->id, 'is_active' => true]);
+        $period = RbaPeriod::create(['name' => 'Murni']);
+        $header = RbaHeader::create([
+            'year' => 2026,
+            'period_id' => $period->id,
+            'admin_id' => $admin->id,
+            'status_global' => 'Draft'
+        ]);
+
+        $submission = \App\Models\RbaSubmission::create([
+            'rba_header_id' => $header->id,
+            'unit_id' => $unit->id,
+            'status_submission' => 'Pending Supervisor',
+        ]);
+
+        $group = \App\Models\KelompokBelanja::create(['kode' => 'KB03', 'name' => 'Belanja Modal']);
+        $ac = \App\Models\AccountCode::create(['kelompok_belanja_id' => $group->id, 'code' => '5.2.01', 'name' => 'Modal Alat']);
+
+        \App\Models\RbaDetail::create([
+            'rba_submission_id' => $submission->id,
+            'account_code_id' => $ac->id,
+            'description' => 'Lampu Operasi',
+            'volume' => 1,
+            'satuan' => 'Unit',
+            'harga_satuan' => 20000000,
+            'nominal_request' => 20000000,
+            'created_by' => $operator->id,
+            'is_submitted' => true,
+            'is_validated' => true,
+        ]);
+
+        $this->assertEquals('Pending Supervisor', $submission->status_submission);
+
+        $response = $this->actingAs($admin)->post(route('admin.headers.sync-unit-statuses', $header));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertEquals('Validated', $submission->fresh()->status_submission);
+    }
+
+    public function test_admin_can_sync_single_submission_status()
+    {
+        $admin = User::factory()->create(['role' => 'Administrator', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Laboratorium', 'code' => 'LAB', 'is_active' => true]);
+        $operator = User::factory()->create(['role' => 'Operator', 'unit_id' => $unit->id, 'is_active' => true]);
+        $period = RbaPeriod::create(['name' => 'Murni']);
+        $header = RbaHeader::create([
+            'year' => 2026,
+            'period_id' => $period->id,
+            'admin_id' => $admin->id,
+            'status_global' => 'Draft'
+        ]);
+
+        $submission = \App\Models\RbaSubmission::create([
+            'rba_header_id' => $header->id,
+            'unit_id' => $unit->id,
+            'status_submission' => 'Draft',
+        ]);
+
+        $group = \App\Models\KelompokBelanja::create(['kode' => 'KB04', 'name' => 'Belanja Bahan']);
+        $ac = \App\Models\AccountCode::create(['kelompok_belanja_id' => $group->id, 'code' => '5.1.03', 'name' => 'Reagen']);
+
+        \App\Models\RbaDetail::create([
+            'rba_submission_id' => $submission->id,
+            'account_code_id' => $ac->id,
+            'description' => 'Reagen Kimia Darah',
+            'volume' => 5,
+            'satuan' => 'Kit',
+            'harga_satuan' => 1000000,
+            'nominal_request' => 5000000,
+            'created_by' => $operator->id,
+            'is_submitted' => true,
+            'is_validated' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.submissions.sync-status', $submission));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertEquals('Validated', $submission->fresh()->status_submission);
+    }
+
+    public function test_non_admin_cannot_access_sync_endpoints()
+    {
+        $admin = User::factory()->create(['role' => 'Administrator', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Unit Test', 'code' => 'UT', 'is_active' => true]);
+        $operator = User::factory()->create(['role' => 'Operator', 'unit_id' => $unit->id, 'is_active' => true]);
+        $period = RbaPeriod::create(['name' => 'Murni']);
+        $header = RbaHeader::create([
+            'year' => 2026,
+            'period_id' => $period->id,
+            'admin_id' => $admin->id,
+            'status_global' => 'Draft'
+        ]);
+        $submission = \App\Models\RbaSubmission::create([
+            'rba_header_id' => $header->id,
+            'unit_id' => $unit->id,
+            'status_submission' => 'Draft',
+        ]);
+
+        $res1 = $this->actingAs($operator)->post(route('admin.headers.sync-unit-statuses', $header));
+        $res1->assertStatus(403);
+
+        $res2 = $this->actingAs($operator)->post(route('admin.submissions.sync-status', $submission));
+        $res2->assertStatus(403);
     }
 }

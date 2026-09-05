@@ -333,6 +333,47 @@ class RbaHeaderController extends Controller
         return back()->with('success', $message);
     }
 
+    /**
+     * Refresh / synchronize all unit submission statuses under this header
+     * based on their actual detail validation states.
+     */
+    public function syncUnitStatuses(\App\Models\RbaHeader $header)
+    {
+        $header->load(['submissions.details', 'submissions.unit']);
+        $totalUnits = $header->submissions->count();
+        $updatedCount = 0;
+
+        foreach ($header->submissions as $submission) {
+            $oldStatus = $submission->status_submission;
+            $newStatus = $submission->syncValidationStatus();
+            if ($oldStatus !== $newStatus) {
+                $updatedCount++;
+            }
+        }
+
+        $message = $updatedCount > 0
+            ? "Sinkronisasi berhasil! Sebanyak {$updatedCount} dari {$totalUnits} unit mengalami pembaruan status sesuai kondisi rincian belanja terkini."
+            : "Status seluruh ({$totalUnits}) unit kerja sudah mutakhir dan sesuai dengan kondisi rincian belanja terkini.";
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * Synchronize a single unit submission status on-demand.
+     */
+    public function syncSingleSubmissionStatus(\App\Models\RbaSubmission $submission)
+    {
+        $oldStatus = $submission->status_submission;
+        $newStatus = $submission->syncValidationStatus();
+        $unitName = $submission->unit?->name ?? 'Unit';
+
+        $message = ($oldStatus !== $newStatus)
+            ? "Status unit {$unitName} berhasil dimutakhirkan dari {$oldStatus} menjadi {$newStatus}."
+            : "Status unit {$unitName} sudah mutakhir ({$newStatus}).";
+
+        return back()->with('success', $message);
+    }
+
     public function printPreview(Request $request, \App\Models\RbaHeader $header)
     {
         $includeBackground = $request->get('include_background', '1') == '1';

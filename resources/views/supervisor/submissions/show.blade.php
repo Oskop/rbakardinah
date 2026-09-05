@@ -11,13 +11,31 @@
                     <span>🖨️ Cetak Rincian Usulan / RBA Final</span>
                 </button>
 
-                @if($submission->status_submission === 'Pending Supervisor')
-                    <form action="{{ route('supervisor.submissions.validate', $submission) }}" method="POST" onsubmit="return confirm('Validasi usulan ini?')">
-                        @csrf
-                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm shadow">
-                            Validasi & Lanjutkan
-                        </button>
-                    </form>
+                @php
+                    $submittedDetailsCount = $submission->details->where('is_submitted', true)->count();
+                    $validatedDetailsCount = $submission->details->where('is_validated', true)->count();
+                    $rejectedDetailsCount = $submission->details->where('is_rejected', true)->count();
+                @endphp
+
+                @if($submission->status_submission === 'Validated')
+                    <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs">
+                        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Unit Validated ({{ $validatedDetailsCount }}/{{ $submittedDetailsCount }})</span>
+                    </div>
+                @elseif($submission->status_submission === 'Pending Supervisor')
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+                        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                        <span>Validasi Berjalan: {{ $validatedDetailsCount }}/{{ $submittedDetailsCount }} Usulan Disetujui</span>
+                        @if($rejectedDetailsCount > 0)
+                            <span class="text-[10px] text-rose-600 font-semibold">({{ $rejectedDetailsCount }} ditolak)</span>
+                        @endif
+                    </div>
+                @else
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                        <span>📝 Draft (Menunggu Pengajuan Operator)</span>
+                    </div>
                 @endif
                 <a href="{{ route('supervisor.submissions.index') }}" class="py-2 px-4 text-sm text-gray-600 hover:text-gray-900">Kembali</a>
 

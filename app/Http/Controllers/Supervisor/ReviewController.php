@@ -309,13 +309,12 @@ class ReviewController extends Controller
             abort(403);
         }
 
-        if ($submission->status_submission !== 'Pending Supervisor') {
-            return back()->with('error', 'Only Pending submissions can be validated.');
+        $newStatus = $submission->syncValidationStatus();
+        if ($newStatus === 'Validated') {
+            return redirect()->route('supervisor.submissions.index')->with('success', 'Seluruh usulan unit berhasil divalidasi (Validated).');
         }
 
-        $submission->update(['status_submission' => 'Validated']);
-
-        return redirect()->route('supervisor.submissions.index')->with('success', 'Submission validated successfully.');
+        return back()->with('error', 'Tidak dapat memvalidasi unit karena masih ada rincian belanja yang belum divalidasi atau ditolak.');
     }
 
     public function toggleDetailValidation(Request $request, \App\Models\RbaDetail $detail)
@@ -346,7 +345,12 @@ class ReviewController extends Controller
         ]);
 
         $status = $detail->is_validated ? 'divalidasi' : 'dibatalkan validasinya';
-        return back()->with('success', "Rincian berhasil $status.");
+        $newUnitStatus = $detail->submission->syncValidationStatus();
+        $extraMessage = ($newUnitStatus === 'Validated')
+            ? ' Seluruh rincian usulan telah disetujui, status unit kini otomatis VALIDATED.'
+            : '';
+
+        return back()->with('success', "Rincian berhasil {$status}.{$extraMessage}");
     }
 
     public function rejectDetail(Request $request, \App\Models\RbaDetail $detail)
@@ -372,6 +376,8 @@ class ReviewController extends Controller
             'rejected_by' => Auth::id(),
             'rejection_reason' => $request->rejection_reason,
         ]);
+
+        $detail->submission->syncValidationStatus();
 
         return back()->with('success', "Rincian telah ditolak.");
     }

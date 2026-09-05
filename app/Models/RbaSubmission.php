@@ -37,4 +37,33 @@ class RbaSubmission extends Model
     {
         return $this->hasMany(RbaSubmissionOperatorBackground::class);
     }
+
+    /**
+     * Synchronize and automatically compute the macro status of this submission
+     * based on its submitted details validation states.
+     */
+    public function syncValidationStatus(): string
+    {
+        $submittedDetails = $this->details()->where('is_submitted', true)->get();
+
+        if ($submittedDetails->isEmpty()) {
+            $newStatus = 'Draft';
+        } else {
+            $totalSubmitted = $submittedDetails->count();
+            $totalValidated = $submittedDetails->where('is_validated', true)->count();
+            $hasRejection = $submittedDetails->where('is_rejected', true)->isNotEmpty();
+
+            if ($totalValidated === $totalSubmitted && !$hasRejection) {
+                $newStatus = 'Validated';
+            } else {
+                $newStatus = 'Pending Supervisor';
+            }
+        }
+
+        if ($this->status_submission !== $newStatus) {
+            $this->update(['status_submission' => $newStatus]);
+        }
+
+        return $newStatus;
+    }
 }

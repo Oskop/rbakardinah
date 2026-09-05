@@ -152,7 +152,29 @@
     </x-slot>
 
     <div class="py-12">
-                    <div x-data="{ 
+        <div class="w-full px-4 sm:px-6 lg:px-8 space-y-6">
+            @if(session('success'))
+                <div class="bg-emerald-50 border border-emerald-300 text-emerald-800 px-4 py-3 rounded-xl text-sm font-semibold shadow-xs flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{{ session('success') }}</span>
+                    </div>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="bg-rose-50 border border-rose-300 text-rose-800 px-4 py-3 rounded-xl text-sm font-semibold shadow-xs flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{{ session('error') }}</span>
+                    </div>
+                </div>
+            @endif
+
+            <div x-data="{ 
                         search: '',
                         formatIDR(val) {
                             return 'Rp ' + Number(val).toLocaleString('id-ID');
@@ -304,6 +326,19 @@
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                                         <span>Tutup Semua</span>
                                     </button>
+
+                                    <!-- Tombol Refresh Seluruh Status Unit -->
+                                    <form action="{{ route('admin.headers.sync-unit-statuses', $header) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit" 
+                                            class="px-2.5 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-300 transition-colors inline-flex items-center gap-1.5 shadow-2xs group cursor-pointer"
+                                            title="Sinkronkan status seluruh unit berdasarkan kelengkapan validasi rincian usulan belanja terkini">
+                                            <svg class="w-3.5 h-3.5 text-emerald-600 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                            </svg>
+                                            <span>Refresh Status Unit</span>
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
 
@@ -327,8 +362,8 @@
                                     <div class="border rounded-xl overflow-hidden bg-white shadow-sm border-slate-200 transition-all"
                                         x-show="!searchUnit || '{{ strtolower($m['unit']?->name ?? '') }} {{ strtolower($m['supervisors']->pluck('name')->join(' ')) }} {{ strtolower(collect($m['operators_monitoring'])->pluck('operator.name')->join(' ')) }}'.includes(searchUnit.toLowerCase())">
                                         <!-- Unit Header Bar -->
-                                        <button type="button" @click="toggleUnit({{ $m['submission_id'] }})"
-                                            class="w-full text-left p-3.5 flex flex-col lg:flex-row lg:items-center justify-between gap-3 hover:bg-slate-50 transition-colors focus:outline-none">
+                                        <div @click="toggleUnit({{ $m['submission_id'] }})" role="button" tabindex="0"
+                                            class="w-full text-left p-3.5 flex flex-col lg:flex-row lg:items-center justify-between gap-3 hover:bg-slate-50 transition-colors focus:outline-none cursor-pointer select-none">
                                             <div class="flex items-center gap-3 min-w-0">
                                                 <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 font-black text-xs flex items-center justify-center flex-shrink-0 border border-indigo-100">
                                                     {{ strtoupper(substr($m['unit']?->name ?? 'U', 0, 2)) }}
@@ -345,6 +380,18 @@
                                                         ">
                                                             {{ $m['status_submission'] }}
                                                         </span>
+
+                                                        <!-- Tombol Refresh Unit Individual -->
+                                                        <form action="{{ route('admin.submissions.sync-status', $m['submission_id']) }}" method="POST" class="inline" @click.stop>
+                                                            @csrf
+                                                            <button type="submit" 
+                                                                class="p-1 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 border border-transparent hover:border-indigo-200 transition-all cursor-pointer inline-flex items-center"
+                                                                title="Sinkronkan status unit ini saja">
+                                                                <svg class="w-3 h-3 hover:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                                </svg>
+                                                            </button>
+                                                        </form>
                                                     </div>
                                                     <div class="text-[11px] text-gray-500 flex items-center gap-2 mt-0.5">
                                                         <span>Supervisor:</span>
@@ -384,7 +431,7 @@
                                                     </svg>
                                                 </div>
                                             </div>
-                                        </button>
+                                        </div>
 
                                         <!-- Operator Level Monitoring Table (Expanded) -->
                                         <div x-show="isUnitOpen({{ $m['submission_id'] }})" x-transition class="border-t border-slate-200 bg-slate-50/50 p-3.5">
@@ -911,6 +958,4 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 </x-app-layout>
