@@ -12,7 +12,23 @@
     @endphp
 
     @if($activeAnnouncements->isNotEmpty())
-        <div class="w-full space-y-2.5 px-4 sm:px-6 lg:px-8 pt-4">
+        <div x-data="{
+                announcements: {
+                    @foreach($activeAnnouncements as $announcement)
+                        '{{ $announcement->id }}': sessionStorage.getItem('announcement_dismissed_{{ $announcement->id }}') !== 'true',
+                    @endforeach
+                },
+                get hasVisible() {
+                    return Object.values(this.announcements).some(v => v === true);
+                },
+                dismiss(id) {
+                    this.announcements[id] = false;
+                    sessionStorage.setItem('announcement_dismissed_' + id, 'true');
+                }
+             }"
+             x-show="hasVisible"
+             style="display: none;"
+             class="w-full space-y-2.5 px-4 sm:px-6 lg:px-8 pt-2 pb-2">
             @foreach($activeAnnouncements as $announcement)
                 @php
                     $colors = match($announcement->type) {
@@ -59,14 +75,7 @@
                     };
                 @endphp
 
-                <div x-data="{
-                        dismissed: sessionStorage.getItem('announcement_dismissed_{{ $announcement->id }}') === 'true',
-                        dismiss() {
-                            this.dismissed = true;
-                            sessionStorage.setItem('announcement_dismissed_{{ $announcement->id }}', 'true');
-                        }
-                     }" 
-                     x-show="!dismissed"
+                <div x-show="announcements['{{ $announcement->id }}']"
                      x-transition:leave="transition ease-in duration-200"
                      x-transition:leave-start="opacity-100 scale-100"
                      x-transition:leave-end="opacity-0 scale-95"
@@ -120,7 +129,7 @@
                         </div>
 
                         <!-- Dismiss / Close Button -->
-                        <button type="button" @click="dismiss()" 
+                        <button type="button" @click="dismiss('{{ $announcement->id }}')" 
                                 title="Tutup pengumuman ini untuk sesi ini"
                                 class="absolute top-3.5 right-3.5 p-1.5 rounded-xl hover:bg-black/5 text-current opacity-60 hover:opacity-100 transition-all">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
