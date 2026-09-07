@@ -36,6 +36,11 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::delete('headers/{header}/pagu/{accountCode}', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'destroy'])->name('headers.pagu.destroy');
     Route::resource('logs', \App\Http\Controllers\Admin\ActivityLogController::class)->only(['index', 'show']);
 
+    // Announcements Management Routes
+    Route::post('announcements/{announcement}/toggle-active', [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggleActive'])->name('announcements.toggle-active');
+    Route::post('announcements/{announcement}/force-end', [\App\Http\Controllers\Admin\AnnouncementController::class, 'forceEnd'])->name('announcements.force-end');
+    Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class);
+
     // Documentation Management Routes
     Route::get('documentation', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'index'])->name('documentation.index');
     Route::get('documentation/versions/create', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'createVersion'])->name('documentation.versions.create');

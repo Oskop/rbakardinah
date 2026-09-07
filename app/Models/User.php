@@ -72,4 +72,12 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Unit::class);
     }
+
+    /**
+     * Get announcements specifically targeted to this user.
+     */
+    public function targetedAnnouncements()
+    {
+        return $this->belongsToMany(Announcement::class, 'announcement_user')->withTimestamps();
+    }
 }
