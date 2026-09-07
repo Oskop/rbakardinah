@@ -39,6 +39,7 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     // Announcements Management Routes
     Route::post('announcements/{announcement}/toggle-active', [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggleActive'])->name('announcements.toggle-active');
     Route::post('announcements/{announcement}/force-end', [\App\Http\Controllers\Admin\AnnouncementController::class, 'forceEnd'])->name('announcements.force-end');
+    Route::post('announcements/{announcement}/reshow', [\App\Http\Controllers\Admin\AnnouncementController::class, 'reshow'])->name('announcements.reshow');
     Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class);
 
     // Documentation Management Routes

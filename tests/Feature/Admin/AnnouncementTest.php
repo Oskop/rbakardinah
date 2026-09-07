@@ -370,4 +370,51 @@ class AnnouncementTest extends TestCase
         $respOpr->assertDontSee('Khusus Supervisor Validasi');
         $respOpr->assertDontSee('Pengumuman Terjadwal Besok');
     }
+
+    public function test_admin_can_reshow_announcement(): void
+    {
+        $announcement = Announcement::create([
+            'title' => 'Pengumuman Penting Deadline RBA',
+            'content' => 'Batas waktu penginputan adalah hari ini.',
+            'type' => 'warning',
+            'target_type' => 'all',
+            'start_at' => now()->subHours(2),
+            'end_at' => now()->addHours(5),
+            'is_active' => true,
+            'reshown_at' => null,
+            'created_by' => $this->admin->id,
+        ]);
+
+        $initialDismissKey = $announcement->dismiss_key;
+        $this->assertNull($announcement->reshown_at);
+
+        // Simulasi waktu maju 1 detik agar timestamp berbeda
+        $this->travel(2)->seconds();
+
+        $response = $this->actingAs($this->admin)->post(route('admin.announcements.reshow', $announcement));
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $fresh = $announcement->fresh();
+        $this->assertNotNull($fresh->reshown_at);
+        $this->assertTrue($fresh->is_active);
+        $this->assertNotEquals($initialDismissKey, $fresh->dismiss_key);
+    }
+
+    public function test_non_admin_cannot_reshow_announcement(): void
+    {
+        $announcement = Announcement::create([
+            'title' => 'Pengumuman Penting',
+            'content' => 'Isi',
+            'type' => 'warning',
+            'target_type' => 'all',
+            'start_at' => now()->subHour(),
+            'end_at' => now()->addHours(2),
+            'is_active' => true,
+            'created_by' => $this->admin->id,
+        ]);
+
+        $response = $this->actingAs($this->supervisor)->post(route('admin.announcements.reshow', $announcement));
+        $response->assertStatus(403);
+    }
 }

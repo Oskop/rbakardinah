@@ -229,4 +229,15 @@ class AnnouncementController extends Controller
         return redirect()->back()
             ->with('success', 'Penayangan pengumuman berhasil diakhiri sekarang.');
     }
+
+    /**
+     * Munculkan ulang / pertegas pengumuman ke seluruh pengguna sasaran (Reshow).
+     */
+    public function reshow(Announcement $announcement)
+    {
+        $announcement->reshow();
+
+        return redirect()->back()
+            ->with('success', "Pengumuman '{$announcement->title}' berhasil dimunculkan ulang kepada seluruh pengguna sasaran.");
+    }
 }

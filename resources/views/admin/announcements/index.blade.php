@@ -180,18 +180,28 @@
                                                 <span class="italic text-emerald-600 font-normal">Tanpa Batas Waktu</span>
                                             @endif
                                         </div>
+                                        
                                         <!-- Relative time hint -->
                                         <div class="text-[10px] mt-1 text-gray-400">
-                                            @if($isCurrentlyRunning && $announcement->end_at)
-                                                <span class="text-amber-600 font-semibold">Berakhir {{ $announcement->end_at->diffForHumans() }}</span>
-                                            @elseif(!$announcement->is_active)
-                                                <span class="text-gray-400">Dimatikan manual</span>
+                                            @if($isCurrentlyRunning)
+                                                @if($announcement->end_at)
+                                                    <span class="text-emerald-600 font-semibold">Selesai {{ $announcement->end_at->diffForHumans() }}</span>
+                                                @else
+                                                    <span class="text-emerald-600 font-semibold">Aktif berkelanjutan</span>
+                                                @endif
                                             @elseif($announcement->start_at->isFuture())
                                                 <span class="text-sky-600 font-semibold">Mulai {{ $announcement->start_at->diffForHumans() }}</span>
                                             @elseif($announcement->end_at && $announcement->end_at->isPast())
                                                 <span class="text-gray-400">Selesai {{ $announcement->end_at->diffForHumans() }}</span>
                                             @endif
                                         </div>
+
+                                        @if($announcement->reshown_at)
+                                            <div class="text-[10px] mt-1 text-indigo-600 font-semibold flex items-center gap-0.5" title="Dimunculkan ulang: {{ $announcement->reshown_at->format('d/m/Y H:i') }}">
+                                                <svg class="w-3 h-3 inline shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                                <span>Ditegaskan {{ $announcement->reshown_at->diffForHumans() }}</span>
+                                            </div>
+                                        @endif
                                     </td>
 
                                     <!-- Status -->
@@ -205,6 +215,21 @@
                                     <!-- Aksi Administrator -->
                                     <td class="px-5 py-4 whitespace-nowrap text-right">
                                         <div class="flex items-center justify-end gap-1.5">
+                                            <!-- Tombol Munculkan Ulang (Reshow / Pertegas) -->
+                                            @if($isCurrentlyRunning || !$announcement->is_active)
+                                                <form action="{{ route('admin.announcements.reshow', $announcement) }}" method="POST" class="inline"
+                                                    onsubmit="return confirm('Munculkan ulang pengumuman ini ke seluruh pengguna sasaran? Pengguna yang sudah menutupnya akan melihatnya kembali.')">
+                                                    @csrf
+                                                    <button type="submit"
+                                                        class="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 border border-indigo-200 transition-all cursor-pointer"
+                                                        title="Munculkan Ulang ke Semua Pengguna Sasaran (Pertegas)">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            @endif
+
                                             <!-- Tombol Edit -->
                                             <a href="{{ route('admin.announcements.edit', $announcement) }}"
                                                 class="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 border border-transparent hover:border-indigo-200 transition-all"

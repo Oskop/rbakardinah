@@ -20,6 +20,7 @@ class Announcement extends Model
         'start_at',
         'end_at',
         'is_active',
+        'reshown_at',
         'created_by',
     ];
 
@@ -29,6 +30,7 @@ class Announcement extends Model
             'start_at' => 'datetime',
             'end_at' => 'datetime',
             'is_active' => 'boolean',
+            'reshown_at' => 'datetime',
         ];
     }
 
@@ -141,5 +143,25 @@ class Announcement extends Model
                 'dot' => 'bg-emerald-500 animate-pulse',
             ],
         };
+    }
+
+    /**
+     * Kunci unik penyimpanan status tutup (dismissal) berbasis timestamp penegasan/pembaruan.
+     */
+    public function getDismissKeyAttribute(): string
+    {
+        $timestamp = $this->reshown_at ? $this->reshown_at->timestamp : ($this->updated_at ? $this->updated_at->timestamp : 0);
+        return "announcement_dismissed_{$this->id}_{$timestamp}";
+    }
+
+    /**
+     * Munculkan ulang / pertegas pengumuman kepada seluruh pengguna sasaran.
+     */
+    public function reshow(): void
+    {
+        $this->update([
+            'is_active' => true,
+            'reshown_at' => now(),
+        ]);
     }
 }
