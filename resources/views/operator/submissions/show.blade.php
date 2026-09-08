@@ -192,6 +192,27 @@
                         formatIDR(val) {
                             return 'Rp ' + Number(val).toLocaleString('id-ID');
                         },
+                        uploadModalOpen: false,
+                        uploadTargetDetail: {
+                            id: null,
+                            accountName: '',
+                            description: '',
+                            nominal: '',
+                            currentVersion: '',
+                            uploadUrl: '',
+                            isExceeding: false,
+                            hasRevision: false,
+                        },
+                        selectedFileName: '',
+                        openUploadModal(detail) {
+                            this.uploadTargetDetail = detail;
+                            this.selectedFileName = '';
+                            this.uploadModalOpen = true;
+                        },
+                        closeUploadModal() {
+                            this.uploadModalOpen = false;
+                            this.selectedFileName = '';
+                        },
                         get totals() {
                             let rows = Array.from(this.$refs.tbody.querySelectorAll('tr[data-usulan]'));
                             let filtered = rows.filter(tr => {
@@ -350,101 +371,142 @@
                                                 @else
                                                     <span class="px-2 py-0.5 bg-gray-100 text-gray-800 rounded-full text-[9px] font-black uppercase">Draft</span>
                                                 @endif
-                                            </td>                                        <td class="px-4 py-2 text-sm">
-                                                <div class="flex flex-col space-y-2">
-                                                    @php
-                                                        $isItemLockedByPagu = $isPaguEstablished;
-                                                        $isExceeding = $detail->isExceedingPagu();
-                                                        $hasRevision = $detail->hasUploadedRevision();
-                                                    @endphp
+                                                          <td class="px-4 py-2 text-sm whitespace-nowrap">
+                                                @php
+                                                    $isItemLockedByPagu = $isPaguEstablished;
+                                                    $isExceeding = $detail->isExceedingPagu();
+                                                    $hasRevision = $detail->hasUploadedRevision();
+                                                @endphp
 
-                                                    @if($detail->is_validated)
-                                                        <div class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded justify-center">
-                                                            <span>🔒</span>
-                                                            <span>Tervalidasi (Terkunci)</span>
-                                                        </div>
-                                                    @elseif(!$isItemLockedByPagu)
-                                                        <div class="flex flex-wrap items-center gap-1.5">
-                                                            <a href="{{ route('operator.details.edit', $detail) }}"
-                                                                class="text-indigo-600 hover:text-indigo-900 text-[10px] font-bold border border-indigo-200 px-2 py-1 rounded bg-indigo-50"
-                                                                title="Edit rincian belanja">Edit</a>
-                                                            
-                                                            @if(!$detail->is_submitted || $detail->is_rejected)
-                                                                <form action="{{ route('operator.details.submit-item', $detail) }}" method="POST">
-                                                                    @csrf
-                                                                    <button type="submit" 
-                                                                        class="text-green-600 hover:text-green-900 text-[10px] font-bold border border-green-200 px-2 py-1 rounded bg-green-50">
-                                                                        Ajukan
-                                                                    </button>
-                                                                </form>
-                                                            @endif
+                                                @if($detail->is_validated)
+                                                    <div class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg justify-center shadow-2xs">
+                                                        <span>🔒</span>
+                                                        <span>Tervalidasi</span>
+                                                    </div>
+                                                @elseif(!$isItemLockedByPagu)
+                                                    <div class="flex items-center gap-1.5">
+                                                        <!-- Tombol Edit (Icon Pencil) -->
+                                                        <a href="{{ route('operator.details.edit', $detail) }}"
+                                                            class="p-1.5 rounded-lg text-indigo-600 hover:text-indigo-900 bg-indigo-50/80 hover:bg-indigo-100 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
+                                                            title="Edit Rincian Belanja">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                            </svg>
+                                                        </a>
 
-                                                            <form action="{{ route('operator.details.destroy', $detail) }}" method="POST" onsubmit="return confirm('Hapus rincian ini?')">
+                                                        <!-- Tombol Unggah Revisi PDF (Icon Upload Document) -->
+                                                        <button type="button"
+                                                            @click="openUploadModal({
+                                                                id: {{ $detail->id }},
+                                                                accountName: @js($detail->accountCode->code . ' - ' . $detail->accountCode->name),
+                                                                description: @js($detail->description),
+                                                                nominal: @js('Rp ' . number_format($detail->nominal_request, 0, ',', '.')),
+                                                                currentVersion: @js($latest ? 'V' . $latest->version_number : '-'),
+                                                                uploadUrl: @js(route('operator.details.upload-version', $detail)),
+                                                                isExceeding: false,
+                                                                hasRevision: false
+                                                            })"
+                                                            class="p-1.5 rounded-lg text-sky-600 hover:text-sky-900 bg-sky-50/80 hover:bg-sky-100 border border-sky-200 transition-all cursor-pointer shadow-2xs"
+                                                            title="Unggah Dokumen PDF Revisi">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                            </svg>
+                                                        </button>
+
+                                                        <!-- Tombol Ajukan (Icon Paper Airplane) -->
+                                                        @if(!$detail->is_submitted || $detail->is_rejected)
+                                                            <form action="{{ route('operator.details.submit-item', $detail) }}" method="POST" class="inline">
                                                                 @csrf
-                                                                @method('DELETE')
                                                                 <button type="submit" 
-                                                                    class="text-red-600 hover:text-red-900 text-[10px] font-bold border border-red-200 px-2 py-1 rounded bg-red-50">
-                                                                    Hapus
+                                                                    class="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-900 bg-emerald-50/80 hover:bg-emerald-100 border border-emerald-200 transition-all cursor-pointer shadow-2xs"
+                                                                    title="Ajukan ke Supervisor">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                                                    </svg>
                                                                 </button>
                                                             </form>
-                                                        </div>
+                                                        @endif
 
-                                                        <form action="{{ route('operator.details.upload-version', $detail) }}"
-                                                            method="POST" enctype="multipart/form-data"
-                                                            class="flex items-center space-x-1 border-t pt-2 mt-2">
+                                                        <!-- Tombol Hapus (Icon Trash) -->
+                                                        <form action="{{ route('operator.details.destroy', $detail) }}" method="POST" onsubmit="return confirm('Hapus rincian belanja ini?')" class="inline">
                                                             @csrf
-                                                            <input type="file" name="attachment" class="text-[10px] w-24" required>
-                                                            <button type="submit"
-                                                                class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-[10px] font-bold"
-                                                                title="Unggah versi PDF baru">Revisi</button>
+                                                            @method('DELETE')
+                                                            <button type="submit" 
+                                                                class="p-1.5 rounded-lg text-rose-600 hover:text-rose-900 bg-rose-50/80 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer shadow-2xs"
+                                                                title="Hapus Rincian Belanja">
+                                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                </svg>
+                                                            </button>
                                                         </form>
-                                                    @else
-                                                        <div class="flex flex-col items-center space-y-2">
-                                                            @if($isItemLockedByPagu)
-                                                                @if($isExceeding)
-                                                                    @if(!$hasRevision)
-                                                                        <span class="px-2 py-0.5 bg-red-100 text-red-800 border border-red-200 rounded text-[9px] font-black uppercase text-center block">⚠ Wajib Upload PDF Baru</span>
-                                                                        
-                                                                        <form action="{{ route('operator.details.upload-version', $detail) }}"
-                                                                            method="POST" enctype="multipart/form-data"
-                                                                            class="flex items-center space-x-1 border-t pt-2 mt-2">
-                                                                            @csrf
-                                                                            <input type="file" name="attachment" class="text-[10px] w-24" required>
-                                                                            <button type="submit"
-                                                                                class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-[10px] font-bold">Upload</button>
-                                                                        </form>
-                                                                    @else
-                                                                        <span class="px-2 py-0.5 bg-green-100 text-green-800 border border-green-200 rounded text-[9px] font-black uppercase text-center block">✓ PDF Penyesuaian Diunggah</span>
-                                                                        
-                                                                        @if(!$detail->is_submitted || $detail->is_rejected)
-                                                                            <form action="{{ route('operator.details.submit-item', $detail) }}" method="POST" class="mt-1">
-                                                                                @csrf
-                                                                                <button type="submit" 
-                                                                                    class="text-green-600 hover:text-green-900 text-[10px] font-bold border border-green-200 px-3 py-1 rounded bg-green-50">
-                                                                                    Ajukan
-                                                                                </button>
-                                                                            </form>
-                                                                        @endif
-
-                                                                        <form action="{{ route('operator.details.upload-version', $detail) }}"
-                                                                            method="POST" enctype="multipart/form-data"
-                                                                            class="flex items-center space-x-1 border-t pt-2 mt-2">
-                                                                            @csrf
-                                                                            <input type="file" name="attachment" class="text-[10px] w-24" required>
-                                                                            <button type="submit"
-                                                                                class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-[10px] font-bold">Revisi</button>
-                                                                        </form>
-                                                                    @endif
-                                                                @else
-                                                                    <span class="text-[9px] bg-red-50 text-red-600 px-1 py-0.5 rounded border border-red-100 font-bold uppercase italic">Pagu Locked</span>
-                                                                    <span class="text-gray-400 text-[10px] italic font-medium text-center">Read Only</span>
+                                                    </div>
+                                                @else
+                                                    {{-- Item terkunci karena pagu sudah diset oleh Admin --}}
+                                                    @if($isExceeding)
+                                                        @if(!$hasRevision)
+                                                            <div class="flex flex-col items-start gap-1">
+                                                                <button type="button"
+                                                                    @click="openUploadModal({
+                                                                        id: {{ $detail->id }},
+                                                                        accountName: @js($detail->accountCode->code . ' - ' . $detail->accountCode->name),
+                                                                        description: @js($detail->description),
+                                                                        nominal: @js('Rp ' . number_format($detail->nominal_request, 0, ',', '.')),
+                                                                        currentVersion: @js($latest ? 'V' . $latest->version_number : '-'),
+                                                                        uploadUrl: @js(route('operator.details.upload-version', $detail)),
+                                                                        isExceeding: true,
+                                                                        hasRevision: false
+                                                                    })"
+                                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-xs transition-all cursor-pointer animate-pulse"
+                                                                    title="Wajib Unggah PDF Penyesuaian Pagu">
+                                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                                    </svg>
+                                                                    <span>Upload PDF Revisi</span>
+                                                                </button>
+                                                                <span class="text-[9px] font-bold text-amber-700">⚠ Melebihi Pagu</span>
+                                                            </div>
+                                                        @else
+                                                            <div class="flex items-center gap-1.5">
+                                                                @if(!$detail->is_submitted || $detail->is_rejected)
+                                                                    <form action="{{ route('operator.details.submit-item', $detail) }}" method="POST" class="inline">
+                                                                        @csrf
+                                                                        <button type="submit" 
+                                                                            class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-xs transition-all cursor-pointer"
+                                                                            title="Ajukan ke Supervisor">
+                                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                                                            </svg>
+                                                                            <span>Ajukan</span>
+                                                                        </button>
+                                                                    </form>
                                                                 @endif
-                                                            @else
-                                                                <span class="text-gray-400 text-[10px] italic font-medium text-center">Read Only</span>
-                                                            @endif
+
+                                                                <button type="button"
+                                                                    @click="openUploadModal({
+                                                                        id: {{ $detail->id }},
+                                                                        accountName: @js($detail->accountCode->code . ' - ' . $detail->accountCode->name),
+                                                                        description: @js($detail->description),
+                                                                        nominal: @js('Rp ' . number_format($detail->nominal_request, 0, ',', '.')),
+                                                                        currentVersion: @js($latest ? 'V' . $latest->version_number : '-'),
+                                                                        uploadUrl: @js(route('operator.details.upload-version', $detail)),
+                                                                        isExceeding: true,
+                                                                        hasRevision: true
+                                                                    })"
+                                                                    class="p-1.5 rounded-lg text-sky-600 hover:text-sky-900 bg-sky-50/80 hover:bg-sky-100 border border-sky-200 transition-all cursor-pointer shadow-2xs"
+                                                                    title="Unggah Versi PDF Lebih Baru">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        @endif
+                                                    @else
+                                                        <div class="inline-flex flex-col items-center">
+                                                            <span class="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200 font-bold uppercase">Pagu Locked</span>
+                                                            <span class="text-gray-400 text-[9px] italic mt-0.5">Read Only</span>
                                                         </div>
                                                     @endif
-                                                </div>
+                                                @endif
                                             </td>
                                         </tr>
                                     @empty
@@ -455,8 +517,144 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Modal Dialog Unggah Revisi Dokumen PDF -->
+                        <div x-show="uploadModalOpen"
+                             x-cloak
+                             style="display: none;"
+                             class="fixed inset-0 z-50 overflow-y-auto"
+                             aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                            <!-- Backdrop Blur -->
+                            <div x-show="uploadModalOpen"
+                                 x-transition:enter="ease-out duration-300"
+                                 x-transition:enter-start="opacity-0"
+                                 x-transition:enter-end="opacity-100"
+                                 x-transition:leave="ease-in duration-200"
+                                 x-transition:leave-start="opacity-100"
+                                 x-transition:leave-end="opacity-0"
+                                 class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+                                 @click="closeUploadModal()"></div>
+
+                            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                                <div x-show="uploadModalOpen"
+                                     x-transition:enter="ease-out duration-300"
+                                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                                     x-transition:leave="ease-in duration-200"
+                                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                                     class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-gray-100">
+                                    
+                                    <!-- Modal Header -->
+                                    <div class="bg-slate-50/80 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-base shadow-2xs">
+                                                📄
+                                            </div>
+                                            <div>
+                                                <h3 class="text-sm font-bold text-gray-900 leading-tight">Unggah Revisi Dokumen PDF</h3>
+                                                <p class="text-[11px] text-gray-500">Pembaruan dokumen pendukung rincian belanja usulan</p>
+                                            </div>
+                                        </div>
+                                        <button type="button" @click="closeUploadModal()" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    </div>
+
+                                    <!-- Form Upload -->
+                                    <form :action="uploadTargetDetail.uploadUrl" method="POST" enctype="multipart/form-data">
+                                        @csrf
+                                        <div class="p-6 space-y-4">
+                                            <!-- Detail Context Card -->
+                                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs space-y-1.5">
+                                                <div class="flex justify-between items-start gap-2">
+                                                    <span class="text-gray-500 font-semibold">Rekening:</span>
+                                                    <span class="font-bold text-gray-800 text-right" x-text="uploadTargetDetail.accountName"></span>
+                                                </div>
+                                                <div class="flex justify-between items-start gap-2">
+                                                    <span class="text-gray-500 font-semibold">Rincian:</span>
+                                                    <span class="font-medium text-gray-800 text-right truncate max-w-[260px]" x-text="uploadTargetDetail.description"></span>
+                                                </div>
+                                                <div class="flex justify-between items-center pt-1 border-t border-slate-200">
+                                                    <span class="text-gray-500 font-semibold">Nominal Usulan:</span>
+                                                    <span class="font-black text-indigo-600" x-text="uploadTargetDetail.nominal"></span>
+                                                </div>
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-gray-500 font-semibold">Versi PDF Saat Ini:</span>
+                                                    <span class="px-2 py-0.5 bg-sky-100 text-sky-800 rounded font-bold text-[10px]" x-text="uploadTargetDetail.currentVersion"></span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Alert Khusus jika Over Pagu -->
+                                            <template x-if="uploadTargetDetail.isExceeding && !uploadTargetDetail.hasRevision">
+                                                <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
+                                                    <span class="text-base">⚠️</span>
+                                                    <div class="leading-relaxed">
+                                                        <strong>Rincian ini melebihi pagu yang ditetapkan!</strong><br>
+                                                        Anda wajib mengunggah berkas PDF penyesuaian baru agar usulan ini dapat diajukan kembali ke Supervisor.
+                                                    </div>
+                                                </div>
+                                            </template>
+
+                                            <!-- Dropzone File Picker -->
+                                            <div>
+                                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+                                                    Pilih Berkas PDF Revisi Baru <span class="text-rose-500">*</span>
+                                                </label>
+                                                <div class="relative border-2 border-dashed border-gray-300 hover:border-indigo-400 rounded-xl p-6 text-center transition-colors bg-white hover:bg-slate-50/50 cursor-pointer"
+                                                     @click="$refs.fileInput.click()">
+                                                    <input type="file" name="attachment" x-ref="fileInput" accept=".pdf,application/pdf" required class="sr-only"
+                                                           @change="selectedFileName = $event.target.files[0] ? $event.target.files[0].name : ''">
+                                                    
+                                                    <div class="flex flex-col items-center">
+                                                        <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2 shadow-2xs">
+                                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                            </svg>
+                                                        </div>
+                                                        <template x-if="!selectedFileName">
+                                                            <div>
+                                                                <span class="text-xs font-bold text-indigo-600 hover:text-indigo-700">Pilih berkas PDF</span>
+                                                                <span class="text-xs text-gray-500"> atau seret ke sini</span>
+                                                                <p class="text-[10px] text-gray-400 mt-1">Format PDF, Ukuran Maksimal 10 MB</p>
+                                                            </div>
+                                                        </template>
+                                                        <template x-if="selectedFileName">
+                                                            <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200">
+                                                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                                <span class="text-xs font-bold truncate max-w-[280px]" x-text="selectedFileName"></span>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="text-[11px] text-gray-400 italic">
+                                                * Catatan: Mengunggah versi PDF baru akan otomatis mengatur ulang status usulan rincian ini menjadi <strong>Draft</strong> agar dapat ditinjau kembali sebelum diajukan.
+                                            </div>
+                                        </div>
+
+                                        <!-- Modal Actions -->
+                                        <div class="bg-gray-50 px-6 py-3.5 border-t border-gray-100 flex items-center justify-end gap-2.5">
+                                            <button type="button" @click="closeUploadModal()"
+                                                    class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-50 transition-all cursor-pointer">
+                                                Batal
+                                            </button>
+                                            <button type="submit"
+                                                    :disabled="!selectedFileName"
+                                                    :class="!selectedFileName ? 'opacity-50 cursor-not-allowed bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700 shadow-sm hover:shadow-md cursor-pointer'"
+                                                    class="inline-flex items-center gap-1.5 px-5 py-2 text-white rounded-xl text-xs font-bold transition-all">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                                <span>Simpan & Unggah PDF</span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
             <!-- Dokumen Pendukung (KAK, RAK, RTP) Section -->
             @php
