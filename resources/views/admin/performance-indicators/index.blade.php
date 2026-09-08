@@ -11,7 +11,8 @@
                 </p>
             </div>
             <div class="flex items-center gap-2">
-                <button type="button" @click="$dispatch('open-indicator-modal', { isEdit: false })"
+                <button type="button"
+                    onclick="window.dispatchEvent(new CustomEvent('open-indicator-modal'))"
                     class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     <span>Tambah Indikator Baru</span>
@@ -21,7 +22,7 @@
     </x-slot>
 
     <div class="py-6 sm:py-8" x-data="performanceIndicatorsManager()">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
             <!-- Flash Notifications -->
             @if (session('success'))
@@ -639,9 +640,10 @@
     </div>
 
     <!-- Script Alpine.js Component -->
+    @push('scripts')
     <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('performanceIndicatorsManager', () => ({
+        function performanceIndicatorsManager() {
+            return {
                 // State Modal 1: Indikator Parent
                 indicatorModalOpen: false,
                 isEditIndicator: false,
@@ -691,7 +693,7 @@
                 },
 
                 init() {
-                    window.addEventListener('open-indicator-modal', (e) => {
+                    window.addEventListener('open-indicator-modal', () => {
                         this.openAddIndicatorModal();
                     });
                 },
@@ -809,7 +811,17 @@
                 closeHistoryModal() {
                     this.historyModalOpen = false;
                 }
-            }));
+            };
+        }
+        window.performanceIndicatorsManager = performanceIndicatorsManager;
+        if (window.Alpine) {
+            window.Alpine.data('performanceIndicatorsManager', performanceIndicatorsManager);
+        }
+        document.addEventListener('alpine:init', () => {
+            if (window.Alpine) {
+                window.Alpine.data('performanceIndicatorsManager', performanceIndicatorsManager);
+            }
         });
     </script>
+    @endpush
 </x-app-layout>
