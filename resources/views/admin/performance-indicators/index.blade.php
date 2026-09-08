@@ -4,7 +4,7 @@
             <div>
                 <h2 class="font-bold text-xl text-gray-800 leading-tight flex items-center gap-2">
                     <span>🎯</span>
-                    <span>{{ __('Manajemen Indikator Kinerja RSUD Kardinah') }}</span>
+                    <span>{{ __('Target Indikator Kinerja RSUD Kardinah') }}</span>
                 </h2>
                 <p class="text-xs text-gray-500 mt-1">
                     Kelola data master indikator kinerja rumah sakit dan pantau target berkala 5 tahun perencanaan.
