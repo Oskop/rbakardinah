@@ -42,6 +42,13 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::post('announcements/{announcement}/reshow', [\App\Http\Controllers\Admin\AnnouncementController::class, 'reshow'])->name('announcements.reshow');
     Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class);
 
+    // Performance Indicators Routes (Indikator Kinerja)
+    Route::post('performance-indicators/{performance_indicator}/toggle-status', [\App\Http\Controllers\Admin\PerformanceIndicatorController::class, 'toggleStatus'])->name('performance-indicators.toggle-status');
+    Route::post('performance-indicators/{performance_indicator}/targets/{year}', [\App\Http\Controllers\Admin\PerformanceIndicatorController::class, 'updateTarget'])->name('performance-indicators.targets.update');
+    Route::post('performance-indicators/{performance_indicator}/targets-batch', [\App\Http\Controllers\Admin\PerformanceIndicatorController::class, 'batchUpdateTargets'])->name('performance-indicators.targets.batch');
+    Route::get('performance-indicators/{performance_indicator}/targets/{year}/history', [\App\Http\Controllers\Admin\PerformanceIndicatorController::class, 'targetHistory'])->name('performance-indicators.targets.history');
+    Route::resource('performance-indicators', \App\Http\Controllers\Admin\PerformanceIndicatorController::class);
+
     // Documentation Management Routes
     Route::get('documentation', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'index'])->name('documentation.index');
     Route::get('documentation/versions/create', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'createVersion'])->name('documentation.versions.create');

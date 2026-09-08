@@ -61,6 +61,9 @@
                             <x-nav-link :href="route('admin.announcements.index')" :active="request()->routeIs('admin.announcements.*')">
                                 📢 {{ __('Pengumuman') }}
                             </x-nav-link>
+                            <x-nav-link :href="route('admin.performance-indicators.index')" :active="request()->routeIs('admin.performance-indicators.*')">
+                                🎯 {{ __('Indikator Kinerja') }}
+                            </x-nav-link>
                             <x-nav-link :href="route('admin.logs.index')" :active="request()->routeIs('admin.logs.*')">
                                 {{ __('Log Data') }}
                             </x-nav-link>
@@ -200,6 +203,9 @@
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.announcements.index')" :active="request()->routeIs('admin.announcements.*')">
                     📢 {{ __('Pengumuman') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.performance-indicators.index')" :active="request()->routeIs('admin.performance-indicators.*')">
+                    🎯 {{ __('Indikator Kinerja') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.logs.index')" :active="request()->routeIs('admin.logs.*')">
                     {{ __('Log Data') }}
