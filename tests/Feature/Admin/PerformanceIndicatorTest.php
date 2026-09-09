@@ -78,7 +78,7 @@ class PerformanceIndicatorTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.performance-indicators.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('Manajemen Indikator Kinerja RSUD Kardinah');
+        $response->assertSee('Target Indikator Kinerja RSUD Kardinah');
         $response->assertSee('IK-01');
         $response->assertSee('Tingkat Akreditasi RSUD Kardinah');
         $response->assertSee('Mutu & Keselamatan');

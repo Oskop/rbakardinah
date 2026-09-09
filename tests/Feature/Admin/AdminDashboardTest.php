@@ -132,6 +132,13 @@ class AdminDashboardTest extends TestCase
             'nominal_pagu' => 100000000
         ]);
 
+        $acUnused = \App\Models\AccountCode::create(['kelompok_belanja_id' => $group->id, 'code' => '5.1.02', 'name' => 'Belanja Barang Tanpa Usulan']);
+        \App\Models\RbaAccountPagu::create([
+            'rba_header_id' => $header->id,
+            'account_code_id' => $acUnused->id,
+            'nominal_pagu' => 50000000
+        ]);
+
         $op1 = User::factory()->create(['role' => 'Operator', 'unit_id' => $unit1->id, 'name' => 'Op Inap']);
         $op2 = User::factory()->create(['role' => 'Operator', 'unit_id' => $unit2->id, 'name' => 'Op Farmasi']);
 
@@ -167,6 +174,11 @@ class AdminDashboardTest extends TestCase
         $resAll->assertSee('Item Farmasi');
         $resAll->assertSee('Unit Rawat Inap');
         $resAll->assertSee('Unit Farmasi');
+        // Account with pagu but without proposal details must appear in All scope
+        $resAll->assertSee('Belanja Barang Tanpa Usulan');
+        $resAll->assertSee('50.000.000');
+        $resAll->assertSee('150.000.000');
+        $resAll->assertSee('Belum ada rincian usulan belanja yang diinputkan unit kerja');
 
         // 2. Test Admin Print RBA Final Filter Unit 1
         $resUnit1 = $this->actingAs($admin)->get(route('admin.headers.print-preview-final', [
@@ -177,6 +189,8 @@ class AdminDashboardTest extends TestCase
         $resUnit1->assertSee('Item Inap');
         $resUnit1->assertDontSee('Item Farmasi');
         $resUnit1->assertSee('Unit Rawat Inap');
+        // Account not proposed by Unit 1 must NOT appear in Unit 1 filter
+        $resUnit1->assertDontSee('Belanja Barang Tanpa Usulan');
     }
 
     public function test_admin_can_view_unit_monitoring_with_supervisor_and_operator_progress()

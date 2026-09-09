@@ -398,7 +398,10 @@
     <div class="section-title">{{ ($includeBackground && isset($backgroundSubmissions) && $backgroundSubmissions->count() > 0) ? 'II.' : 'I.' }} RINCIAN BELANJA DAN PAGU FINAL (RBA FINAL)</div>
 
     @php
-        $groupedDetails = $details->groupBy('account_code_id');
+        $detailsByAccount = $details->groupBy('account_code_id');
+        $accountsToRender = isset($reportAccountCodes) && $reportAccountCodes->isNotEmpty() 
+            ? $reportAccountCodes 
+            : \App\Models\AccountCode::whereIn('id', array_keys($detailsByAccount->toArray()))->orderBy('code')->get();
         $grandTotalUsulan = 0;
         $grandTotalPaguFinal = 0;
         $counter = 1;
@@ -422,10 +425,10 @@
             </tr>
         </thead>
         <tbody>
-            @forelse($groupedDetails as $accountCodeId => $itemDetails)
+            @forelse($accountsToRender as $accountCode)
                 @php
-                    $firstDetail = $itemDetails->first();
-                    $accountCode = $firstDetail->accountCode;
+                    $accountCodeId = $accountCode->id;
+                    $itemDetails = $detailsByAccount->get($accountCodeId, collect());
                     $paguFinal = $pagus[$accountCodeId]->nominal_pagu ?? 0;
                     $paguAwal = $previousPagus[$accountCodeId]->nominal_pagu ?? 0;
                     $subtotalUsulan = $itemDetails->sum('nominal_request');
@@ -447,7 +450,7 @@
                 </tr>
 
                 <!-- Item Detail Rows -->
-                @foreach($itemDetails as $detail)
+                @forelse($itemDetails as $detail)
                     <tr>
                         <td></td>
                         <td class="font-mono text-center" style="font-size: 8.5px; color: #64748b;">
@@ -466,7 +469,7 @@
                             <span style="color: #475569;">{{ $detail->creator->name ?? 'System' }}</span>
                         </td>
                         <td class="text-right font-mono">
-                            {{ number_format($paguAwal, 0, ',', '.') }}
+                            {{ $paguAwal > 0 ? number_format($paguAwal, 0, ',', '.') : '-' }}
                         </td>
                         <td class="text-center font-mono">{{ $detail->volume }}</td>
                         <td class="text-center">{{ $detail->satuan }}</td>
@@ -487,7 +490,33 @@
                             @endif
                         </td>
                     </tr>
-                @endforeach
+                @empty
+                    <!-- Baris informatif bagi rekening yang telah ditetapkan pagunya namun belum diusulkan oleh unit kerja -->
+                    <tr style="background-color: #f8fafc;">
+                        <td></td>
+                        <td class="font-mono text-center" style="font-size: 8.5px; color: #94a3b8;">
+                            {{ $accountCode->code ?? '-' }}
+                        </td>
+                        <td colspan="3" style="color: #64748b; font-style: italic;">
+                            (Belum ada rincian usulan belanja yang diinputkan unit kerja)
+                        </td>
+                        <td class="text-right font-mono" style="color: #94a3b8;">
+                            {{ $paguAwal > 0 ? number_format($paguAwal, 0, ',', '.') : '-' }}
+                        </td>
+                        <td class="text-center font-mono" style="color: #94a3b8;">-</td>
+                        <td class="text-center" style="color: #94a3b8;">-</td>
+                        <td class="text-right font-mono" style="color: #94a3b8;">-</td>
+                        <td class="text-right font-mono" style="color: #64748b; font-weight: 600;">
+                            0
+                        </td>
+                        <td class="text-right font-mono" style="color: #0369a1; font-weight: 600;">
+                            {{ number_format($paguFinal, 0, ',', '.') }}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-warning" style="font-size: 7.5px;">Belum Usul</span>
+                        </td>
+                    </tr>
+                @endforelse
 
                 <!-- Subtotal Row per Kode Rekening -->
                 <tr class="subtotal-row">
@@ -508,12 +537,12 @@
             @empty
                 <tr>
                     <td colspan="12" class="text-center" style="padding: 20px; color: #64748b;">
-                        Belum ada rincian belanja yang diusulkan untuk kriteria filter ini.
+                        Belum ada rincian belanja atau alokasi pagu untuk kriteria filter ini.
                     </td>
                 </tr>
             @endforelse
         </tbody>
-        @if($groupedDetails->count() > 0)
+        @if($accountsToRender->count() > 0)
             <tfoot>
                 <tr class="grandtotal-row">
                     <td colspan="9" class="text-right" style="letter-spacing: 0.5px;">

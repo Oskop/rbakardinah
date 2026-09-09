@@ -517,6 +517,14 @@ class RbaHeaderController extends Controller
 
         $pagus = \App\Models\RbaAccountPagu::where('rba_header_id', $header->id)->get()->keyBy('account_code_id');
 
+        $isFiltered = !empty($selectedUnitIds) || !empty($selectedOperatorIds);
+        $accountCodeIds = $details->pluck('account_code_id')->toArray();
+        if (!$isFiltered) {
+            $paguAccountIds = $pagus->filter(fn($p) => $p->nominal_pagu > 0)->keys()->toArray();
+            $accountCodeIds = array_unique(array_merge($accountCodeIds, $paguAccountIds));
+        }
+        $reportAccountCodes = \App\Models\AccountCode::whereIn('id', $accountCodeIds)->orderBy('code')->get();
+
         $currentYear = $header->year;
         $currentPeriodName = $header->period->name ?? '';
 
@@ -564,7 +572,7 @@ class RbaHeaderController extends Controller
 
         return view('reports.admin_rba_final_print', compact(
             'header', 'submissions', 'details', 'pagus', 'includeBackground', 'previousPagus',
-            'units', 'allOperators', 'selectedUnitIds', 'selectedOperatorIds', 'filterLabel'
+            'units', 'allOperators', 'selectedUnitIds', 'selectedOperatorIds', 'filterLabel', 'reportAccountCodes'
         ));
     }
 }
