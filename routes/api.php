@@ -25,8 +25,8 @@ Route::prefix('v1')->group(function () {
         ]);
     });
 
-    // Protected API Endpoints (Membutuhkan API Key valid)
-    Route::middleware(['api.key', 'throttle:60,1'])->group(function () {
+    // Protected API Endpoints (Membutuhkan API Key valid & dicatat log-nya)
+    Route::middleware(['api.log', 'api.key', 'throttle:60,1'])->group(function () {
         Route::get('/pagu', [PaguApiController::class, 'index'])->name('api.v1.pagu.index');
     });
 });

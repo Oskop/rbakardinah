@@ -34,6 +34,9 @@ class VerifyApiKey
             ], Response::HTTP_UNAUTHORIZED);
         }
 
+        // Lampirkan data client ke request attributes sesegera mungkin agar logging dapat merekam identitas klien
+        $request->attributes->set('api_client', $client);
+
         if (!$client->is_active) {
             return response()->json([
                 'success' => false,
@@ -50,9 +53,6 @@ class VerifyApiKey
 
         // Catat penggunaan terakhir
         $client->recordUsage($request->ip());
-
-        // Lampirkan data client ke request attributes
-        $request->attributes->set('api_client', $client);
 
         return $next($request);
     }

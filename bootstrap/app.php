@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
             'active' => \App\Http\Middleware\CheckUserActive::class,
             'api.key' => \App\Http\Middleware\VerifyApiKey::class,
+            'api.log' => \App\Http\Middleware\LogApiAccess::class,
         ]);
 
         $middleware->appendToGroup('web', [

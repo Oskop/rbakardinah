@@ -26,6 +26,18 @@
     }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
+            <!-- Navigation Tabs: Database Mutasi Logs vs API Access Logs -->
+            <div class="flex items-center space-x-2 border-b border-gray-200 pb-1">
+                <a href="{{ route('admin.logs.index') }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-indigo-700 bg-white border border-b-0 border-gray-200 rounded-t-xl shadow-2xs">
+                    <span>📝 Log Transaksi Database (Internal)</span>
+                </a>
+                <a href="{{ route('admin.api-logs.index') }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-500 hover:text-indigo-600 hover:bg-gray-50 rounded-t-xl transition">
+                    <span>🌐 Log Akses REST API (Eksternal)</span>
+                </a>
+            </div>
+
             <!-- Summary Stats Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">

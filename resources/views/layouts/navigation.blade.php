@@ -64,8 +64,8 @@
                             <x-nav-link :href="route('admin.performance-indicators.index')" :active="request()->routeIs('admin.performance-indicators.*')">
                                 🎯 {{ __('Indikator Kinerja') }}
                             </x-nav-link>
-                            <x-nav-link :href="route('admin.logs.index')" :active="request()->routeIs('admin.logs.*')">
-                                {{ __('Log Data') }}
+                            <x-nav-link :href="route('admin.logs.index')" :active="request()->routeIs('admin.logs.*') || request()->routeIs('admin.api-logs.*')">
+                                📋 {{ __('Log Data') }}
                             </x-nav-link>
                         @elseif(Auth::user()->role === 'Supervisor')
                             <x-nav-link :href="route('supervisor.submissions.index')"
