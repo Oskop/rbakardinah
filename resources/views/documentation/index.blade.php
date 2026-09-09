@@ -19,7 +19,7 @@
 
             <!-- Top Action Toolbar -->
             <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                <!-- Tab Switcher (Web vs PDF) -->
+                <!-- Tab Switcher (Web vs PDF vs REST API) -->
                 <div class="inline-flex p-1 bg-gray-100 rounded-xl border border-gray-200 text-xs font-semibold">
                     <a href="{{ route('documentation.index', ['tab' => 'web', 'version' => $selectedHtmlVersion?->version]) }}"
                         class="px-3 py-1.5 rounded-lg transition {{ $tab === 'web' ? 'bg-white text-indigo-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900' }}">
@@ -28,6 +28,11 @@
                     <a href="{{ route('documentation.index', ['tab' => 'pdf', 'version' => $selectedHtmlVersion?->version]) }}"
                         class="px-3 py-1.5 rounded-lg transition {{ $tab === 'pdf' ? 'bg-white text-indigo-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900' }}">
                         📄 Manual Book PDF
+                    </a>
+                    <a href="{{ route('api.documentation') }}"
+                        class="px-3 py-1.5 rounded-lg transition text-indigo-600 hover:text-indigo-800 hover:bg-white/80 font-bold flex items-center gap-1">
+                        <span>🌐 REST API</span>
+                        <span class="text-[10px] px-1 bg-indigo-100 text-indigo-700 rounded font-mono">Swagger</span>
                     </a>
                 </div>
 

@@ -74,6 +74,13 @@ Route::get('documentation/pdf/preview/{version}', [\App\Http\Controllers\General
 Route::get('documentation/pdf/download/{version}', [\App\Http\Controllers\General\DocumentationController::class, 'downloadPdf'])->name('documentation.pdf.download');
 Route::get('documentation/{version}/{slug}', [\App\Http\Controllers\General\DocumentationController::class, 'article'])->name('documentation.article');
 
+// Public REST API Documentation & OpenAPI Specification (No Login Required)
+Route::get('api/documentation', [\App\Http\Controllers\Api\ApiDocumentationController::class, 'index'])->name('api.documentation');
+Route::get('api/v1/openapi.json', [\App\Http\Controllers\Api\ApiDocumentationController::class, 'openapi'])->name('api.openapi.json');
+Route::get('documentation/api', function () {
+    return redirect()->route('api.documentation');
+});
+
 Route::middleware(['auth', 'role:Supervisor'])->prefix('supervisor')->name('supervisor.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Supervisor\DashboardController::class, 'index'])->name('dashboard');
 
