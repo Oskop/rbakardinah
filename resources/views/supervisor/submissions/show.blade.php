@@ -121,7 +121,7 @@
                                             @forelse($operators as $op)
                                                 <label class="flex items-center gap-2 text-xs text-gray-700 py-1 px-1.5 hover:bg-white rounded cursor-pointer transition-colors">
                                                     <input type="checkbox" name="operator_ids[]" value="{{ $op->id }}" x-model="selectedOperators" class="rounded text-emerald-600 focus:ring-emerald-500">
-                                                    <span><strong>{{ $op->name }}</strong> <span class="text-gray-400">({{ $op->email }})</span></span>
+                                                    <span><strong>{{ $op->name }}</strong> @if($op->subUnit) <span class="text-blue-600 font-semibold">[📌 {{ $op->subUnit->name }}]</span> @endif <span class="text-gray-400">({{ $op->email }})</span></span>
                                                 </label>
                                             @empty
                                                 <p class="text-xs text-gray-500 italic text-center py-2">Belum ada operator terdaftar di unit ini.</p>
@@ -251,6 +251,14 @@
                                                 <h4 class="text-sm font-bold text-gray-900 truncate">
                                                     {{ $op->name }}
                                                 </h4>
+                                                @if($op->subUnit)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                                        📌 {{ $op->subUnit->name }}
+                                                    </span>
+                                                @endif
+                                                @if($op->jabatan)
+                                                    <span class="text-[11px] font-medium text-slate-500">({{ $op->jabatan }})</span>
+                                                @endif
                                                 @if($op->nip)
                                                     <span class="text-[11px] font-normal font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">({{ $op->nip }})</span>
                                                 @endif
@@ -567,8 +575,18 @@
                                         </svg>
                                     </div>
                                     <div>
-                                        <h4 class="font-bold text-base text-gray-800">{{ $op->name }}</h4>
-                                        <p class="text-xs text-gray-500">{{ $op->email }}</p>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <h4 class="font-bold text-base text-gray-800">{{ $op->name }}</h4>
+                                            @if($op->subUnit)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                                    📌 {{ $op->subUnit->name }}
+                                                </span>
+                                            @endif
+                                            @if($op->jabatan)
+                                                <span class="text-xs text-slate-500">({{ $op->jabatan }})</span>
+                                            @endif
+                                        </div>
+                                        <p class="text-xs text-gray-500">{{ $op->email }} @if($op->nip) • NIP. {{ $op->nip }} @endif</p>
                                     </div>
                                 </div>
 

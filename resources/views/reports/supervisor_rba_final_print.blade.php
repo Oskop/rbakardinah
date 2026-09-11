@@ -531,7 +531,7 @@
             <td>
                 <div class="sign-title">
                     Tegal, {{ date('d F Y') }}<br>
-                    Supervisor / Atasan Sub-Unit
+                    <strong>{{ Auth::user()->jabatan ?? 'Supervisor / Kepala ' . ($submission->unit->name ?? 'Unit') }}</strong>
                 </div>
                 <div class="sign-name">{{ Auth::user()->name ?? 'Supervisor Sub-Unit' }}</div>
                 <div class="sign-nip">NIP. {{ Auth::user()->nip ?? '....................................' }}</div>

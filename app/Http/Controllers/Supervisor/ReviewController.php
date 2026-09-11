@@ -31,6 +31,7 @@ class ReviewController extends Controller
         $operators = \App\Models\User::where('unit_id', Auth::user()->unit_id)
             ->where('role', 'Operator')
             ->where('is_active', true)
+            ->with('subUnit')
             ->orderBy('name')
             ->get();
 
@@ -40,9 +41,9 @@ class ReviewController extends Controller
             },
             'header.period', 
             'documents' => function ($query) {
-                $query->with(['user', 'versions.uploader', 'latestVersion']);
+                $query->with(['user.subUnit', 'versions.uploader', 'latestVersion']);
             },
-            'operatorBackgrounds.user'
+            'operatorBackgrounds.user.subUnit'
         ]);
 
         $documents = $submission->documents->groupBy('user_id');

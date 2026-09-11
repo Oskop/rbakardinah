@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Supervisor;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\SubUnit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -17,8 +18,9 @@ class UserController extends Controller
     public function index()
     {
         $unitId = Auth::user()->unit_id;
-        $users = User::where('unit_id', $unitId)->get();
-        return view('supervisor.users.index', compact('users'));
+        $users = User::where('unit_id', $unitId)->with('subUnit')->get();
+        $subUnits = SubUnit::where('unit_id', $unitId)->where('is_active', true)->orderBy('name')->get();
+        return view('supervisor.users.index', compact('users', 'subUnits'));
     }
 
     /**
@@ -26,7 +28,12 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('supervisor.users.create');
+        $subUnits = SubUnit::where('unit_id', Auth::user()->unit_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('supervisor.users.create', compact('subUnits'));
     }
 
     /**
@@ -34,10 +41,22 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $unitId = Auth::user()->unit_id;
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'sub_unit_id' => [
+                'nullable',
+                'exists:sub_units,id',
+                function ($attribute, $value, $fail) use ($unitId) {
+                    if ($value && !SubUnit::where('id', $value)->where('unit_id', $unitId)->exists()) {
+                        $fail('Sub-unit yang dipilih tidak berada di bawah naungan unit kerja Anda.');
+                    }
+                },
+            ],
+            'jabatan' => ['nullable', 'string', 'max:255'],
         ]);
 
         User::create([
@@ -45,7 +64,9 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'Operator', // Supervisor can only create Operators
-            'unit_id' => Auth::user()->unit_id,
+            'unit_id' => $unitId,
+            'sub_unit_id' => $request->sub_unit_id,
+            'jabatan' => $request->jabatan,
             'is_active' => true,
         ]);
 
@@ -61,7 +82,12 @@ class UserController extends Controller
             abort(403);
         }
 
-        return view('supervisor.users.edit', compact('user'));
+        $subUnits = SubUnit::where('unit_id', Auth::user()->unit_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('supervisor.users.edit', compact('user', 'subUnits'));
     }
 
     /**
@@ -73,17 +99,31 @@ class UserController extends Controller
             abort(403);
         }
 
+        $unitId = Auth::user()->unit_id;
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'is_active' => ['required', 'boolean'],
+            'sub_unit_id' => [
+                'nullable',
+                'exists:sub_units,id',
+                function ($attribute, $value, $fail) use ($unitId) {
+                    if ($value && !SubUnit::where('id', $value)->where('unit_id', $unitId)->exists()) {
+                        $fail('Sub-unit yang dipilih tidak berada di bawah naungan unit kerja Anda.');
+                    }
+                },
+            ],
+            'jabatan' => ['nullable', 'string', 'max:255'],
         ]);
 
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
             'is_active' => $request->is_active,
+            'sub_unit_id' => $request->sub_unit_id,
+            'jabatan' => $request->jabatan,
         ];
 
         if ($request->filled('password')) {

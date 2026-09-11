@@ -94,6 +94,8 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
+        $this->call(SubUnitSeeder::class);
+
         // // Admin User
         // User::factory()->create([
         //     'name' => 'Admin',

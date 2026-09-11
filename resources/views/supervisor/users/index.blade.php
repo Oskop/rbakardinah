@@ -46,8 +46,20 @@
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                    <!-- Filter 1: Role -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    <!-- Filter 1: Sub-Unit Kerja -->
+                    <div>
+                        <label for="filter-sub-unit" class="block text-xs font-bold text-slate-700 mb-1.5">Sub-Unit Kerja</label>
+                        <select id="filter-sub-unit" class="w-full text-xs rounded-xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2.5">
+                            <option value="">Semua Sub-Unit</option>
+                            @foreach($subUnits as $su)
+                                <option value="{{ $su->name }}">{{ $su->name }}</option>
+                            @endforeach
+                            <option value="Langsung Unit Induk">Langsung Unit Induk (Tanpa Sub-Unit)</option>
+                        </select>
+                    </div>
+
+                    <!-- Filter 2: Role -->
                     <div>
                         <label for="filter-role" class="block text-xs font-bold text-slate-700 mb-1.5">Peran / Role</label>
                         <select id="filter-role" class="w-full text-xs rounded-xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2.5">
@@ -57,7 +69,7 @@
                         </select>
                     </div>
 
-                    <!-- Filter 2: Status Akun -->
+                    <!-- Filter 3: Status Akun -->
                     <div>
                         <label for="filter-status" class="block text-xs font-bold text-slate-700 mb-1.5">Status Akun</label>
                         <select id="filter-status" class="w-full text-xs rounded-xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2.5">
@@ -67,7 +79,7 @@
                         </select>
                     </div>
 
-                    <!-- Filter 3: Tipe Akun / Provider -->
+                    <!-- Filter 4: Tipe Akun / Provider -->
                     <div>
                         <label for="filter-provider" class="block text-xs font-bold text-slate-700 mb-1.5">Tipe Akun (Metode Login)</label>
                         <select id="filter-provider" class="w-full text-xs rounded-xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2.5">
@@ -91,6 +103,8 @@
                                     <th class="px-6 py-3.5 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                         Email</th>
                                     <th class="px-6 py-3.5 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                        Sub-Unit Kerja</th>
+                                    <th class="px-6 py-3.5 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                         Role</th>
                                     <th class="px-6 py-3.5 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                                         Status</th>
@@ -103,9 +117,12 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($users as $user)
                                     <tr>
-                                        <!-- Column 0: Nama & NIP -->
+                                        <!-- Column 0: Nama, Jabatan & NIP -->
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm font-semibold text-gray-900">{{ $user->name }}</div>
+                                            @if($user->jabatan)
+                                                <div class="text-xs text-indigo-600 font-medium mt-0.5">{{ $user->jabatan }}</div>
+                                            @endif
                                             @if($user->nip)
                                                 <div class="text-[11px] text-gray-500 font-mono flex items-center gap-1 mt-0.5">
                                                     <span>🪪</span>
@@ -119,19 +136,30 @@
                                             {{ $user->email }}
                                         </td>
 
-                                        <!-- Column 2: Role -->
+                                        <!-- Column 2: Sub-Unit Kerja -->
+                                        <td data-search="{{ $user->subUnit ? $user->subUnit->name : 'Langsung Unit Induk' }}" data-filter="{{ $user->subUnit ? $user->subUnit->name : 'Langsung Unit Induk' }}" class="px-6 py-4 whitespace-nowrap text-sm">
+                                            @if($user->subUnit)
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                                    📌 {{ $user->subUnit->name }}
+                                                </span>
+                                            @else
+                                                <span class="text-xs text-slate-400 italic">Langsung Unit Induk</span>
+                                            @endif
+                                        </td>
+
+                                        <!-- Column 3: Role -->
                                         <td data-search="{{ $user->role }}" data-filter="{{ $user->role }}" class="px-6 py-4 whitespace-nowrap text-sm">
                                             <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full 
                                                 {{ $user->role === 'Supervisor' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200' }}">{{ $user->role }}</span>
                                         </td>
 
-                                        <!-- Column 3: Status -->
+                                        <!-- Column 4: Status -->
                                         <td data-search="{{ $user->is_active ? 'Active' : 'Inactive' }}" data-filter="{{ $user->is_active ? 'Active' : 'Inactive' }}" class="px-6 py-4 whitespace-nowrap text-sm">
                                             <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full 
                                                 {{ $user->is_active ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-gray-100 text-gray-600 border border-gray-200' }}">{{ $user->is_active ? 'Active' : 'Inactive' }}</span>
                                         </td>
 
-                                        <!-- Column 4: Tipe Akun -->
+                                        <!-- Column 5: Tipe Akun -->
                                         <td data-search="{{ $user->auth_provider === 'simrs_oidc' ? 'SSO SIMRS' : 'Akun Lokal' }}" data-filter="{{ $user->auth_provider === 'simrs_oidc' ? 'SSO SIMRS' : 'Akun Lokal' }}" class="px-6 py-4 whitespace-nowrap text-sm">
                                             @if($user->auth_provider === 'simrs_oidc')
                                                 <span class="px-2.5 py-1 inline-flex items-center gap-1 text-[11px] leading-4 font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-200">
@@ -146,7 +174,7 @@
                                             @endif
                                         </td>
 
-                                        <!-- Column 5: Aksi -->
+                                        <!-- Column 6: Aksi -->
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                             <a href="{{ route('supervisor.users.edit', $user) }}"
                                                 class="text-indigo-600 hover:text-indigo-900 font-semibold transition-colors">Edit</a>
@@ -165,8 +193,8 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="px-6 py-8 whitespace-nowrap text-sm text-center text-gray-500">
-                                            Tidak ada data pengguna ditemukan pada unit ini.
+                                        <td colspan="7" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                            Tidak ada user ditemukan untuk unit ini.
                                         </td>
                                     </tr>
                                 @endforelse
@@ -200,7 +228,7 @@
                     responsive: true,
                     language: {
                         search: "Cari Bebas:",
-                        searchPlaceholder: "Nama, NIP, atau Email...",
+                        searchPlaceholder: "Nama, NIP, Sub-Unit, Email...",
                         lengthMenu: "Tampilkan _MENU_ data",
                         info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ pengguna",
                         infoEmpty: "Menampilkan 0 sampai 0 dari 0 pengguna",
@@ -211,29 +239,39 @@
                             next: "Selanjutnya",
                             previous: "Sebelumnya"
                         }
-                    }
+                    },
+                    columnDefs: [
+                        { orderable: false, targets: [6] }
+                    ]
                 });
 
-                // Filter 1: Peran / Role (Column Index 2)
-                $('#filter-role').on('change', function() {
+                // Filter 1: Sub-Unit (Column Index 2)
+                $('#filter-sub-unit').on('change', function() {
                     const val = $(this).val();
                     table.column(2).search(val ? '^\\s*' + escapeRegex(val) + '\\s*$' : '', true, false).draw();
                 });
 
-                // Filter 2: Status Akun (Column Index 3)
-                $('#filter-status').on('change', function() {
+                // Filter 2: Peran / Role (Column Index 3)
+                $('#filter-role').on('change', function() {
                     const val = $(this).val();
                     table.column(3).search(val ? '^\\s*' + escapeRegex(val) + '\\s*$' : '', true, false).draw();
                 });
 
-                // Filter 3: Tipe Akun (Column Index 4)
+                // Filter 3: Status Akun (Column Index 4)
+                $('#filter-status').on('change', function() {
+                    const val = $(this).val();
+                    table.column(4).search(val ? '^\\s*' + escapeRegex(val) + '\\s*$' : '', true, false).draw();
+                });
+
+                // Filter 4: Tipe Akun (Column Index 5)
                 $('#filter-provider').on('change', function() {
                     const val = $(this).val();
-                    table.column(4).search(val ? escapeRegex(val) : '', true, false).draw();
+                    table.column(5).search(val ? escapeRegex(val) : '', true, false).draw();
                 });
 
                 // Tombol Reset Semua Filter
                 $('#btn-reset-filters').on('click', function() {
+                    $('#filter-sub-unit').val('');
                     $('#filter-role').val('');
                     $('#filter-status').val('');
                     $('#filter-provider').val('');

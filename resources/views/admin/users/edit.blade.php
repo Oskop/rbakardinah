@@ -46,15 +46,39 @@
 
                         <!-- Unit -->
                         <div>
-                            <x-input-label for="unit_id" :value="__('Unit')" />
+                            <x-input-label for="unit_id" :value="__('Unit Kerja Induk (Eselon III)')" />
                             <select id="unit_id" name="unit_id"
                                 class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                <option value="">None / General</option>
+                                <option value="">None / General (Direksi & Sysadmin)</option>
                                 @foreach($units as $unit)
-                                    <option value="{{ $unit->id }}" {{ old('unit_id', $user->unit_id) == $unit->id ? 'selected' : '' }}>{{ $unit->name }}</option>
+                                    <option value="{{ $unit->id }}" {{ old('unit_id', $user->unit_id) == $unit->id ? 'selected' : '' }}>🏢 {{ $unit->name }}</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('unit_id')" class="mt-2" />
+                        </div>
+
+                        <!-- Sub-Unit -->
+                        <div>
+                            <x-input-label for="sub_unit_id" :value="__('Sub-Unit Kerja (Eselon IV / Non-Eselon)')" />
+                            <select id="sub_unit_id" name="sub_unit_id"
+                                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <option value="">None / Langsung di bawah Unit Induk</option>
+                                @foreach($subUnits as $sub)
+                                    <option value="{{ $sub->id }}" data-unit="{{ $sub->unit_id }}" {{ old('sub_unit_id', $user->sub_unit_id) == $sub->id ? 'selected' : '' }}>
+                                        📌 {{ $sub->name }} ({{ $sub->type }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="text-xs text-slate-500 mt-1">Pilih satuan kerja operasional spesifik tempat pegawai bertugas.</p>
+                            <x-input-error :messages="$errors->get('sub_unit_id')" class="mt-2" />
+                        </div>
+
+                        <!-- Jabatan -->
+                        <div>
+                            <x-input-label for="jabatan" :value="__('Jabatan Organisasi / Kedinasan')" />
+                            <x-text-input id="jabatan" class="block mt-1 w-full" type="text" name="jabatan"
+                                :value="old('jabatan', $user->jabatan)" placeholder="Contoh: Pranata Komputer Ahli Pertama, Staf Perencanaan, Apoteker" />
+                            <x-input-error :messages="$errors->get('jabatan')" class="mt-2" />
                         </div>
 
                         <!-- Status -->
@@ -106,4 +130,38 @@
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const unitSelect = document.getElementById('unit_id');
+            const subUnitSelect = document.getElementById('sub_unit_id');
+            if (!unitSelect || !subUnitSelect) return;
+
+            const originalSubOptions = Array.from(subUnitSelect.options);
+
+            function filterSubUnits() {
+                const selectedUnit = unitSelect.value;
+                const currentSelectedSub = subUnitSelect.value;
+                
+                subUnitSelect.innerHTML = '';
+
+                originalSubOptions.forEach(option => {
+                    const unitAttr = option.getAttribute('data-unit');
+                    if (!option.value || !selectedUnit || unitAttr === selectedUnit) {
+                        subUnitSelect.appendChild(option.cloneNode(true));
+                    }
+                });
+
+                const exists = Array.from(subUnitSelect.options).some(opt => opt.value === currentSelectedSub);
+                if (exists) {
+                    subUnitSelect.value = currentSelectedSub;
+                }
+            }
+
+            unitSelect.addEventListener('change', filterSubUnits);
+            filterSubUnits();
+        });
+    </script>
+    @endpush
 </x-app-layout>

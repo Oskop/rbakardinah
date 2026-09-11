@@ -495,7 +495,7 @@
                     <td>
                         <div class="sig-title">
                             Menyetujui / Memvalidasi,<br>
-                            <strong>Supervisor / Atasan Sub-Unit</strong>
+                            <strong>{{ Auth::user()->jabatan ?? 'Supervisor / Kepala ' . ($submission->unit->name ?? 'Unit') }}</strong>
                         </div>
                         <div class="sig-name">{{ Auth::user()->name ?? '( ___________________________ )' }}</div>
                         <div class="sig-role">NIP. {{ Auth::user()->nip ?? '....................................................' }}</div>

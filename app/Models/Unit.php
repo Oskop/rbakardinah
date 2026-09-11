@@ -31,4 +31,12 @@ class Unit extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    /**
+     * Get the operational sub-units associated with the unit.
+     */
+    public function subUnits(): HasMany
+    {
+        return $this->hasMany(SubUnit::class);
+    }
 }

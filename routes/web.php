@@ -22,6 +22,9 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
 
     Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
     Route::resource('units', \App\Http\Controllers\UnitController::class);
+    Route::get('units/{unit}/sub-units', [\App\Http\Controllers\Admin\SubUnitController::class, 'getByUnit'])->name('units.sub-units');
+    Route::resource('sub-units', \App\Http\Controllers\Admin\SubUnitController::class);
+    Route::get('org-chart', [\App\Http\Controllers\Admin\OrgChartController::class, 'index'])->name('org-chart.index');
     Route::resource('kelompok-belanja', \App\Http\Controllers\KelompokBelanjaController::class);
     Route::resource('account-codes', \App\Http\Controllers\AccountCodeController::class);
     Route::resource('periods', \App\Http\Controllers\RbaPeriodController::class);

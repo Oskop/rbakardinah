@@ -39,9 +39,33 @@
 
                         <!-- Unit (Locked to Supervisor's Unit) -->
                         <div>
-                            <x-input-label for="unit_display" :value="__('Unit')" />
+                            <x-input-label for="unit_display" :value="__('Unit Induk (Eselon III)')" />
                             <x-text-input id="unit_display" class="block mt-1 w-full bg-gray-100" type="text"
                                 value="{{ Auth::user()->unit?->name }}" readonly />
+                        </div>
+
+                        <!-- Sub-Unit -->
+                        <div>
+                            <x-input-label for="sub_unit_id" :value="__('Sub-Unit Kerja (Eselon IV / Non-Eselon)')" />
+                            <select id="sub_unit_id" name="sub_unit_id"
+                                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                <option value="">None / Langsung di bawah Unit Induk</option>
+                                @foreach($subUnits as $sub)
+                                    <option value="{{ $sub->id }}" {{ old('sub_unit_id') == $sub->id ? 'selected' : '' }}>
+                                        📌 {{ $sub->name }} ({{ $sub->type }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">Pilih satuan kerja operasional tempat operator ditugaskan.</p>
+                            <x-input-error :messages="$errors->get('sub_unit_id')" class="mt-2" />
+                        </div>
+
+                        <!-- Jabatan -->
+                        <div>
+                            <x-input-label for="jabatan" :value="__('Jabatan Organisasi / Kedinasan')" />
+                            <x-text-input id="jabatan" class="block mt-1 w-full" type="text" name="jabatan"
+                                :value="old('jabatan')" placeholder="Contoh: Pranata Komputer, Staf Operasional, Apoteker" />
+                            <x-input-error :messages="$errors->get('jabatan')" class="mt-2" />
                         </div>
 
                         <!-- Password -->

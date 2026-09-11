@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Unit;
+use App\Models\SubUnit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -16,8 +17,8 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::with('unit')->get();
-        $units = Unit::orderBy('name')->get();
+        $users = User::with(['unit', 'subUnit'])->get();
+        $units = Unit::with('subUnits')->orderBy('name')->get();
         return view('admin.users.index', compact('users', 'units'));
     }
 
@@ -26,9 +27,10 @@ class UserController extends Controller
      */
     public function create()
     {
-        $units = Unit::all();
+        $units = Unit::with('subUnits')->orderBy('name')->get();
+        $subUnits = SubUnit::where('is_active', true)->orderBy('name')->get();
         $roles = ['Administrator', 'Supervisor', 'Operator'];
-        return view('admin.users.create', compact('units', 'roles'));
+        return view('admin.users.create', compact('units', 'subUnits', 'roles'));
     }
 
     /**
@@ -42,6 +44,8 @@ class UserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'string', 'in:Administrator,Supervisor,Operator'],
             'unit_id' => ['nullable', 'exists:units,id'],
+            'sub_unit_id' => ['nullable', 'exists:sub_units,id'],
+            'jabatan' => ['nullable', 'string', 'max:255'],
         ]);
 
         User::create([
@@ -50,6 +54,8 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'unit_id' => $request->unit_id,
+            'sub_unit_id' => $request->sub_unit_id,
+            'jabatan' => $request->jabatan,
             'is_active' => true,
         ]);
 
@@ -61,9 +67,10 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        $units = Unit::all();
+        $units = Unit::with('subUnits')->orderBy('name')->get();
+        $subUnits = SubUnit::where('is_active', true)->orderBy('name')->get();
         $roles = ['Administrator', 'Supervisor', 'Operator'];
-        return view('admin.users.edit', compact('user', 'units', 'roles'));
+        return view('admin.users.edit', compact('user', 'units', 'subUnits', 'roles'));
     }
 
     /**
@@ -77,6 +84,8 @@ class UserController extends Controller
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'string', 'in:Administrator,Supervisor,Operator'],
             'unit_id' => ['nullable', 'exists:units,id'],
+            'sub_unit_id' => ['nullable', 'exists:sub_units,id'],
+            'jabatan' => ['nullable', 'string', 'max:255'],
         ]);
 
         $userData = [
@@ -84,6 +93,8 @@ class UserController extends Controller
             'email' => $request->email,
             'role' => $request->role,
             'unit_id' => $request->unit_id,
+            'sub_unit_id' => $request->sub_unit_id,
+            'jabatan' => $request->jabatan,
             'is_active' => $request->is_active,
         ];
 

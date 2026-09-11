@@ -118,9 +118,12 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($users as $user)
                                     <tr>
-                                        <!-- Column 0: Nama & NIP -->
+                                        <!-- Column 0: Nama, Jabatan & NIP -->
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm font-semibold text-gray-900">{{ $user->name }}</div>
+                                            @if($user->jabatan)
+                                                <div class="text-xs text-indigo-600 font-medium mt-0.5">{{ $user->jabatan }}</div>
+                                            @endif
                                             @if($user->nip)
                                                 <div class="text-[11px] text-gray-500 font-mono flex items-center gap-1 mt-0.5">
                                                     <span>🪪</span>
@@ -141,10 +144,17 @@
                                                     ($user->role === 'Supervisor' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200') }}">{{ $user->role }}</span>
                                         </td>
 
-                                        <!-- Column 3: Unit Kerja -->
-                                        <td data-search="{{ $user->unit ? $user->unit->name : 'Belum Ditugaskan' }}" data-filter="{{ $user->unit ? $user->unit->name : 'Belum Ditugaskan' }}" class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <!-- Column 3: Unit Kerja & Sub-Unit -->
+                                        <td data-search="{{ $user->unit ? $user->unit->name . ' ' . ($user->subUnit ? $user->subUnit->name : '') : 'Belum Ditugaskan' }}" data-filter="{{ $user->unit ? $user->unit->name : 'Belum Ditugaskan' }}" class="px-6 py-4 whitespace-nowrap text-sm">
                                             @if($user->unit)
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200">{{ $user->unit->name }}</span>
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200">🏢 {{ $user->unit->name }}</span>
+                                                @if($user->subUnit)
+                                                    <div class="mt-1">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                                            📌 {{ $user->subUnit->name }}
+                                                        </span>
+                                                    </div>
+                                                @endif
                                             @else
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">⚠️ Belum Ditugaskan</span>
                                             @endif

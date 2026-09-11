@@ -37,6 +37,8 @@ class User extends Authenticatable
         'auth_provider',
         'simrs_metadata',
         'unit_id',
+        'sub_unit_id',
+        'jabatan',
         'is_active',
     ];
 
@@ -66,11 +68,63 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the unit that the user belongs to.
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (User $user) {
+            // Auto-sync unit_id from sub_unit if sub_unit_id is provided
+            if ($user->sub_unit_id && !$user->unit_id) {
+                $subUnit = SubUnit::find($user->sub_unit_id);
+                if ($subUnit) {
+                    $user->unit_id = $subUnit->unit_id;
+                }
+            }
+        });
+    }
+
+    /**
+     * Get the parent unit (Eselon III) that the user belongs to.
      */
     public function unit()
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    /**
+     * Get the operational sub-unit (Eselon IV / Non-Eselon) that the user belongs to.
+     */
+    public function subUnit()
+    {
+        return $this->belongsTo(SubUnit::class);
+    }
+
+    /**
+     * Helper accessor to get the resolved sub-unit or unit name.
+     */
+    public function getSubUnitNameAttribute(): string
+    {
+        if ($this->subUnit) {
+            return $this->subUnit->name;
+        }
+
+        return $this->unit ? $this->unit->name : '-';
+    }
+
+    /**
+     * Helper accessor to get full organizational hierarchy label.
+     */
+    public function getOrganizationLabelAttribute(): string
+    {
+        if ($this->subUnit && $this->unit) {
+            return "{$this->subUnit->name} ({$this->unit->name})";
+        }
+
+        if ($this->subUnit) {
+            return $this->subUnit->name;
+        }
+
+        return $this->unit ? $this->unit->name : 'Tanpa Unit';
     }
 
     /**

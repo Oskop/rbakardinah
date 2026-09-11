@@ -373,7 +373,7 @@
             </tr>
             <tr>
                 <td class="meta-label">OPERATOR PEMBUAT</td>
-                <td class="meta-value">: {{ Auth::user()->name ?? '-' }} ({{ Auth::user()->email ?? '' }})</td>
+                <td class="meta-value">: {{ Auth::user()->subUnit ? Auth::user()->subUnit->name . ' - ' : '' }}{{ Auth::user()->name ?? '-' }} ({{ Auth::user()->email ?? '' }})</td>
                 <td class="meta-label">TANGGAL CETAK</td>
                 <td class="meta-value">: {{ now()->translatedFormat('d F Y H:i') }} WIB</td>
             </tr>
@@ -503,7 +503,10 @@
                     <td>
                         <div class="sig-title">
                             Tegal, {{ now()->translatedFormat('d F Y') }}<br>
-                            <strong>Operator / Penyusun RBA</strong>
+                            <strong>{{ Auth::user()->jabatan ?? 'Operator / Penyusun RBA' }}</strong>
+                            @if(Auth::user()->subUnit)
+                                <div style="font-size: 8pt; color: #475569; font-weight: normal;">{{ Auth::user()->subUnit->name }}</div>
+                            @endif
                         </div>
                         <div class="sig-name">{{ Auth::user()->name ?? '( ___________________________ )' }}</div>
                         <div class="sig-role">NIP. {{ Auth::user()->nip ?? '....................................................' }}</div>

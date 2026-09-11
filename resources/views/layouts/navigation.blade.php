@@ -22,7 +22,7 @@
                             <div class="inline-flex items-center">
                                 <x-dropdown align="left" width="w-56">
                                     <x-slot name="trigger">
-                                        <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('admin.units.*', 'admin.users.*', 'admin.kelompok-belanja.*', 'admin.account-codes.*', 'admin.periods.*') ? 'border-indigo-400 text-gray-900 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium leading-5 transition duration-150 ease-in-out h-16 focus:outline-none cursor-pointer">
+                                        <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('admin.units.*', 'admin.sub-units.*', 'admin.org-chart.*', 'admin.users.*', 'admin.kelompok-belanja.*', 'admin.account-codes.*', 'admin.periods.*') ? 'border-indigo-400 text-gray-900 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium leading-5 transition duration-150 ease-in-out h-16 focus:outline-none cursor-pointer">
                                             <span>{{ __('Master Data') }}</span>
                                             <div class="ms-1.5 text-gray-400">
                                                 <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -34,10 +34,16 @@
 
                                     <x-slot name="content">
                                         <x-dropdown-link :href="route('admin.units.index')" class="{{ request()->routeIs('admin.units.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : '' }}">
-                                            🏢 {{ __('Units') }}
+                                            🏢 {{ __('Unit Induk (Eselon III)') }}
+                                        </x-dropdown-link>
+                                        <x-dropdown-link :href="route('admin.sub-units.index')" class="{{ request()->routeIs('admin.sub-units.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : '' }}">
+                                            🏛️ {{ __('Sub-Unit Kerja') }}
+                                        </x-dropdown-link>
+                                        <x-dropdown-link :href="route('admin.org-chart.index')" class="{{ request()->routeIs('admin.org-chart.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : '' }}">
+                                            🌳 {{ __('Bagan Struktur Organisasi') }}
                                         </x-dropdown-link>
                                         <x-dropdown-link :href="route('admin.users.index')" class="{{ request()->routeIs('admin.users.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : '' }}">
-                                            👥 {{ __('Users') }}
+                                            👥 {{ __('Users & Pegawai') }}
                                         </x-dropdown-link>
                                         <x-dropdown-link :href="route('admin.kelompok-belanja.index')" class="{{ request()->routeIs('admin.kelompok-belanja.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : '' }}">
                                             📁 {{ __('Kelompok Belanja') }}
@@ -177,12 +183,18 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <div x-show="masterDataOpen" class="ps-4 space-y-1 bg-gray-50/60 py-1" style="{{ request()->routeIs('admin.units.*', 'admin.users.*', 'admin.kelompok-belanja.*', 'admin.account-codes.*', 'admin.periods.*') ? '' : 'display: none;' }}">
+                    <div x-show="masterDataOpen" class="ps-4 space-y-1 bg-gray-50/60 py-1" style="{{ request()->routeIs('admin.units.*', 'admin.sub-units.*', 'admin.org-chart.*', 'admin.users.*', 'admin.kelompok-belanja.*', 'admin.account-codes.*', 'admin.periods.*') ? '' : 'display: none;' }}">
                         <x-responsive-nav-link :href="route('admin.units.index')" :active="request()->routeIs('admin.units.*')">
-                            🏢 {{ __('Units') }}
+                            🏢 {{ __('Unit Induk (Eselon III)') }}
+                        </x-responsive-nav-link>
+                        <x-responsive-nav-link :href="route('admin.sub-units.index')" :active="request()->routeIs('admin.sub-units.*')">
+                            🏛️ {{ __('Sub-Unit Kerja') }}
+                        </x-responsive-nav-link>
+                        <x-responsive-nav-link :href="route('admin.org-chart.index')" :active="request()->routeIs('admin.org-chart.*')">
+                            🌳 {{ __('Bagan Struktur Organisasi') }}
                         </x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
-                            👥 {{ __('Users') }}
+                            👥 {{ __('Users & Pegawai') }}
                         </x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('admin.kelompok-belanja.index')" :active="request()->routeIs('admin.kelompok-belanja.*')">
                             📁 {{ __('Kelompok Belanja') }}
