@@ -37,6 +37,7 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::get('headers/{header}/pagu', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'index'])->name('headers.pagu.index');
     Route::post('headers/{header}/pagu', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'store'])->name('headers.pagu.store');
     Route::delete('headers/{header}/pagu/{accountCode}', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'destroy'])->name('headers.pagu.destroy');
+    Route::resource('master-barangs', \App\Http\Controllers\Admin\MasterBarangController::class);
     Route::resource('logs', \App\Http\Controllers\Admin\ActivityLogController::class)->only(['index', 'show']);
     Route::get('api-logs', [\App\Http\Controllers\Admin\ApiAccessLogController::class, 'index'])->name('api-logs.index');
     Route::get('api-logs/{apiLog}', [\App\Http\Controllers\Admin\ApiAccessLogController::class, 'show'])->name('api-logs.show');
@@ -118,6 +119,11 @@ Route::middleware(['auth', 'role:Operator'])->prefix('operator')->name('operator
     Route::resource('details', \App\Http\Controllers\Operator\DetailController::class);
     Route::post('details/{detail}/submit-item', [\App\Http\Controllers\Operator\DetailController::class, 'submitItem'])->name('details.submit-item');
     Route::post('details/{detail}/upload-version', [\App\Http\Controllers\Operator\DetailController::class, 'uploadVersion'])->name('details.upload-version');
+
+    // RKBMD Routes
+    Route::post('rkbmd/{rkbmd}/reply', [\App\Http\Controllers\Operator\RkbmdController::class, 'reply'])->name('rkbmd.reply');
+    Route::post('rkbmd/{rkbmd}/forward', [\App\Http\Controllers\Operator\RkbmdController::class, 'forward'])->name('rkbmd.forward');
+    Route::resource('rkbmd', \App\Http\Controllers\Operator\RkbmdController::class);
 });
 
 Route::middleware('auth')->group(function () {

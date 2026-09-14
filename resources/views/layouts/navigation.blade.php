@@ -22,7 +22,7 @@
                             <div class="inline-flex items-center">
                                 <x-dropdown align="left" width="w-56">
                                     <x-slot name="trigger">
-                                        <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('admin.units.*', 'admin.sub-units.*', 'admin.org-chart.*', 'admin.users.*', 'admin.kelompok-belanja.*', 'admin.account-codes.*', 'admin.periods.*') ? 'border-indigo-400 text-gray-900 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium leading-5 transition duration-150 ease-in-out h-16 focus:outline-none cursor-pointer">
+                                        <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('admin.units.*', 'admin.sub-units.*', 'admin.org-chart.*', 'admin.users.*', 'admin.kelompok-belanja.*', 'admin.account-codes.*', 'admin.periods.*', 'admin.master-barangs.*') ? 'border-indigo-400 text-gray-900 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium leading-5 transition duration-150 ease-in-out h-16 focus:outline-none cursor-pointer">
                                             <span>{{ __('Master Data') }}</span>
                                             <div class="ms-1.5 text-gray-400">
                                                 <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -53,6 +53,9 @@
                                         </x-dropdown-link>
                                         <x-dropdown-link :href="route('admin.periods.index')" class="{{ request()->routeIs('admin.periods.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : '' }}">
                                             📅 {{ __('Periode') }}
+                                        </x-dropdown-link>
+                                        <x-dropdown-link :href="route('admin.master-barangs.index')" class="{{ request()->routeIs('admin.master-barangs.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : '' }}">
+                                            📦 {{ __('Master Barang BMD') }}
                                         </x-dropdown-link>
                                     </x-slot>
                                 </x-dropdown>
@@ -89,6 +92,10 @@
                             <x-nav-link :href="route('operator.submissions.index')"
                                 :active="request()->routeIs('operator.submissions.*')">
                                 {{ __('Workboard RBA') }}
+                            </x-nav-link>
+                            <x-nav-link :href="route('operator.rkbmd.index')"
+                                :active="request()->routeIs('operator.rkbmd.*')">
+                                📦 {{ __('RKBMD') }}
                             </x-nav-link>
                             <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                                 {{ __('Laporan') }}
@@ -205,6 +212,9 @@
                         <x-responsive-nav-link :href="route('admin.periods.index')" :active="request()->routeIs('admin.periods.*')">
                             📅 {{ __('Periode') }}
                         </x-responsive-nav-link>
+                        <x-responsive-nav-link :href="route('admin.master-barangs.index')" :active="request()->routeIs('admin.master-barangs.*')">
+                            📦 {{ __('Master Barang BMD') }}
+                        </x-responsive-nav-link>
                     </div>
                 </div>
                 <x-responsive-nav-link :href="route('admin.headers.index')" :active="request()->routeIs('admin.headers.*')">
@@ -238,6 +248,10 @@
                 <x-responsive-nav-link :href="route('operator.submissions.index')"
                     :active="request()->routeIs('operator.submissions.*')">
                     {{ __('Workboard RBA') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('operator.rkbmd.index')"
+                    :active="request()->routeIs('operator.rkbmd.*')">
+                    📦 {{ __('RKBMD') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                     {{ __('Laporan') }}

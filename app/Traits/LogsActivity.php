@@ -158,6 +158,38 @@ trait LogsActivity
             return "{$actor} mengunggah versi dokumen pendukung (Versi {$ver})";
         }
 
+        if ($modelName === 'MasterBarang') {
+            $kode = $model->kode_barang ?? ($model->getOriginal('kode_barang') ?? '');
+            $nama = $model->nama_barang ?? ($model->getOriginal('nama_barang') ?? "#{$key}");
+            if ($action === 'updated' && isset($new['is_active'])) {
+                $statusText = $new['is_active'] ? 'mengaktifkan' : 'menonaktifkan';
+                return "{$actor} {$statusText} Master Barang BMD: [{$kode}] {$nama}";
+            }
+            return "{$actor} {$actionVerb} Master Barang BMD: [{$kode}] {$nama}";
+        }
+
+        if ($modelName === 'RkbmdSubmission') {
+            $nomor = $model->nomor_permohonan ?? ($model->getOriginal('nomor_permohonan') ?? "#{$key}");
+            $title = $model->title ?? ($model->getOriginal('title') ?? '');
+            if ($action === 'created') {
+                return "{$actor} membuat Permohonan RKBMD: \"{$title}\" ({$nomor})";
+            }
+            if ($action === 'updated' && isset($new['status']) && $new['status'] === 'Dialihkan') {
+                $targetName = $model->targetOperator?->name ?? 'operator lain';
+                return "{$actor} mengalihkan Permohonan RKBMD #{$nomor} ke {$targetName}";
+            }
+            if ($action === 'updated' && isset($new['reply_notes'])) {
+                $statusReply = $model->status ?? 'ditanggapi';
+                return "{$actor} membalas Permohonan RKBMD #{$nomor} dengan status: {$statusReply}";
+            }
+            return "{$actor} {$actionVerb} Permohonan RKBMD #{$nomor}: \"{$title}\"";
+        }
+
+        if ($modelName === 'RkbmdHistory') {
+            $act = $model->action ?? 'proses';
+            return "{$actor} mencatat riwayat {$act} pada Permohonan RKBMD #{$model->rkbmd_submission_id}";
+        }
+
         return "{$actor} {$actionVerb} data {$modelName} #{$key}";
     }
 }
