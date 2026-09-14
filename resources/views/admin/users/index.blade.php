@@ -142,6 +142,19 @@
                                             <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full 
                                                 {{ $user->role === 'Administrator' ? 'bg-red-100 text-red-800 border border-red-200' :
                                                     ($user->role === 'Supervisor' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200') }}">{{ $user->role }}</span>
+                                            @if($user->role === 'Operator')
+                                                <div class="mt-1">
+                                                    @if($user->can_propose)
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200" title="Berwenang menginput dan mengusulkan RBA">
+                                                            ✍️ Pengusul (PIC)
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-300" title="Hanya dapat melihat usulan dan mencetak laporan">
+                                                            👁️ Viewer
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            @endif
                                         </td>
 
                                         <!-- Column 3: Unit Kerja & Sub-Unit -->

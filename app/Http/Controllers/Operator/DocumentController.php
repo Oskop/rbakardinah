@@ -19,6 +19,10 @@ class DocumentController extends Controller
             abort(403);
         }
 
+        if (!Auth::user()->isProposer()) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengunggah dokumen (Mode Peninjau / Viewer).');
+        }
+
         $isLocked = $submission->header->status_global === 'Locked';
         if (!$isLocked) {
             return back()->with('error', 'Dokumen KAK, RAK, dan RTP hanya dapat diunggah setelah RBA dikunci oleh Administrator.');

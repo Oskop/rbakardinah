@@ -68,6 +68,22 @@
                             <x-input-error :messages="$errors->get('jabatan')" class="mt-2" />
                         </div>
 
+                        <!-- Hak Pengusulan RBA -->
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                            <input type="hidden" name="can_propose" value="0">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="can_propose" id="can_propose" value="1"
+                                    {{ old('can_propose', '1') == '1' ? 'checked' : '' }}
+                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 w-4 h-4">
+                                <span class="ml-2.5 text-sm font-bold text-gray-800">
+                                    ✍️ Hak Pengusulan RBA (Operator Pengusul / PIC)
+                                </span>
+                            </label>
+                            <p class="text-xs text-slate-500 mt-1.5 ml-6.5 leading-relaxed">
+                                Centang opsi ini jika operator berwenang menginput rincian belanja usulan, mengisi latar belakang, dan mengajukan usulan ke Supervisor. Jika <strong>tidak dicentang</strong>, akun ini berstatus sebagai <strong>Viewer / Peninjau</strong> (hanya dapat melihat data usulan & mencetak laporan sub-unitnya).
+                            </p>
+                        </div>
+
                         <!-- Password -->
                         <div>
                             <x-input-label for="password" :value="__('Password')" />

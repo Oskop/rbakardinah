@@ -75,19 +75,26 @@
                     })->exists();
                 @endphp
                 
-                @if($submission->header->status_global === 'Draft' || $hasOpenPagu)
-                    @if(!empty($submission->background))
-                        <a href="{{ route('operator.details.create', ['submission_id' => $submission->id]) }}"
-                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">
-                            + Tambah Rincian
-                        </a>
-                    @else
-                        <button disabled
-                            title="Silakan isi data Latar Belakang terlebih dahulu"
-                            class="bg-gray-400 text-white font-bold py-2 px-4 rounded text-sm cursor-not-allowed">
-                            + Tambah Rincian
-                        </button>
+                @if(Auth::user()->isProposer())
+                    @if($submission->header->status_global === 'Draft' || $hasOpenPagu)
+                        @if(!empty($submission->background))
+                            <a href="{{ route('operator.details.create', ['submission_id' => $submission->id]) }}"
+                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm shadow-sm transition">
+                                + Tambah Rincian
+                            </a>
+                        @else
+                            <button disabled
+                                title="Silakan isi data Latar Belakang terlebih dahulu"
+                                class="bg-gray-400 text-white font-bold py-2 px-4 rounded text-sm cursor-not-allowed">
+                                + Tambah Rincian
+                            </button>
+                        @endif
                     @endif
+                @else
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Anda berada dalam mode peninjau (tidak memiliki hak pengusulan)">
+                        <span>👁️</span>
+                        <span>Mode Peninjau (Hanya Lihat)</span>
+                    </span>
                 @endif
                 <a href="{{ route('operator.submissions.index') }}"
                     class="py-2 px-4 text-sm text-gray-600 hover:text-gray-900">Kembali</a>
@@ -123,40 +130,50 @@
                         @endif
                     </div>
                     
-                    @if(empty($myBackground))
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                    </svg>
+                    @if(Auth::user()->isProposer())
+                        @if(empty($myBackground))
+                            <div class="mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm text-yellow-700">
+                                            Anda belum mengisi data Latar Belakang Anda. Anda **wajib** mengisi Latar Belakang terlebih dahulu sebelum dapat menambahkan rincian belanja.
+                                        </p>
+                                    </div>
                                 </div>
-                                <div class="ml-3">
-                                    <p class="text-sm text-yellow-700">
-                                        Anda belum mengisi data Latar Belakang Anda. Anda **wajib** mengisi Latar Belakang terlebih dahulu sebelum dapat menambahkan rincian belanja.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-
-                    <form action="{{ route('operator.submissions.update-background', $submission) }}" method="POST">
-                        @csrf
-                        @method('PUT')
-                        <div class="mb-4">
-                            <textarea name="background" rows="4" 
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" 
-                                placeholder="Tuliskan latar belakang usulan RBA Anda secara spesifik di sini..." 
-                                {{ $submission->header->status_global === 'Locked' ? 'readonly' : '' }} required>{{ old('background', $myBackground ?? $submission->background) }}</textarea>
-                        </div>
-                        @if($submission->header->status_global !== 'Locked')
-                            <div class="flex justify-end">
-                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm shadow-md transition duration-150 ease-in-out">
-                                    {{ empty($myBackground) ? 'Simpan Latar Belakang' : 'Perbarui Latar Belakang' }}
-                                </button>
                             </div>
                         @endif
-                    </form>
+
+                        <form action="{{ route('operator.submissions.update-background', $submission) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <div class="mb-4">
+                                <textarea name="background" rows="4" 
+                                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm" 
+                                    placeholder="Tuliskan latar belakang usulan RBA Anda secara spesifik di sini..." 
+                                    {{ $submission->header->status_global === 'Locked' ? 'readonly' : '' }} required>{{ old('background', $myBackground ?? $submission->background) }}</textarea>
+                            </div>
+                            @if($submission->header->status_global !== 'Locked')
+                                <div class="flex justify-end">
+                                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm shadow-md transition duration-150 ease-in-out">
+                                        {{ empty($myBackground) ? 'Simpan Latar Belakang' : 'Perbarui Latar Belakang' }}
+                                    </button>
+                                </div>
+                            @endif
+                        </form>
+                    @else
+                        <div class="mb-4 bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-700">
+                            @if(!empty($myBackground ?? $submission->background))
+                                <p class="whitespace-pre-wrap leading-relaxed">{{ $myBackground ?? $submission->background }}</p>
+                            @else
+                                <p class="italic text-gray-400">Belum ada catatan latar belakang yang diinputkan untuk akun ini (Mode Peninjau / Read-Only).</p>
+                            @endif
+                        </div>
+                    @endif
 
                     {{-- Referensi Latar Belakang Rekan Operator Lain --}}
                     @if(isset($otherOperatorBackgrounds) && $otherOperatorBackgrounds->isNotEmpty())
@@ -378,7 +395,11 @@
                                                     $hasRevision = $detail->hasUploadedRevision();
                                                 @endphp
 
-                                                @if($detail->is_validated)
+                                                @if(!Auth::user()->isProposer())
+                                                    <span class="inline-flex items-center gap-1 text-[11px] text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded italic">
+                                                        <span>👁️</span> Hanya Lihat
+                                                    </span>
+                                                @elseif($detail->is_validated)
                                                     <div class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg justify-center shadow-2xs">
                                                         <span>🔒</span>
                                                         <span>Tervalidasi</span>
@@ -703,16 +724,22 @@
                                     </div>
 
                                     <div>
-                                        <form action="{{ route('operator.submissions.documents.upload', $submission) }}" method="POST" enctype="multipart/form-data" class="mt-2">
-                                            @csrf
-                                            <input type="hidden" name="type" value="{{ $docType }}">
-                                            <div class="flex flex-col space-y-2">
-                                                <input type="file" name="attachment" accept="application/pdf" class="text-xs w-full" required>
-                                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-3 rounded text-xs shadow">
-                                                    {{ $latestVersion ? 'Unggah Revisi Baru' : 'Unggah Dokumen' }}
-                                                </button>
+                                        @if(Auth::user()->isProposer())
+                                            <form action="{{ route('operator.submissions.documents.upload', $submission) }}" method="POST" enctype="multipart/form-data" class="mt-2">
+                                                @csrf
+                                                <input type="hidden" name="type" value="{{ $docType }}">
+                                                <div class="flex flex-col space-y-2">
+                                                    <input type="file" name="attachment" accept="application/pdf" class="text-xs w-full" required>
+                                                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-3 rounded text-xs shadow">
+                                                        {{ $latestVersion ? 'Unggah Revisi Baru' : 'Unggah Dokumen' }}
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        @else
+                                            <div class="mt-2 py-1.5 text-center text-[10px] text-gray-400 italic bg-gray-100 rounded">
+                                                Mode Peninjau (Unggah Dinonaktifkan)
                                             </div>
-                                        </form>
+                                        @endif
 
                                         @if($doc)
                                             <div class="mt-3 text-center">

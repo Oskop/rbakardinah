@@ -10,6 +10,18 @@ use Illuminate\Auth\Access\Response;
 class RbaDetailPolicy
 {
     /**
+     * Perform pre-authorization checks.
+     */
+    public function before(User $user, string $ability): ?Response
+    {
+        if ($user->role === 'Operator' && !$user->isProposer()) {
+            return Response::deny('Anda tidak memiliki hak akses untuk melakukan pengusulan RBA (Mode Peninjau / Viewer).');
+        }
+
+        return null;
+    }
+
+    /**
      * Determine whether the user can update the model.
      */
     public function update(User $user, RbaDetail $rbaDetail): Response

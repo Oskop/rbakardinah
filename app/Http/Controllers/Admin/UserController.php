@@ -45,8 +45,13 @@ class UserController extends Controller
             'role' => ['required', 'string', 'in:Administrator,Supervisor,Operator'],
             'unit_id' => ['nullable', 'exists:units,id'],
             'sub_unit_id' => ['nullable', 'exists:sub_units,id'],
+            'can_propose' => ['nullable', 'boolean'],
             'jabatan' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $canPropose = $request->role === 'Operator'
+            ? ($request->has('can_propose') ? $request->boolean('can_propose') : true)
+            : true;
 
         User::create([
             'name' => $request->name,
@@ -55,6 +60,7 @@ class UserController extends Controller
             'role' => $request->role,
             'unit_id' => $request->unit_id,
             'sub_unit_id' => $request->sub_unit_id,
+            'can_propose' => $canPropose,
             'jabatan' => $request->jabatan,
             'is_active' => true,
         ]);
@@ -85,6 +91,7 @@ class UserController extends Controller
             'role' => ['required', 'string', 'in:Administrator,Supervisor,Operator'],
             'unit_id' => ['nullable', 'exists:units,id'],
             'sub_unit_id' => ['nullable', 'exists:sub_units,id'],
+            'can_propose' => ['nullable', 'boolean'],
             'jabatan' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -94,6 +101,7 @@ class UserController extends Controller
             'role' => $request->role,
             'unit_id' => $request->unit_id,
             'sub_unit_id' => $request->sub_unit_id,
+            'can_propose' => $request->role === 'Operator' ? $request->boolean('can_propose') : true,
             'jabatan' => $request->jabatan,
             'is_active' => $request->is_active,
         ];

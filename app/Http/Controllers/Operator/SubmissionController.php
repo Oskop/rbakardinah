@@ -29,11 +29,39 @@ class SubmissionController extends Controller
             abort(403);
         }
 
-        $submission->load(['details' => function ($query) {
-            $query->where('created_by', Auth::id());
-        }, 'details.accountCode', 'details.attachments', 'header.period', 'documents' => function ($query) {
-            $query->where('user_id', Auth::id());
-        }, 'documents.versions', 'documents.latestVersion']);
+        $isProposer = Auth::user()->isProposer();
+        $userSubUnitId = Auth::user()->sub_unit_id;
+
+        $submission->load([
+            'details' => function ($query) use ($isProposer, $userSubUnitId) {
+                if ($isProposer) {
+                    $query->where('created_by', Auth::id());
+                } else {
+                    if ($userSubUnitId) {
+                        $query->whereHas('creator', function ($q) use ($userSubUnitId) {
+                            $q->where('sub_unit_id', $userSubUnitId);
+                        });
+                    }
+                }
+            },
+            'details.accountCode',
+            'details.attachments',
+            'details.creator',
+            'header.period',
+            'documents' => function ($query) use ($isProposer, $userSubUnitId) {
+                if ($isProposer) {
+                    $query->where('user_id', Auth::id());
+                } else {
+                    if ($userSubUnitId) {
+                        $query->whereHas('user', function ($q) use ($userSubUnitId) {
+                            $q->where('sub_unit_id', $userSubUnitId);
+                        });
+                    }
+                }
+            },
+            'documents.versions',
+            'documents.latestVersion'
+        ]);
 
         // Load pagu for this header
         $pagus = RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)->get()->keyBy('account_code_id');
@@ -82,15 +110,25 @@ class SubmissionController extends Controller
             ->get()
             ->keyBy('account_code_id');
 
-        $myBgRecord = $submission->operatorBackgrounds()->where('user_id', Auth::id())->first();
-        $myBackground = $myBgRecord ? $myBgRecord->background : ($submission->operatorBackgrounds()->count() === 0 ? $submission->background : '');
-        $otherOperatorBackgrounds = $submission->operatorBackgrounds()
-            ->with('user')
-            ->where('user_id', '!=', Auth::id())
-            ->whereHas('user', function ($q) {
-                $q->where('is_active', true);
-            })
-            ->get();
+        if ($isProposer) {
+            $myBgRecord = $submission->operatorBackgrounds()->where('user_id', Auth::id())->first();
+            $myBackground = $myBgRecord ? $myBgRecord->background : ($submission->operatorBackgrounds()->count() === 0 ? $submission->background : '');
+            $otherOperatorBackgrounds = $submission->operatorBackgrounds()
+                ->with('user')
+                ->where('user_id', '!=', Auth::id())
+                ->whereHas('user', function ($q) {
+                    $q->where('is_active', true);
+                })
+                ->get();
+        } else {
+            $myBackground = $submission->background;
+            $otherOperatorBackgrounds = $submission->operatorBackgrounds()
+                ->with('user')
+                ->whereHas('user', function ($q) {
+                    $q->where('is_active', true);
+                })
+                ->get();
+        }
 
         return view('operator.submissions.show', compact('submission', 'pagus', 'headerTotals', 'previousPagus', 'myBackground', 'otherOperatorBackgrounds'));
     }
@@ -99,6 +137,10 @@ class SubmissionController extends Controller
     {
         if ($submission->unit_id !== Auth::user()->unit_id) {
             abort(403);
+        }
+
+        if (!Auth::user()->isProposer()) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengajukan usulan ke Supervisor (Mode Peninjau / Viewer).');
         }
 
         if ($submission->status_submission !== 'Draft') {
@@ -114,6 +156,10 @@ class SubmissionController extends Controller
     {
         if ($submission->unit_id !== Auth::user()->unit_id) {
             abort(403);
+        }
+
+        if (!Auth::user()->isProposer()) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengubah latar belakang (Mode Peninjau / Viewer).');
         }
 
         $request->validate([
@@ -155,9 +201,19 @@ class SubmissionController extends Controller
         }
 
         $includeBackground = $request->get('include_background', '1') == '1';
+        $isProposer = Auth::user()->isProposer();
+        $userSubUnitId = Auth::user()->sub_unit_id;
 
-        $submission->load(['details' => function ($query) {
-            $query->where('created_by', Auth::id());
+        $submission->load(['details' => function ($query) use ($isProposer, $userSubUnitId) {
+            if ($isProposer) {
+                $query->where('created_by', Auth::id());
+            } else {
+                if ($userSubUnitId) {
+                    $query->whereHas('creator', function ($q) use ($userSubUnitId) {
+                        $q->where('sub_unit_id', $userSubUnitId);
+                    });
+                }
+            }
         }, 'details.accountCode', 'header.period', 'unit']);
 
         $currentHeader = $submission->header;
@@ -201,9 +257,19 @@ class SubmissionController extends Controller
         }
 
         $includeBackground = $request->get('include_background', '1') == '1';
+        $isProposer = Auth::user()->isProposer();
+        $userSubUnitId = Auth::user()->sub_unit_id;
 
-        $submission->load(['details' => function ($query) {
-            $query->where('created_by', Auth::id());
+        $submission->load(['details' => function ($query) use ($isProposer, $userSubUnitId) {
+            if ($isProposer) {
+                $query->where('created_by', Auth::id());
+            } else {
+                if ($userSubUnitId) {
+                    $query->whereHas('creator', function ($q) use ($userSubUnitId) {
+                        $q->where('sub_unit_id', $userSubUnitId);
+                    });
+                }
+            }
         }, 'details.accountCode', 'header.period', 'unit']);
 
         $pagus = RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)->get()->keyBy('account_code_id');

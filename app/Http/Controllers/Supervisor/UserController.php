@@ -57,7 +57,10 @@ class UserController extends Controller
                 },
             ],
             'jabatan' => ['nullable', 'string', 'max:255'],
+            'can_propose' => ['nullable', 'boolean'],
         ]);
+
+        $canPropose = $request->has('can_propose') ? $request->boolean('can_propose') : true;
 
         User::create([
             'name' => $request->name,
@@ -66,6 +69,7 @@ class UserController extends Controller
             'role' => 'Operator', // Supervisor can only create Operators
             'unit_id' => $unitId,
             'sub_unit_id' => $request->sub_unit_id,
+            'can_propose' => $canPropose,
             'jabatan' => $request->jabatan,
             'is_active' => true,
         ]);
@@ -106,6 +110,7 @@ class UserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'is_active' => ['required', 'boolean'],
+            'can_propose' => ['nullable', 'boolean'],
             'sub_unit_id' => [
                 'nullable',
                 'exists:sub_units,id',
@@ -123,6 +128,7 @@ class UserController extends Controller
             'email' => $request->email,
             'is_active' => $request->is_active,
             'sub_unit_id' => $request->sub_unit_id,
+            'can_propose' => $request->boolean('can_propose'),
             'jabatan' => $request->jabatan,
         ];
 

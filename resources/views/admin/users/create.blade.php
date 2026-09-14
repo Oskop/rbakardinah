@@ -81,6 +81,22 @@
                             <x-input-error :messages="$errors->get('jabatan')" class="mt-2" />
                         </div>
 
+                        <!-- Hak Pengusulan RBA (Khusus Operator) -->
+                        <div id="can_propose_wrapper" class="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                            <input type="hidden" name="can_propose" value="0">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="can_propose" id="can_propose" value="1"
+                                    {{ old('can_propose', '1') == '1' ? 'checked' : '' }}
+                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 w-4 h-4">
+                                <span class="ml-2.5 text-sm font-bold text-gray-800">
+                                    ✍️ Hak Pengusulan RBA (Operator Pengusul / PIC)
+                                </span>
+                            </label>
+                            <p class="text-xs text-slate-500 mt-1.5 ml-6.5 leading-relaxed">
+                                Centang opsi ini jika pengguna berwenang menginput rincian belanja usulan, mengisi latar belakang, dan mengajukan berkas ke Supervisor. Jika <strong>tidak dicentang</strong>, akun ini berstatus sebagai <strong>Viewer / Peninjau</strong> (hanya dapat melihat data usulan & mencetak laporan sub-unitnya).
+                            </p>
+                        </div>
+
                         <!-- Password -->
                         <div>
                             <x-input-label for="password" :value="__('Password')" />
@@ -115,8 +131,25 @@
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const roleSelect = document.getElementById('role');
+            const canProposeWrapper = document.getElementById('can_propose_wrapper');
             const unitSelect = document.getElementById('unit_id');
             const subUnitSelect = document.getElementById('sub_unit_id');
+
+            function toggleCanPropose() {
+                if (!roleSelect || !canProposeWrapper) return;
+                if (roleSelect.value === 'Operator') {
+                    canProposeWrapper.style.display = 'block';
+                } else {
+                    canProposeWrapper.style.display = 'none';
+                }
+            }
+
+            if (roleSelect) {
+                roleSelect.addEventListener('change', toggleCanPropose);
+                toggleCanPropose();
+            }
+
             if (!unitSelect || !subUnitSelect) return;
 
             const originalSubOptions = Array.from(subUnitSelect.options);

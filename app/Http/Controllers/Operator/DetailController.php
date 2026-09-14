@@ -23,6 +23,10 @@ class DetailController extends Controller
             abort(403);
         }
 
+        if (!Auth::user()->isProposer()) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mengusulkan rincian belanja (Mode Peninjau / Viewer).');
+        }
+
         $hasBackground = $submission->operatorBackgrounds()->where('user_id', Auth::id())->exists() || !empty($submission->background);
         if (!$hasBackground) {
             return redirect()->route('operator.submissions.show', $submission->id)

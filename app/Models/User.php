@@ -38,6 +38,7 @@ class User extends Authenticatable
         'simrs_metadata',
         'unit_id',
         'sub_unit_id',
+        'can_propose',
         'jabatan',
         'is_active',
     ];
@@ -63,6 +64,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'can_propose' => 'boolean',
             'simrs_metadata' => 'array',
         ];
     }
@@ -134,4 +136,13 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Announcement::class, 'announcement_user')->withTimestamps();
     }
+
+    /**
+     * Check if user is an Operator with RBA proposing permission.
+     */
+    public function isProposer(): bool
+    {
+        return $this->role === 'Operator' && (bool) ($this->can_propose ?? true);
+    }
 }
+
