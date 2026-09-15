@@ -20,34 +20,61 @@ class RkbmdController extends Controller
         $user = Auth::user();
         $isProposer = $user->isProposer();
 
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $status = $request->input('status');
+        $search = $request->input('search');
+
+        $applyFilters = function ($query) use ($startDate, $endDate, $status, $search) {
+            $query->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
+                ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
+                ->when($status, fn($q) => $q->where('status', $status))
+                ->when($search, function ($q) use ($search) {
+                    $q->where(function ($subQ) use ($search) {
+                        $subQ->where('nomor_permohonan', 'like', "%{$search}%")
+                            ->orWhere('title', 'like', "%{$search}%")
+                            ->orWhere('notes', 'like', "%{$search}%");
+                    });
+                });
+        };
+
         // 1. Permohonan Saya (Dibuat oleh pengguna login)
-        $mySubmissions = RkbmdSubmission::with(['targetOperator', 'subUnit', 'unit', 'items'])
-            ->where('user_id', $user->id)
-            ->latest()
-            ->get();
+        $myQuery = RkbmdSubmission::with(['targetOperator', 'subUnit', 'unit', 'items'])
+            ->where('user_id', $user->id);
+        $applyFilters($myQuery);
+        $mySubmissions = $myQuery->latest('created_at')->get();
 
         // 2. Permohonan Masuk (Khusus Operator Pengusul / Penerima Berkas Saat Ini)
         $incomingSubmissions = collect();
         $forwardedSubmissions = collect();
 
         if ($isProposer) {
-            $incomingSubmissions = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'originalOperator'])
-                ->where('target_operator_id', $user->id)
-                ->latest()
-                ->get();
+            $incomingQuery = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'originalOperator'])
+                ->where('target_operator_id', $user->id);
+            $applyFilters($incomingQuery);
+            $incomingSubmissions = $incomingQuery->latest('created_at')->get();
 
             // 3. Permohonan yang Dialihkan oleh Operator Pengusul ini
-            $forwardedSubmissions = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'targetOperator', 'histories'])
+            $forwardedQuery = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'targetOperator', 'histories'])
                 ->whereHas('histories', function ($q) use ($user) {
                     $q->where('action', 'Pengalihan')
                         ->where('from_operator_id', $user->id);
                 })
-                ->where('target_operator_id', '!=', $user->id)
-                ->latest('updated_at')
-                ->get();
+                ->where('target_operator_id', '!=', $user->id);
+            $applyFilters($forwardedQuery);
+            $forwardedSubmissions = $forwardedQuery->latest('updated_at')->get();
         }
 
-        return view('operator.rkbmd.index', compact('mySubmissions', 'incomingSubmissions', 'forwardedSubmissions', 'isProposer'));
+        return view('operator.rkbmd.index', compact(
+            'mySubmissions',
+            'incomingSubmissions',
+            'forwardedSubmissions',
+            'isProposer',
+            'startDate',
+            'endDate',
+            'status',
+            'search'
+        ));
     }
 
     public function create()

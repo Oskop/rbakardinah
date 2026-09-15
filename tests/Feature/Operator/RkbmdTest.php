@@ -872,6 +872,153 @@ class RkbmdTest extends TestCase
         $forwardedA = $respA->viewData('forwardedSubmissions');
         $this->assertEquals('Dipenuhi', $forwardedA->firstWhere('id', $submission->id)->status);
     }
+
+    public function test_rkbmd_index_filters_by_date_range_server_side()
+    {
+        $file = UploadedFile::fake()->create('memo_dinas.pdf', 500, 'application/pdf');
+
+        // Permohonan 1: 10 hari yang lalu
+        $subOld = RkbmdSubmission::create([
+            'nomor_permohonan' => 'RKBMD/2026/09/001',
+            'year' => 2026,
+            'user_id' => $this->pemohon->id,
+            'unit_id' => $this->unitA->id,
+            'sub_unit_id' => $this->subUnitPoli->id,
+            'target_operator_id' => $this->proposerA->id,
+            'original_operator_id' => $this->proposerA->id,
+            'title' => 'Permohonan Lama 10 Hari Lalu',
+            'status' => 'Diajukan',
+        ]);
+        $subOld->created_at = now()->subDays(10);
+        $subOld->save();
+
+        // Permohonan 2: Hari ini
+        $subToday = RkbmdSubmission::create([
+            'nomor_permohonan' => 'RKBMD/2026/09/002',
+            'year' => 2026,
+            'user_id' => $this->pemohon->id,
+            'unit_id' => $this->unitA->id,
+            'sub_unit_id' => $this->subUnitPoli->id,
+            'target_operator_id' => $this->proposerA->id,
+            'original_operator_id' => $this->proposerA->id,
+            'title' => 'Permohonan Baru Hari Ini',
+            'status' => 'Diajukan',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Filter rentang tanggal hari ini
+        $response = $this->actingAs($this->pemohon)->get(route('operator.rkbmd.index', [
+            'start_date' => now()->format('Y-m-d'),
+            'end_date' => now()->format('Y-m-d'),
+        ]));
+
+        $response->assertStatus(200);
+        $mySubmissions = $response->viewData('mySubmissions');
+        $this->assertTrue($mySubmissions->contains('id', $subToday->id));
+        $this->assertFalse($mySubmissions->contains('id', $subOld->id));
+    }
+
+    public function test_rkbmd_index_filters_by_status_server_side()
+    {
+        $sub1 = RkbmdSubmission::create([
+            'nomor_permohonan' => 'RKBMD/2026/09/003',
+            'year' => 2026,
+            'user_id' => $this->pemohon->id,
+            'unit_id' => $this->unitA->id,
+            'sub_unit_id' => $this->subUnitPoli->id,
+            'target_operator_id' => $this->proposerA->id,
+            'original_operator_id' => $this->proposerA->id,
+            'title' => 'Permohonan Belum Dibalas',
+            'status' => 'Diajukan',
+        ]);
+
+        $sub2 = RkbmdSubmission::create([
+            'nomor_permohonan' => 'RKBMD/2026/09/004',
+            'year' => 2026,
+            'user_id' => $this->pemohon->id,
+            'unit_id' => $this->unitA->id,
+            'sub_unit_id' => $this->subUnitPoli->id,
+            'target_operator_id' => $this->proposerA->id,
+            'original_operator_id' => $this->proposerA->id,
+            'title' => 'Permohonan Sudah Dipenuhi',
+            'status' => 'Dipenuhi',
+            'replied_at' => now(),
+            'replied_by' => $this->proposerA->id,
+        ]);
+
+        $response = $this->actingAs($this->pemohon)->get(route('operator.rkbmd.index', [
+            'status' => 'Dipenuhi',
+        ]));
+
+        $response->assertStatus(200);
+        $mySubmissions = $response->viewData('mySubmissions');
+        $this->assertTrue($mySubmissions->contains('id', $sub2->id));
+        $this->assertFalse($mySubmissions->contains('id', $sub1->id));
+    }
+
+    public function test_rkbmd_index_filters_by_keyword_search_server_side()
+    {
+        $sub1 = RkbmdSubmission::create([
+            'nomor_permohonan' => 'RKBMD/2026/09/005',
+            'year' => 2026,
+            'user_id' => $this->pemohon->id,
+            'unit_id' => $this->unitA->id,
+            'sub_unit_id' => $this->subUnitPoli->id,
+            'target_operator_id' => $this->proposerA->id,
+            'original_operator_id' => $this->proposerA->id,
+            'title' => 'Pengadaan Monitor Pasien ICU Kardinah',
+            'status' => 'Diajukan',
+        ]);
+
+        $sub2 = RkbmdSubmission::create([
+            'nomor_permohonan' => 'RKBMD/2026/09/006',
+            'year' => 2026,
+            'user_id' => $this->pemohon->id,
+            'unit_id' => $this->unitA->id,
+            'sub_unit_id' => $this->subUnitPoli->id,
+            'target_operator_id' => $this->proposerA->id,
+            'original_operator_id' => $this->proposerA->id,
+            'title' => 'Pengadaan Kasur Rawat Inap Standar',
+            'status' => 'Diajukan',
+        ]);
+
+        $response = $this->actingAs($this->pemohon)->get(route('operator.rkbmd.index', [
+            'search' => 'Monitor',
+        ]));
+
+        $response->assertStatus(200);
+        $mySubmissions = $response->viewData('mySubmissions');
+        $this->assertTrue($mySubmissions->contains('id', $sub1->id));
+        $this->assertFalse($mySubmissions->contains('id', $sub2->id));
+    }
+
+    public function test_rkbmd_index_renders_datatables_assets_and_data_attributes()
+    {
+        $sub = RkbmdSubmission::create([
+            'nomor_permohonan' => 'RKBMD/2026/09/007',
+            'year' => 2026,
+            'user_id' => $this->pemohon->id,
+            'unit_id' => $this->unitA->id,
+            'sub_unit_id' => $this->subUnitPoli->id,
+            'target_operator_id' => $this->proposerA->id,
+            'original_operator_id' => $this->proposerA->id,
+            'title' => 'Permohonan Verifikasi Atribut',
+            'status' => 'Diajukan',
+        ]);
+
+        $response = $this->actingAs($this->pemohon)->get(route('operator.rkbmd.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('filter-search');
+        $response->assertSee('filter-status');
+        $response->assertSee('filter-start-date');
+        $response->assertSee('filter-end-date');
+        $response->assertSee('btn-reset-filters');
+        $response->assertSee('dataTables.tailwindcss.css');
+        $response->assertSee('data-order="' . $sub->created_at->timestamp . '"', false);
+        $response->assertSee('data-date="' . $sub->created_at->format('Y-m-d') . '"', false);
+    }
 }
 
 
