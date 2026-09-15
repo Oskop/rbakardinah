@@ -27,6 +27,13 @@
                 </h2>
             </div>
             <div class="flex items-center gap-2">
+                @if($rkbmd->canEditSubmission(Auth::user()))
+                    <a href="{{ route('operator.rkbmd.edit', $rkbmd) }}"
+                        class="inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-colors gap-1.5 shadow-xs">
+                        <span>✏️</span>
+                        <span>Edit Permohonan</span>
+                    </a>
+                @endif
                 <a href="{{ route('operator.rkbmd.index') }}"
                     class="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
                     ← Kembali
@@ -48,6 +55,39 @@
                 <div class="p-4 bg-rose-50 border-l-4 border-rose-500 text-rose-800 rounded-xl shadow-sm text-sm font-semibold flex items-center gap-2">
                     <span>⚠️</span>
                     <span>{{ session('error') }}</span>
+                </div>
+            @endif
+
+            <!-- BANNER PERMOHONAN MASIH DAPAT DIEDIT (BAGI PEMOHON) -->
+            @if($rkbmd->canEditSubmission(Auth::user()))
+                <div class="bg-gradient-to-r from-amber-50 via-orange-50 to-white border border-amber-200 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <span class="p-2 bg-amber-500 text-white rounded-xl text-xs">✏️</span>
+                        <div>
+                            <h4 class="text-xs font-bold text-amber-950">Permohonan Masih Dapat Diedit</h4>
+                            <p class="text-[11px] text-amber-800">
+                                Status berkas masih <strong>Diajukan</strong> dan belum diproses ataupun dialihkan oleh Operator Pengusul tujuan. Anda dapat memperbarui data permohonan, mengganti berkas, atau mengubah daftar barang jika diperlukan.
+                            </p>
+                        </div>
+                    </div>
+                    <a href="{{ route('operator.rkbmd.edit', $rkbmd) }}"
+                        class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all gap-1.5 shrink-0">
+                        <span>✏️</span>
+                        <span>Edit Permohonan</span>
+                    </a>
+                </div>
+            @endif
+
+            <!-- BANNER STATUS INFORMASI BERKAS DIALIHKAN (BAGI OPERATOR PENGALIH) -->
+            @if($rkbmd->histories->where('action', 'Pengalihan')->where('from_operator_id', Auth::id())->isNotEmpty() && $rkbmd->target_operator_id !== Auth::id())
+                <div class="bg-gradient-to-r from-amber-50 via-sky-50 to-white border border-amber-200/90 rounded-2xl p-4 shadow-xs flex items-center gap-3">
+                    <span class="p-2.5 bg-amber-500 text-white rounded-xl text-xs">↪️</span>
+                    <div>
+                        <h4 class="text-xs font-bold text-amber-950">Berkas Telah Anda Alihkan</h4>
+                        <p class="text-[11px] text-amber-800 leading-relaxed">
+                            Anda telah meneruskan permohonan ini kepada <strong>{{ $rkbmd->targetOperator?->name ?? 'Operator Pengusul Lain' }}</strong>. Anda tetap dapat memantau perkembangan dan tindak lanjut status keputusan melalui linimasa riwayat di bawah ini.
+                        </p>
+                    </div>
                 </div>
             @endif
 
@@ -257,13 +297,13 @@
                                 <div class="relative text-xs">
                                     <!-- Bullet Marker -->
                                     <div class="absolute -left-6 top-0.5 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center
-                                        {{ $history->action === 'Pengajuan' ? 'bg-blue-600' : ($history->action === 'Pengalihan' ? 'bg-amber-500' : ($history->action === 'Edit Balasan' ? 'bg-orange-500' : 'bg-emerald-600')) }} shadow-xs">
+                                        {{ $history->action === 'Pengajuan' ? 'bg-blue-600' : ($history->action === 'Pengalihan' ? 'bg-amber-500' : ($history->action === 'Edit Balasan' ? 'bg-orange-500' : ($history->action === 'Edit Permohonan' ? 'bg-indigo-600' : 'bg-emerald-600'))) }} shadow-xs">
                                     </div>
 
                                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5">
                                         <div class="flex items-center justify-between">
-                                            <span class="font-bold {{ $history->action === 'Edit Balasan' ? 'text-orange-700' : 'text-slate-900' }}">
-                                                {{ $history->action === 'Edit Balasan' ? '✏️ Edit Balasan' : $history->action }}
+                                            <span class="font-bold {{ $history->action === 'Edit Balasan' ? 'text-orange-700' : ($history->action === 'Edit Permohonan' ? 'text-indigo-700' : 'text-slate-900') }}">
+                                                {{ $history->action === 'Edit Balasan' ? '✏️ Edit Balasan' : ($history->action === 'Edit Permohonan' ? '✏️ Edit Permohonan' : $history->action) }}
                                             </span>
                                             <span class="text-[10px] text-slate-400">
                                                 {{ $history->created_at->format('d/m/Y H:i') }}
