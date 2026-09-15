@@ -526,5 +526,353 @@ class RkbmdTest extends TestCase
         $responseDashboard = $this->actingAs($this->pemohon)->get(route('admin.dashboard'));
         $responseDashboard->assertStatus(403);
     }
+
+    public function test_applicant_operator_can_access_edit_page_when_status_diajukan_and_no_forward_or_reply()
+    {
+        $file = UploadedFile::fake()->create('memo_dinas.pdf', 500, 'application/pdf');
+
+        $this->actingAs($this->pemohon)->post(route('operator.rkbmd.store'), [
+            'target_operator_id' => $this->proposerA->id,
+            'title' => 'Pengadaan Kebutuhan Poli Jantung Awal',
+            'year' => 2026,
+            'notes' => 'Catatan awal pengajuan',
+            'attachment' => $file,
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangAC->id,
+                    'volume' => 2,
+                    'satuan' => 'Unit',
+                    'spesifikasi' => 'AC 2 PK Inverter',
+                ],
+            ],
+        ]);
+
+        $submission = RkbmdSubmission::first();
+        $this->assertTrue($submission->canEditSubmission($this->pemohon));
+
+        $response = $this->actingAs($this->pemohon)->get(route('operator.rkbmd.edit', $submission));
+        $response->assertStatus(200);
+        $response->assertSee('Edit Permohonan RKBMD');
+        $response->assertSee('Pengadaan Kebutuhan Poli Jantung Awal');
+    }
+
+    public function test_applicant_operator_can_update_submission_and_items_and_logs_history()
+    {
+        $file = UploadedFile::fake()->create('memo_dinas.pdf', 500, 'application/pdf');
+
+        $this->actingAs($this->pemohon)->post(route('operator.rkbmd.store'), [
+            'target_operator_id' => $this->proposerA->id,
+            'title' => 'Pengadaan Kebutuhan Poli Jantung Awal',
+            'year' => 2026,
+            'notes' => 'Catatan awal pengajuan',
+            'attachment' => $file,
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangAC->id,
+                    'volume' => 2,
+                    'satuan' => 'Unit',
+                    'spesifikasi' => 'AC 2 PK Inverter',
+                ],
+            ],
+        ]);
+
+        $submission = RkbmdSubmission::first();
+
+        // Update submission: ganti judul, catatan, dan item menjadi 3 unit meja
+        $responseUpdate = $this->actingAs($this->pemohon)->put(route('operator.rkbmd.update', $submission), [
+            'target_operator_id' => $this->proposerA->id,
+            'title' => 'Revisi: Pengadaan Meja Dokter Poli Jantung',
+            'year' => 2026,
+            'notes' => 'Catatan revisi setelah koordinasi internal',
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangMeja->id,
+                    'volume' => 3,
+                    'satuan' => 'Unit',
+                    'spesifikasi' => 'Meja Kayu Jati 1/2 Biro',
+                ],
+            ],
+        ]);
+
+        $responseUpdate->assertRedirect(route('operator.rkbmd.show', $submission));
+
+        $submission->refresh();
+        $this->assertEquals('Revisi: Pengadaan Meja Dokter Poli Jantung', $submission->title);
+        $this->assertEquals('Catatan revisi setelah koordinasi internal', $submission->notes);
+        $this->assertEquals('Diajukan', $submission->status);
+
+        // Verifikasi items
+        $this->assertCount(1, $submission->items);
+        $this->assertEquals($this->barangMeja->id, $submission->items->first()->master_barang_id);
+        $this->assertEquals(3, $submission->items->first()->volume);
+
+        // Verifikasi histori 'Edit Permohonan'
+        $this->assertDatabaseHas('rkbmd_histories', [
+            'rkbmd_submission_id' => $submission->id,
+            'user_id' => $this->pemohon->id,
+            'action' => 'Edit Permohonan',
+            'status_before' => 'Diajukan',
+            'status_after' => 'Diajukan',
+        ]);
+    }
+
+    public function test_applicant_cannot_edit_if_submission_has_been_replied()
+    {
+        $file = UploadedFile::fake()->create('memo_dinas.pdf', 500, 'application/pdf');
+
+        $this->actingAs($this->pemohon)->post(route('operator.rkbmd.store'), [
+            'target_operator_id' => $this->proposerA->id,
+            'title' => 'Pengadaan Kebutuhan Poli Jantung',
+            'year' => 2026,
+            'attachment' => $file,
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangAC->id,
+                    'volume' => 1,
+                    'satuan' => 'Unit',
+                ],
+            ],
+        ]);
+
+        $submission = RkbmdSubmission::first();
+
+        // Target operator membalas permohonan
+        $this->actingAs($this->proposerA)->post(route('operator.rkbmd.reply', $submission), [
+            'status' => 'Dipenuhi',
+            'reply_notes' => 'Disetujui penuh.',
+        ]);
+
+        $submission->refresh();
+        $this->assertFalse($submission->canEditSubmission($this->pemohon));
+
+        // Pemohon mencoba akses halaman edit -> 403
+        $respEdit = $this->actingAs($this->pemohon)->get(route('operator.rkbmd.edit', $submission));
+        $respEdit->assertStatus(403);
+
+        // Pemohon mencoba request update -> 403
+        $respUpdate = $this->actingAs($this->pemohon)->put(route('operator.rkbmd.update', $submission), [
+            'target_operator_id' => $this->proposerA->id,
+            'title' => 'Coba ubah setelah dibalas',
+            'year' => 2026,
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangAC->id,
+                    'volume' => 5,
+                    'satuan' => 'Unit',
+                ],
+            ],
+        ]);
+        $respUpdate->assertStatus(403);
+    }
+
+    public function test_applicant_cannot_edit_if_submission_has_been_forwarded()
+    {
+        $file = UploadedFile::fake()->create('memo_dinas.pdf', 500, 'application/pdf');
+
+        $this->actingAs($this->pemohon)->post(route('operator.rkbmd.store'), [
+            'target_operator_id' => $this->proposerA->id,
+            'title' => 'Pengadaan Kebutuhan Poli Jantung',
+            'year' => 2026,
+            'attachment' => $file,
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangAC->id,
+                    'volume' => 1,
+                    'satuan' => 'Unit',
+                ],
+            ],
+        ]);
+
+        $submission = RkbmdSubmission::first();
+
+        // Target operator mengalihkan berkas ke Proposer B
+        $this->actingAs($this->proposerA)->post(route('operator.rkbmd.forward', $submission), [
+            'new_target_operator_id' => $this->proposerB->id,
+            'forward_reason' => 'Bukan wewenang poli kami, dialihkan ke Sarpras.',
+        ]);
+
+        $submission->refresh();
+        $this->assertFalse($submission->canEditSubmission($this->pemohon));
+
+        // Pemohon mencoba akses halaman edit -> 403
+        $respEdit = $this->actingAs($this->pemohon)->get(route('operator.rkbmd.edit', $submission));
+        $respEdit->assertStatus(403);
+
+        // Pemohon mencoba request update -> 403
+        $respUpdate = $this->actingAs($this->pemohon)->put(route('operator.rkbmd.update', $submission), [
+            'target_operator_id' => $this->proposerB->id,
+            'title' => 'Coba ubah setelah dialihkan',
+            'year' => 2026,
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangAC->id,
+                    'volume' => 5,
+                    'satuan' => 'Unit',
+                ],
+            ],
+        ]);
+        $respUpdate->assertStatus(403);
+    }
+
+    public function test_unauthorized_operator_cannot_edit_submission()
+    {
+        $file = UploadedFile::fake()->create('memo_dinas.pdf', 500, 'application/pdf');
+
+        $this->actingAs($this->pemohon)->post(route('operator.rkbmd.store'), [
+            'target_operator_id' => $this->proposerA->id,
+            'title' => 'Pengadaan Kebutuhan Poli Jantung',
+            'year' => 2026,
+            'attachment' => $file,
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangAC->id,
+                    'volume' => 1,
+                    'satuan' => 'Unit',
+                ],
+            ],
+        ]);
+
+        $submission = RkbmdSubmission::first();
+
+        // Operator lain (proposerB) mencoba mengedit permohonan milik pemohon -> 403
+        $respEdit = $this->actingAs($this->proposerB)->get(route('operator.rkbmd.edit', $submission));
+        $respEdit->assertStatus(403);
+
+        $respUpdate = $this->actingAs($this->proposerB)->put(route('operator.rkbmd.update', $submission), [
+            'target_operator_id' => $this->proposerA->id,
+            'title' => 'Perubahan ilegal oleh pihak ketiga',
+            'year' => 2026,
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangAC->id,
+                    'volume' => 1,
+                    'satuan' => 'Unit',
+                ],
+            ],
+        ]);
+        $respUpdate->assertStatus(403);
+    }
+
+    public function test_forwarding_operator_sees_forwarded_submission_in_dedicated_tab()
+    {
+        $file = UploadedFile::fake()->create('memo_dinas.pdf', 500, 'application/pdf');
+
+        $this->actingAs($this->pemohon)->post(route('operator.rkbmd.store'), [
+            'target_operator_id' => $this->proposerA->id,
+            'title' => 'Pengadaan Kebutuhan Poli Jantung',
+            'year' => 2026,
+            'attachment' => $file,
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangAC->id,
+                    'volume' => 1,
+                    'satuan' => 'Unit',
+                ],
+            ],
+        ]);
+
+        $submission = RkbmdSubmission::first();
+
+        // 1. Proposer A mengalihkan ke Proposer B
+        $this->actingAs($this->proposerA)->post(route('operator.rkbmd.forward', $submission), [
+            'new_target_operator_id' => $this->proposerB->id,
+            'forward_reason' => 'Bukan tupoksi kami, dialihkan ke Sarpras.',
+        ]);
+
+        // 2. Cek index dari sisi Proposer A (Pengalih)
+        $respA = $this->actingAs($this->proposerA)->get(route('operator.rkbmd.index'));
+        $respA->assertStatus(200);
+        $respA->assertSee('Permohonan Dialihkan');
+        $respA->assertSee('Daftar Permohonan yang Anda Alihkan');
+        $respA->assertSee($submission->nomor_permohonan);
+        $respA->assertSee($this->proposerB->name);
+
+        $forwardedA = $respA->viewData('forwardedSubmissions');
+        $this->assertTrue($forwardedA->contains('id', $submission->id));
+
+        $incomingA = $respA->viewData('incomingSubmissions');
+        $this->assertFalse($incomingA->contains('id', $submission->id));
+
+        // 3. Cek index dari sisi Proposer B (Penerima alihan)
+        $respB = $this->actingAs($this->proposerB)->get(route('operator.rkbmd.index'));
+        $respB->assertStatus(200);
+        $incomingB = $respB->viewData('incomingSubmissions');
+        $this->assertTrue($incomingB->contains('id', $submission->id));
+    }
+
+    public function test_forwarding_operator_can_view_show_page_and_banner_of_forwarded_submission()
+    {
+        $file = UploadedFile::fake()->create('memo_dinas.pdf', 500, 'application/pdf');
+
+        $this->actingAs($this->pemohon)->post(route('operator.rkbmd.store'), [
+            'target_operator_id' => $this->proposerA->id,
+            'title' => 'Pengadaan Kebutuhan Poli Jantung',
+            'year' => 2026,
+            'attachment' => $file,
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangAC->id,
+                    'volume' => 1,
+                    'satuan' => 'Unit',
+                ],
+            ],
+        ]);
+
+        $submission = RkbmdSubmission::first();
+
+        // Proposer A mengalihkan ke Proposer B
+        $this->actingAs($this->proposerA)->post(route('operator.rkbmd.forward', $submission), [
+            'new_target_operator_id' => $this->proposerB->id,
+            'forward_reason' => 'Bukan tupoksi kami, dialihkan ke Sarpras.',
+        ]);
+
+        // Proposer A melihat halaman show
+        $response = $this->actingAs($this->proposerA)->get(route('operator.rkbmd.show', $submission));
+        $response->assertStatus(200);
+        $response->assertSee('Berkas Telah Anda Alihkan');
+        $response->assertSee($this->proposerB->name);
+        $response->assertSee('Bukan tupoksi kami, dialihkan ke Sarpras.');
+    }
+
+    public function test_forwarded_submission_status_updates_when_resolved_by_target_operator()
+    {
+        $file = UploadedFile::fake()->create('memo_dinas.pdf', 500, 'application/pdf');
+
+        $this->actingAs($this->pemohon)->post(route('operator.rkbmd.store'), [
+            'target_operator_id' => $this->proposerA->id,
+            'title' => 'Pengadaan Kebutuhan Poli Jantung',
+            'year' => 2026,
+            'attachment' => $file,
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangAC->id,
+                    'volume' => 1,
+                    'satuan' => 'Unit',
+                ],
+            ],
+        ]);
+
+        $submission = RkbmdSubmission::first();
+
+        // Proposer A mengalihkan ke Proposer B
+        $this->actingAs($this->proposerA)->post(route('operator.rkbmd.forward', $submission), [
+            'new_target_operator_id' => $this->proposerB->id,
+            'forward_reason' => 'Bukan tupoksi kami, dialihkan ke Sarpras.',
+        ]);
+
+        // Proposer B memberikan balasan Dipenuhi
+        $this->actingAs($this->proposerB)->post(route('operator.rkbmd.reply', $submission), [
+            'status' => 'Dipenuhi',
+            'reply_notes' => 'Telah disetujui Sarpras.',
+        ]);
+
+        // Proposer A melihat index -> status di tab forwarded terupdate menjadi Dipenuhi
+        $respA = $this->actingAs($this->proposerA)->get(route('operator.rkbmd.index'));
+        $respA->assertStatus(200);
+        $forwardedA = $respA->viewData('forwardedSubmissions');
+        $this->assertEquals('Dipenuhi', $forwardedA->firstWhere('id', $submission->id)->status);
+    }
 }
+
+
 

@@ -52,10 +52,21 @@
                         :class="activeTab === 'incoming' ? 'bg-indigo-600 text-white shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'"
                         class="flex-1 py-2.5 px-4 rounded-xl text-xs transition-all duration-150 flex items-center justify-center gap-2">
                         <span>📥</span>
-                        <span>Permohonan Masuk (Perlu Ditindaklanjuti)</span>
+                        <span>Permohonan Masuk (Perlu Tindak Lanjut)</span>
                         <span class="px-2 py-0.5 rounded-full text-[10px]"
                             :class="activeTab === 'incoming' ? 'bg-indigo-700/80 text-white' : 'bg-slate-200 text-slate-700'">
                             {{ $incomingSubmissions->count() }}
+                        </span>
+                    </button>
+
+                    <button type="button" @click="activeTab = 'forwarded'"
+                        :class="activeTab === 'forwarded' ? 'bg-indigo-600 text-white shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'"
+                        class="flex-1 py-2.5 px-4 rounded-xl text-xs transition-all duration-150 flex items-center justify-center gap-2">
+                        <span>↪️</span>
+                        <span>Permohonan Dialihkan</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px]"
+                            :class="activeTab === 'forwarded' ? 'bg-indigo-700/80 text-white' : 'bg-slate-200 text-slate-700'">
+                            {{ $forwardedSubmissions->count() }}
                         </span>
                     </button>
                 @endif
@@ -130,7 +141,13 @@
                                                 </span>
                                             </td>
 
-                                            <td class="px-5 py-4 whitespace-nowrap text-right text-xs">
+                                            <td class="px-5 py-4 whitespace-nowrap text-right text-xs space-x-1.5">
+                                                @if($sub->canEditSubmission(Auth::user()))
+                                                    <a href="{{ route('operator.rkbmd.edit', $sub) }}"
+                                                        class="inline-flex items-center px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-bold border border-amber-200 transition-colors gap-1">
+                                                        <span>✏️</span> Edit
+                                                    </a>
+                                                @endif
                                                 <a href="{{ route('operator.rkbmd.show', $sub) }}"
                                                     class="inline-flex items-center px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-bold border border-indigo-200 transition-colors">
                                                     Lihat Detail →
@@ -236,6 +253,111 @@
                                             <tr>
                                                 <td colspan="6" class="px-5 py-8 text-center text-xs text-gray-400">
                                                     Tidak ada permohonan RKBMD masuk yang sedang menunggu tindakan Anda saat ini.
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: PERMOHONAN DIALIHKAN (KHUSUS OPERATOR PENGUSUL) -->
+                <div x-show="activeTab === 'forwarded'" x-transition class="space-y-4">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80">
+                        <div class="p-6 text-gray-900">
+                            <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                                <div>
+                                    <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
+                                        <span>↪️</span>
+                                        <span>Daftar Permohonan yang Anda Alihkan</span>
+                                    </h3>
+                                    <p class="text-xs text-slate-400">Pantau perkembangan status berkas yang telah Anda teruskan / alihkan ke Operator Pengusul lain</p>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table id="table-forwarded-rkbmd" class="min-w-full divide-y divide-gray-200 stripe hover">
+                                    <thead class="bg-gray-50/80">
+                                        <tr>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No. Tiket</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Pemohon / Asal Sub-Unit</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Perihal Permohonan</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Dialihkan Kepada</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Jumlah Item</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Status Terkini</th>
+                                            <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        @forelse($forwardedSubmissions as $fSub)
+                                            <tr>
+                                                <td class="px-5 py-4 whitespace-nowrap">
+                                                    <span class="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-200">
+                                                        {{ $fSub->nomor_permohonan }}
+                                                    </span>
+                                                    <div class="text-[11px] text-gray-400 mt-1">
+                                                        Tahun {{ $fSub->year }} • {{ $fSub->created_at->format('d M Y') }}
+                                                    </div>
+                                                </td>
+
+                                                <td class="px-5 py-4 whitespace-nowrap">
+                                                    <div class="text-xs font-bold text-gray-900">{{ $fSub->applicant->name }}</div>
+                                                    <div class="text-[11px] text-indigo-600 font-semibold mt-0.5">
+                                                        📌 {{ $fSub->subUnit?->name ?? $fSub->unit?->name }}
+                                                    </div>
+                                                </td>
+
+                                                <td class="px-5 py-4">
+                                                    <div class="text-sm font-semibold text-gray-900">{{ $fSub->title }}</div>
+                                                    <div class="text-xs text-gray-500 mt-0.5 line-clamp-1">{{ $fSub->notes }}</div>
+                                                </td>
+
+                                                <td class="px-5 py-4 whitespace-nowrap">
+                                                    <div class="text-xs font-bold text-amber-900 flex items-center gap-1">
+                                                        <span>👤</span>
+                                                        <span>{{ $fSub->targetOperator?->name ?? 'Operator Lain' }}</span>
+                                                    </div>
+                                                    <div class="text-[11px] text-slate-500 mt-0.5">
+                                                        {{ $fSub->targetOperator?->unit?->name }} {{ $fSub->targetOperator?->subUnit ? '(' . $fSub->targetOperator->subUnit->name . ')' : '' }}
+                                                    </div>
+                                                </td>
+
+                                                <td class="px-5 py-4 whitespace-nowrap text-center text-xs font-bold text-slate-700">
+                                                    {{ $fSub->items->count() }} Item
+                                                </td>
+
+                                                <td class="px-5 py-4 whitespace-nowrap text-center">
+                                                    @php
+                                                        $statusClasses = [
+                                                            'Diajukan' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                                            'Dialihkan' => 'bg-amber-100 text-amber-800 border-amber-200',
+                                                            'Dipenuhi' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                                                            'Dipenuhi Sebagian' => 'bg-teal-100 text-teal-800 border-teal-200',
+                                                            'Substitusi' => 'bg-cyan-100 text-cyan-800 border-cyan-200',
+                                                            'Optimalisasi' => 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                                                            'Ditolak' => 'bg-rose-100 text-rose-800 border-rose-200',
+                                                        ];
+                                                        $cls = $statusClasses[$fSub->status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+                                                    @endphp
+                                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full border {{ $cls }}">
+                                                        {{ $fSub->status }}
+                                                    </span>
+                                                </td>
+
+                                                <td class="px-5 py-4 whitespace-nowrap text-right text-xs">
+                                                    <a href="{{ route('operator.rkbmd.show', $fSub) }}"
+                                                        class="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold border border-slate-300 transition-colors gap-1 shadow-2xs">
+                                                        <span>👁️</span>
+                                                        <span>Lihat Detail & Pantau →</span>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="7" class="px-5 py-8 text-center text-xs text-gray-400">
+                                                    Belum ada permohonan RKBMD yang Anda alihkan ke operator pengusul lain.
                                                 </td>
                                             </tr>
                                         @endforelse

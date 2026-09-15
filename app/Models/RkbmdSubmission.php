@@ -122,4 +122,27 @@ class RkbmdSubmission extends Model
         // Hanya operator yang membalas atau target_operator saat ini yang berhak mengedit
         return $this->replied_by === $user->id || $this->target_operator_id === $user->id;
     }
+
+    /**
+     * Check if a given user can edit this submission.
+     * Hanya pemohon (atau Administrator) yang berhak mengedit,
+     * dan hanya saat status masih 'Diajukan', belum ada balasan, dan belum pernah dialihkan.
+     */
+    public function canEditSubmission(User $user): bool
+    {
+        if ($user->role === 'Administrator') {
+            return $this->status === 'Diajukan'
+                && empty($this->replied_at)
+                && !$this->histories()->where('action', 'Pengalihan')->exists();
+        }
+
+        if ($this->user_id !== $user->id) {
+            return false;
+        }
+
+        return $this->status === 'Diajukan'
+            && empty($this->replied_at)
+            && !$this->histories()->where('action', 'Pengalihan')->exists();
+    }
 }
+

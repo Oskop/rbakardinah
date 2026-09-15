@@ -28,14 +28,26 @@ class RkbmdController extends Controller
 
         // 2. Permohonan Masuk (Khusus Operator Pengusul / Penerima Berkas Saat Ini)
         $incomingSubmissions = collect();
+        $forwardedSubmissions = collect();
+
         if ($isProposer) {
             $incomingSubmissions = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'originalOperator'])
                 ->where('target_operator_id', $user->id)
                 ->latest()
                 ->get();
+
+            // 3. Permohonan yang Dialihkan oleh Operator Pengusul ini
+            $forwardedSubmissions = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'targetOperator', 'histories'])
+                ->whereHas('histories', function ($q) use ($user) {
+                    $q->where('action', 'Pengalihan')
+                        ->where('from_operator_id', $user->id);
+                })
+                ->where('target_operator_id', '!=', $user->id)
+                ->latest('updated_at')
+                ->get();
         }
 
-        return view('operator.rkbmd.index', compact('mySubmissions', 'incomingSubmissions', 'isProposer'));
+        return view('operator.rkbmd.index', compact('mySubmissions', 'incomingSubmissions', 'forwardedSubmissions', 'isProposer'));
     }
 
     public function create()
@@ -155,7 +167,11 @@ class RkbmdController extends Controller
         // Pastikan hak akses lihat (Pemohon, Target saat ini, Pengalih terdahulu, SPV unit, atau Admin)
         $isParticipant = $rkbmd->user_id === $user->id
             || $rkbmd->target_operator_id === $user->id
-            || $rkbmd->histories()->where('user_id', $user->id)->orWhere('from_operator_id', $user->id)->orWhere('to_operator_id', $user->id)->exists()
+            || $rkbmd->histories()->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhere('from_operator_id', $user->id)
+                    ->orWhere('to_operator_id', $user->id);
+            })->exists()
             || ($user->role === 'Supervisor' && $user->unit_id === $rkbmd->unit_id)
             || $user->role === 'Administrator';
 
@@ -352,4 +368,120 @@ class RkbmdController extends Controller
         return redirect()->route('operator.rkbmd.show', $rkbmd)
             ->with('success', "Permohonan RKBMD telah berhasil dialihkan ke operator {$newTarget->name}.");
     }
+
+    /**
+     * Menampilkan formulir edit permohonan RKBMD bagi pemohon
+     */
+    public function edit(RkbmdSubmission $rkbmd)
+    {
+        $user = Auth::user();
+
+        if (!$rkbmd->canEditSubmission($user)) {
+            abort(403, 'Permohonan RKBMD ini tidak dapat diedit karena sudah diproses/dialihkan atau Anda tidak memiliki hak akses.');
+        }
+
+        // Daftar operator pengusul aktif (can_propose = 1) kecuali pemohon sendiri
+        $targetOperators = User::where('role', 'Operator')
+            ->where('can_propose', true)
+            ->where('is_active', true)
+            ->where('id', '!=', $user->id)
+            ->with(['unit', 'subUnit'])
+            ->orderBy('name')
+            ->get();
+
+        $masterBarangs = MasterBarang::orderBy('kode_barang')->get(['id', 'kode_barang', 'nama_barang', 'satuan']);
+
+        $rkbmd->load(['items.masterBarang', 'subUnit', 'unit', 'targetOperator']);
+
+        return view('operator.rkbmd.edit', compact('rkbmd', 'targetOperators', 'masterBarangs', 'user'));
+    }
+
+    /**
+     * Memperbarui data permohonan RKBMD oleh pemohon
+     */
+    public function update(Request $request, RkbmdSubmission $rkbmd)
+    {
+        $user = Auth::user();
+
+        if (!$rkbmd->canEditSubmission($user)) {
+            abort(403, 'Permohonan RKBMD ini tidak dapat diedit karena sudah diproses/dialihkan atau Anda tidak memiliki hak akses.');
+        }
+
+        $request->validate([
+            'target_operator_id' => [
+                'required',
+                'exists:users,id',
+                function ($attribute, $value, $fail) use ($user) {
+                    $target = User::find($value);
+                    if (!$target || $target->role !== 'Operator' || !$target->can_propose || !$target->is_active) {
+                        $fail('Operator tujuan harus merupakan akun Operator aktif yang memiliki hak pengusulan RBA.');
+                    }
+                    if ($target->id === $user->id) {
+                        $fail('Anda tidak dapat memilih akun Anda sendiri sebagai operator tujuan.');
+                    }
+                },
+            ],
+            'title' => 'required|string|max:255',
+            'year' => 'required|integer|digits:4',
+            'notes' => 'nullable|string|max:2000',
+            'attachment' => 'nullable|file|mimes:pdf|max:10240',
+            'items' => 'required|array|min:1',
+            'items.*.master_barang_id' => 'required|exists:master_barangs,id',
+            'items.*.volume' => 'required|numeric|min:0.01',
+            'items.*.satuan' => 'required|string|max:50',
+            'items.*.spesifikasi' => 'nullable|string|max:255',
+        ]);
+
+        $attachmentPath = $rkbmd->attachment_path;
+        if ($request->hasFile('attachment')) {
+            if ($attachmentPath && Storage::disk('public')->exists($attachmentPath)) {
+                Storage::disk('public')->delete($attachmentPath);
+            }
+            $attachmentPath = $request->file('attachment')->store('rkbmd_attachments', 'public');
+        }
+
+        DB::transaction(function () use ($request, $rkbmd, $user, $attachmentPath) {
+            $rkbmd->update([
+                'target_operator_id' => $request->target_operator_id,
+                'original_operator_id' => $request->target_operator_id,
+                'title' => $request->title,
+                'year' => $request->year,
+                'notes' => $request->notes,
+                'attachment_path' => $attachmentPath,
+                'updated_by' => $user->id,
+            ]);
+
+            // Sinkronisasi item: hapus lama dan buat yang baru
+            $rkbmd->items()->delete();
+
+            foreach ($request->items as $itemData) {
+                RkbmdItem::create([
+                    'rkbmd_submission_id' => $rkbmd->id,
+                    'master_barang_id' => $itemData['master_barang_id'],
+                    'volume' => $itemData['volume'],
+                    'satuan' => $itemData['satuan'],
+                    'spesifikasi' => $itemData['spesifikasi'] ?? null,
+                    'created_by' => $user->id,
+                    'updated_by' => $user->id,
+                ]);
+            }
+
+            // Catat Riwayat Edit Permohonan
+            RkbmdHistory::create([
+                'rkbmd_submission_id' => $rkbmd->id,
+                'user_id' => $user->id,
+                'action' => 'Edit Permohonan',
+                'to_operator_id' => $request->target_operator_id,
+                'status_before' => 'Diajukan',
+                'status_after' => 'Diajukan',
+                'notes' => "Permohonan diperbarui oleh pemohon ({$user->name})",
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]);
+        });
+
+        return redirect()->route('operator.rkbmd.show', $rkbmd)
+            ->with('success', "Permohonan RKBMD ({$rkbmd->nomor_permohonan}) berhasil diperbarui.");
+    }
 }
+
