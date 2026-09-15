@@ -39,8 +39,21 @@ class User extends Authenticatable
         'unit_id',
         'sub_unit_id',
         'can_propose',
+        'menu_permissions',
         'jabatan',
         'is_active',
+    ];
+
+    /**
+     * Daftar menu delegasi yang dapat diberikan oleh Administrator kepada user non-admin.
+     */
+    public const DELEGATABLE_MENUS = [
+        'master_barangs' => [
+            'label' => 'Master Barang BMD',
+            'icon' => '📦',
+            'route' => 'admin.master-barangs.index',
+            'description' => 'Pengelolaan katalog Master Barang Milik Daerah (Permendagri No. 108/2016)',
+        ],
     ];
 
     /**
@@ -65,6 +78,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'can_propose' => 'boolean',
+            'menu_permissions' => 'array',
             'simrs_metadata' => 'array',
         ];
     }
@@ -143,6 +157,34 @@ class User extends Authenticatable
     public function isProposer(): bool
     {
         return $this->role === 'Operator' && (bool) ($this->can_propose ?? true);
+    }
+
+    /**
+     * Periksa apakah pengguna memiliki hak akses ke menu tertentu (termasuk menu delegasi).
+     */
+    public function hasMenuPermission(string $menuKey): bool
+    {
+        if ($this->role === 'Administrator') {
+            return true;
+        }
+
+        $permissions = $this->menu_permissions ?? [];
+        return in_array($menuKey, $permissions, true);
+    }
+
+    /**
+     * Ambil daftar konfigurasi menu yang didelegasikan untuk pengguna ini.
+     */
+    public function getDelegatedMenus(): array
+    {
+        if ($this->role === 'Administrator') {
+            return self::DELEGATABLE_MENUS;
+        }
+
+        $permissions = $this->menu_permissions ?? [];
+        return array_filter(self::DELEGATABLE_MENUS, function ($key) use ($permissions) {
+            return in_array($key, $permissions, true);
+        }, ARRAY_FILTER_USE_KEY);
     }
 }
 

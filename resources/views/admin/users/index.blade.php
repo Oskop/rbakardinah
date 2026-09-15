@@ -155,6 +155,16 @@
                                                     @endif
                                                 </div>
                                             @endif
+
+                                            @if(!empty($user->menu_permissions))
+                                                <div class="mt-1.5 flex flex-wrap gap-1">
+                                                    @foreach($user->getDelegatedMenus() as $dMenu)
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-violet-50 text-violet-700 border border-violet-200" title="{{ $dMenu['description'] }}">
+                                                            {{ $dMenu['icon'] }} {{ $dMenu['label'] }}
+                                                        </span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         </td>
 
                                         <!-- Column 3: Unit Kerja & Sub-Unit -->

@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'active' => \App\Http\Middleware\CheckUserActive::class,
             'api.key' => \App\Http\Middleware\VerifyApiKey::class,
             'api.log' => \App\Http\Middleware\LogApiAccess::class,
+            'menu_permission' => \App\Http\Middleware\CheckMenuPermission::class,
         ]);
 
         $middleware->appendToGroup('web', [

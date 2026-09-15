@@ -101,6 +101,14 @@
                                 {{ __('Laporan') }}
                             </x-nav-link>
                         @endif
+
+                        @if(Auth::user()->role !== 'Administrator' && !empty(Auth::user()->menu_permissions))
+                            @foreach(Auth::user()->getDelegatedMenus() as $dKey => $dMenu)
+                                <x-nav-link :href="route($dMenu['route'])" :active="request()->routeIs(str_replace('.index', '.*', $dMenu['route']))">
+                                    {{ $dMenu['icon'] }} {{ __($dMenu['label']) }}
+                                </x-nav-link>
+                            @endforeach
+                        @endif
                     @endauth
 
                     <x-nav-link :href="route('documentation.index')" :active="request()->routeIs('documentation.*')">
@@ -256,6 +264,14 @@
                 <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                     {{ __('Laporan') }}
                 </x-responsive-nav-link>
+            @endif
+
+            @if(Auth::user()->role !== 'Administrator' && !empty(Auth::user()->menu_permissions))
+                @foreach(Auth::user()->getDelegatedMenus() as $dKey => $dMenu)
+                    <x-responsive-nav-link :href="route($dMenu['route'])" :active="request()->routeIs(str_replace('.index', '.*', $dMenu['route']))">
+                        {{ $dMenu['icon'] }} {{ __($dMenu['label']) }}
+                    </x-responsive-nav-link>
+                @endforeach
             @endif
         @endauth
 

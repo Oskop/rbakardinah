@@ -37,7 +37,6 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::get('headers/{header}/pagu', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'index'])->name('headers.pagu.index');
     Route::post('headers/{header}/pagu', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'store'])->name('headers.pagu.store');
     Route::delete('headers/{header}/pagu/{accountCode}', [\App\Http\Controllers\Admin\RbaAccountPaguController::class, 'destroy'])->name('headers.pagu.destroy');
-    Route::resource('master-barangs', \App\Http\Controllers\Admin\MasterBarangController::class);
     Route::resource('logs', \App\Http\Controllers\Admin\ActivityLogController::class)->only(['index', 'show']);
     Route::get('api-logs', [\App\Http\Controllers\Admin\ApiAccessLogController::class, 'index'])->name('api-logs.index');
     Route::get('api-logs/{apiLog}', [\App\Http\Controllers\Admin\ApiAccessLogController::class, 'show'])->name('api-logs.show');
@@ -70,6 +69,11 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::get('documentation/articles/{article}/edit', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'editArticle'])->name('documentation.articles.edit');
     Route::put('documentation/articles/{article}', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'updateArticle'])->name('documentation.articles.update');
     Route::delete('documentation/articles/{article}', [\App\Http\Controllers\Admin\DocumentationManagementController::class, 'destroyArticle'])->name('documentation.articles.destroy');
+});
+
+// Menu Delegasi: Master Barang BMD (Dapat diakses Administrator atau User yang didelegasikan izin 'master_barangs')
+Route::middleware(['auth', 'menu_permission:master_barangs'])->prefix('admin')->name('admin.')->group(function () {
+    Route::resource('master-barangs', \App\Http\Controllers\Admin\MasterBarangController::class);
 });
 
 // Public Documentation Reader Routes (No Login Required)

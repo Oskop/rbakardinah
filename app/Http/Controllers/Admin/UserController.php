@@ -46,12 +46,18 @@ class UserController extends Controller
             'unit_id' => ['nullable', 'exists:units,id'],
             'sub_unit_id' => ['nullable', 'exists:sub_units,id'],
             'can_propose' => ['nullable', 'boolean'],
+            'menu_permissions' => ['nullable', 'array'],
+            'menu_permissions.*' => ['string', 'in:' . implode(',', array_keys(User::DELEGATABLE_MENUS))],
             'jabatan' => ['nullable', 'string', 'max:255'],
         ]);
 
         $canPropose = $request->role === 'Operator'
             ? ($request->has('can_propose') ? $request->boolean('can_propose') : true)
             : true;
+
+        $menuPermissions = $request->role === 'Administrator'
+            ? null
+            : ($request->filled('menu_permissions') ? $request->input('menu_permissions') : []);
 
         User::create([
             'name' => $request->name,
@@ -61,6 +67,7 @@ class UserController extends Controller
             'unit_id' => $request->unit_id,
             'sub_unit_id' => $request->sub_unit_id,
             'can_propose' => $canPropose,
+            'menu_permissions' => $menuPermissions,
             'jabatan' => $request->jabatan,
             'is_active' => true,
         ]);
@@ -92,6 +99,8 @@ class UserController extends Controller
             'unit_id' => ['nullable', 'exists:units,id'],
             'sub_unit_id' => ['nullable', 'exists:sub_units,id'],
             'can_propose' => ['nullable', 'boolean'],
+            'menu_permissions' => ['nullable', 'array'],
+            'menu_permissions.*' => ['string', 'in:' . implode(',', array_keys(User::DELEGATABLE_MENUS))],
             'jabatan' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -102,8 +111,9 @@ class UserController extends Controller
             'unit_id' => $request->unit_id,
             'sub_unit_id' => $request->sub_unit_id,
             'can_propose' => $request->role === 'Operator' ? $request->boolean('can_propose') : true,
+            'menu_permissions' => $request->role === 'Administrator' ? null : ($request->filled('menu_permissions') ? $request->input('menu_permissions') : []),
             'jabatan' => $request->jabatan,
-            'is_active' => $request->is_active,
+            'is_active' => $request->has('is_active') ? $request->boolean('is_active') : ($user->is_active ?? true),
         ];
 
         if ($request->filled('password')) {

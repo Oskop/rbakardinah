@@ -97,6 +97,40 @@
                             </p>
                         </div>
 
+                        <!-- Delegasi Hak Akses Menu Tambahan -->
+                        <div id="menu_permissions_wrapper" class="p-5 bg-indigo-50/40 border border-indigo-200/80 rounded-2xl space-y-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base">🛡️</span>
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-950">
+                                    Delegasi Hak Akses Menu Tambahan
+                                </h4>
+                            </div>
+                            <p class="text-xs text-slate-500 leading-relaxed">
+                                Berikan wewenang kepada pengguna ini untuk mengelola menu tertentu di luar hak akses default rolenya (misalnya: mendelegasikan pengisian katalog Master Barang BMD kepada Operator).
+                            </p>
+
+                            <div class="grid grid-cols-1 gap-3 pt-1">
+                                @foreach(\App\Models\User::DELEGATABLE_MENUS as $key => $menu)
+                                    <label class="flex items-start p-3 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 transition-colors cursor-pointer shadow-2xs">
+                                        <input type="checkbox" name="menu_permissions[]" value="{{ $key }}"
+                                            {{ in_array($key, old('menu_permissions', $user->menu_permissions ?? [])) ? 'checked' : '' }}
+                                            class="rounded border-slate-300 text-indigo-600 shadow-sm focus:ring-indigo-500 mt-0.5 w-4 h-4">
+                                        <div class="ml-3 text-xs">
+                                            <span class="font-bold text-slate-800 flex items-center gap-1.5">
+                                                <span>{{ $menu['icon'] }}</span>
+                                                <span>{{ $menu['label'] }}</span>
+                                            </span>
+                                            <p class="text-[11px] text-slate-500 mt-0.5 leading-normal">
+                                                {{ $menu['description'] }}
+                                            </p>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                            <x-input-error :messages="$errors->get('menu_permissions')" class="mt-2" />
+                            <x-input-error :messages="$errors->get('menu_permissions.*')" class="mt-2" />
+                        </div>
+
                         <!-- Status -->
                         <div>
                             <x-input-label for="is_active" :value="__('Status')" />

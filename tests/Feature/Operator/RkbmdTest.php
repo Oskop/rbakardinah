@@ -449,4 +449,82 @@ class RkbmdTest extends TestCase
         ]);
         $respProposerB->assertStatus(403);
     }
+
+    public function test_admin_can_delegate_master_barangs_menu_permission_to_operator()
+    {
+        $response = $this->actingAs($this->admin)->put(route('admin.users.update', $this->pemohon), [
+            'name' => $this->pemohon->name,
+            'email' => $this->pemohon->email,
+            'role' => 'Operator',
+            'unit_id' => $this->unitA->id,
+            'sub_unit_id' => $this->subUnitPoli->id,
+            'can_propose' => 0,
+            'menu_permissions' => ['master_barangs'],
+        ]);
+
+        $response->assertRedirect(route('admin.users.index'));
+        $this->pemohon->refresh();
+        $this->assertTrue($this->pemohon->hasMenuPermission('master_barangs'));
+        $this->assertContains('master_barangs', $this->pemohon->menu_permissions);
+    }
+
+    public function test_operator_with_delegated_permission_can_manage_master_barangs()
+    {
+        $this->pemohon->update([
+            'menu_permissions' => ['master_barangs'],
+        ]);
+
+        // 1. Operator bisa membuka index master-barangs dan melihat menu navigasinya
+        $responseIndex = $this->actingAs($this->pemohon)->get(route('admin.master-barangs.index'));
+        $responseIndex->assertStatus(200);
+        $responseIndex->assertSee('Master Barang BMD');
+
+        // 2. Operator bisa membuka form create
+        $responseCreate = $this->actingAs($this->pemohon)->get(route('admin.master-barangs.create'));
+        $responseCreate->assertStatus(200);
+
+        // 3. Operator bisa menambah master barang baru
+        $responseStore = $this->actingAs($this->pemohon)->post(route('admin.master-barangs.store'), [
+            'kode_barang' => '1.3.2.05.01.01.009',
+            'nama_barang' => 'Sofa Ruang Tunggu Delegasi',
+            'satuan' => 'Unit',
+            'spesifikasi' => 'Kulit sintetis 3 dudukan',
+        ]);
+
+        $responseStore->assertRedirect(route('admin.master-barangs.index'));
+        $this->assertDatabaseHas('master_barangs', [
+            'kode_barang' => '1.3.2.05.01.01.009',
+            'nama_barang' => 'Sofa Ruang Tunggu Delegasi',
+        ]);
+    }
+
+    public function test_operator_without_delegated_permission_cannot_access_master_barangs()
+    {
+        // Proposer B tidak memiliki menu_permissions
+        $this->assertFalse($this->proposerB->hasMenuPermission('master_barangs'));
+
+        $responseIndex = $this->actingAs($this->proposerB)->get(route('admin.master-barangs.index'));
+        $responseIndex->assertStatus(403);
+
+        $responseCreate = $this->actingAs($this->proposerB)->get(route('admin.master-barangs.create'));
+        $responseCreate->assertStatus(403);
+    }
+
+    public function test_operator_with_delegated_permission_cannot_access_other_admin_menus()
+    {
+        $this->pemohon->update([
+            'menu_permissions' => ['master_barangs'],
+        ]);
+
+        // Tetap dilarang membuka menu admin lainnya (RBAC intact)
+        $responseUsers = $this->actingAs($this->pemohon)->get(route('admin.users.index'));
+        $responseUsers->assertStatus(403);
+
+        $responseUnits = $this->actingAs($this->pemohon)->get(route('admin.units.index'));
+        $responseUnits->assertStatus(403);
+
+        $responseDashboard = $this->actingAs($this->pemohon)->get(route('admin.dashboard'));
+        $responseDashboard->assertStatus(403);
+    }
 }
+
