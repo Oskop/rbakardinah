@@ -122,6 +122,7 @@ Route::middleware(['auth', 'role:Operator'])->prefix('operator')->name('operator
 
     // RKBMD Routes
     Route::post('rkbmd/{rkbmd}/reply', [\App\Http\Controllers\Operator\RkbmdController::class, 'reply'])->name('rkbmd.reply');
+    Route::put('rkbmd/{rkbmd}/reply', [\App\Http\Controllers\Operator\RkbmdController::class, 'updateReply'])->name('rkbmd.reply.update');
     Route::post('rkbmd/{rkbmd}/forward', [\App\Http\Controllers\Operator\RkbmdController::class, 'forward'])->name('rkbmd.forward');
     Route::resource('rkbmd', \App\Http\Controllers\Operator\RkbmdController::class);
 });

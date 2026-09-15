@@ -355,4 +355,98 @@ class RkbmdTest extends TestCase
         // Pastikan tidak ada td colspan di tbody yang merusak inisialisasi DataTables
         $response->assertDontSee('colspan="5"');
     }
+
+    public function test_target_operator_can_edit_reply_and_logs_history()
+    {
+        $file = UploadedFile::fake()->create('memo_dinas.pdf', 500, 'application/pdf');
+
+        $this->actingAs($this->pemohon)->post(route('operator.rkbmd.store'), [
+            'target_operator_id' => $this->proposerA->id,
+            'title' => 'Pengadaan Kebutuhan Poli Jantung',
+            'year' => 2026,
+            'notes' => 'Catatan awal',
+            'attachment' => $file,
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangAC->id,
+                    'volume' => 1,
+                    'satuan' => 'Unit',
+                    'spesifikasi' => 'AC 2 PK Inverter',
+                ],
+            ],
+        ]);
+
+        $submission = RkbmdSubmission::first();
+
+        // 1. Berikan balasan awal oleh proposerA
+        $this->actingAs($this->proposerA)->post(route('operator.rkbmd.reply', $submission), [
+            'status' => 'Dipenuhi',
+            'reply_notes' => 'Disetujui penuh untuk masuk usulan RBA tahun depan.',
+        ]);
+
+        $submission->refresh();
+        $this->assertEquals('Dipenuhi', $submission->status);
+
+        // 2. ProposerA mengedit balasan (misal keliru, mestinya Dipenuhi Sebagian)
+        $editResp = $this->actingAs($this->proposerA)->put(route('operator.rkbmd.reply.update', $submission), [
+            'status' => 'Dipenuhi Sebagian',
+            'reply_notes' => 'Koreksi: Hanya disetujui 1 unit karena alokasi anggaran terbatas.',
+        ]);
+
+        $editResp->assertRedirect(route('operator.rkbmd.show', $submission));
+
+        $submission->refresh();
+        $this->assertEquals('Dipenuhi Sebagian', $submission->status);
+        $this->assertEquals('Koreksi: Hanya disetujui 1 unit karena alokasi anggaran terbatas.', $submission->reply_notes);
+
+        // Cek histori 'Edit Balasan'
+        $this->assertDatabaseHas('rkbmd_histories', [
+            'rkbmd_submission_id' => $submission->id,
+            'user_id' => $this->proposerA->id,
+            'action' => 'Edit Balasan',
+            'status_before' => 'Dipenuhi',
+            'status_after' => 'Dipenuhi Sebagian',
+        ]);
+    }
+
+    public function test_viewer_and_unauthorized_operator_cannot_edit_reply()
+    {
+        $file = UploadedFile::fake()->create('memo_dinas.pdf', 500, 'application/pdf');
+
+        $this->actingAs($this->pemohon)->post(route('operator.rkbmd.store'), [
+            'target_operator_id' => $this->proposerA->id,
+            'title' => 'Pengadaan Kebutuhan Poli Jantung',
+            'year' => 2026,
+            'attachment' => $file,
+            'items' => [
+                [
+                    'master_barang_id' => $this->barangAC->id,
+                    'volume' => 1,
+                    'satuan' => 'Unit',
+                ],
+            ],
+        ]);
+
+        $submission = RkbmdSubmission::first();
+
+        // Proposer A balas
+        $this->actingAs($this->proposerA)->post(route('operator.rkbmd.reply', $submission), [
+            'status' => 'Dipenuhi',
+            'reply_notes' => 'Catatan awal.',
+        ]);
+
+        // Pemohon (Viewer) mencoba edit balasan -> 403
+        $respPemohon = $this->actingAs($this->pemohon)->put(route('operator.rkbmd.reply.update', $submission), [
+            'status' => 'Ditolak',
+            'reply_notes' => 'Mencoba mengubah secara ilegal.',
+        ]);
+        $respPemohon->assertStatus(403);
+
+        // Proposer B (operator lain) mencoba edit balasan -> 403
+        $respProposerB = $this->actingAs($this->proposerB)->put(route('operator.rkbmd.reply.update', $submission), [
+            'status' => 'Ditolak',
+            'reply_notes' => 'Bukan pemegang berkas ini.',
+        ]);
+        $respProposerB->assertStatus(403);
+    }
 }

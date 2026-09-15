@@ -100,4 +100,26 @@ class RkbmdSubmission extends Model
 
         return $this->target_operator_id === $user->id;
     }
+
+    /**
+     * Check if a given user can edit an already submitted reply on this submission.
+     */
+    public function canEditReply(User $user): bool
+    {
+        if ($user->role === 'Administrator') {
+            return !empty($this->replied_at);
+        }
+
+        if ($user->role !== 'Operator' || !$user->can_propose) {
+            return false;
+        }
+
+        // Harus sudah ada balasan sebelumnya
+        if (empty($this->replied_at)) {
+            return false;
+        }
+
+        // Hanya operator yang membalas atau target_operator saat ini yang berhak mengedit
+        return $this->replied_by === $user->id || $this->target_operator_id === $user->id;
+    }
 }

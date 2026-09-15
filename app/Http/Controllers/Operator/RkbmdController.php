@@ -255,6 +255,48 @@ class RkbmdController extends Controller
     }
 
     /**
+     * Memperbarui / Mengedit Balasan Permohonan RKBMD (Jika terjadi kesalahan penginputan)
+     */
+    public function updateReply(Request $request, RkbmdSubmission $rkbmd)
+    {
+        $user = Auth::user();
+
+        if (!$rkbmd->canEditReply($user)) {
+            abort(403, 'Anda tidak berwenang mengedit balasan permohonan RKBMD ini.');
+        }
+
+        $request->validate([
+            'status' => 'required|in:Dipenuhi,Dipenuhi Sebagian,Substitusi,Optimalisasi,Ditolak',
+            'reply_notes' => 'required|string|max:2000',
+        ]);
+
+        $statusBefore = $rkbmd->status;
+
+        DB::transaction(function () use ($request, $rkbmd, $user, $statusBefore) {
+            $rkbmd->update([
+                'status' => $request->status,
+                'reply_notes' => $request->reply_notes,
+                'updated_by' => $user->id,
+            ]);
+
+            // Catat Riwayat Edit Balasan
+            RkbmdHistory::create([
+                'rkbmd_submission_id' => $rkbmd->id,
+                'user_id' => $user->id,
+                'action' => 'Edit Balasan',
+                'status_before' => $statusBefore,
+                'status_after' => $request->status,
+                'notes' => "Revisi balasan oleh {$user->name} [Status: {$request->status}]: {$request->reply_notes}",
+                'created_by' => $user->id,
+                'updated_by' => $user->id,
+            ]);
+        });
+
+        return redirect()->route('operator.rkbmd.show', $rkbmd)
+            ->with('success', "Balasan permohonan RKBMD ({$rkbmd->nomor_permohonan}) berhasil diperbarui.");
+    }
+
+    /**
      * Skenario 2: Mengalihkan (Forward) Permohonan RKBMD ke Operator Pengusul Lain
      */
     public function forward(Request $request, RkbmdSubmission $rkbmd)

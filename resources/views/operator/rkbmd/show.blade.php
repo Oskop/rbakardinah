@@ -35,7 +35,7 @@
         </div>
     </x-slot>
 
-    <div class="py-8" x-data="{ replyModalOpen: false, forwardModalOpen: false }">
+    <div class="py-8" x-data="{ replyModalOpen: false, forwardModalOpen: false, editReplyModalOpen: false }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             @if (session('success'))
                 <div class="p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 rounded-xl shadow-sm text-sm font-semibold flex items-center gap-2">
@@ -204,9 +204,18 @@
                     @if($rkbmd->replied_at)
                         <div class="bg-white rounded-2xl shadow-sm border border-emerald-200 p-6 space-y-3">
                             <div class="flex items-center justify-between pb-3 border-b border-emerald-100">
-                                <h3 class="text-sm font-extrabold text-emerald-900 flex items-center gap-2">
-                                    <span>✅</span> Keputusan / Balasan Resmi Operator Pengusul
-                                </h3>
+                                <div class="flex items-center gap-2.5">
+                                    <h3 class="text-sm font-extrabold text-emerald-900 flex items-center gap-2">
+                                        <span>✅</span> Keputusan / Balasan Resmi Operator Pengusul
+                                    </h3>
+                                    @if($rkbmd->canEditReply(Auth::user()))
+                                        <button type="button" @click="editReplyModalOpen = true"
+                                            class="inline-flex items-center px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-bold border border-amber-200 transition-colors gap-1 shadow-2xs">
+                                            <span>✏️</span>
+                                            <span>Edit Balasan</span>
+                                        </button>
+                                    @endif
+                                </div>
                                 <span class="px-2.5 py-1 text-xs font-bold rounded-full border {{ $badgeCls }}">
                                     {{ $rkbmd->status }}
                                 </span>
@@ -214,6 +223,9 @@
 
                             <div class="text-xs text-slate-600">
                                 Dibalas oleh <strong>{{ $rkbmd->repliedBy?->name ?? 'Operator Pengusul' }}</strong> pada {{ $rkbmd->replied_at->format('d M Y, H:i') }} WIB
+                                @if($rkbmd->updated_at->gt($rkbmd->replied_at))
+                                    <span class="text-amber-600 font-medium italic ml-1.5">(Diedit {{ $rkbmd->updated_at->format('d M Y, H:i') }} WIB)</span>
+                                @endif
                             </div>
 
                             <div class="bg-emerald-50/60 border border-emerald-200 rounded-xl p-4 text-xs text-emerald-950 whitespace-pre-wrap leading-relaxed font-medium">
@@ -245,13 +257,13 @@
                                 <div class="relative text-xs">
                                     <!-- Bullet Marker -->
                                     <div class="absolute -left-6 top-0.5 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center
-                                        {{ $history->action === 'Pengajuan' ? 'bg-blue-600' : ($history->action === 'Pengalihan' ? 'bg-amber-500' : 'bg-emerald-600') }} shadow-xs">
+                                        {{ $history->action === 'Pengajuan' ? 'bg-blue-600' : ($history->action === 'Pengalihan' ? 'bg-amber-500' : ($history->action === 'Edit Balasan' ? 'bg-orange-500' : 'bg-emerald-600')) }} shadow-xs">
                                     </div>
 
                                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5">
                                         <div class="flex items-center justify-between">
-                                            <span class="font-bold text-slate-900">
-                                                {{ $history->action }}
+                                            <span class="font-bold {{ $history->action === 'Edit Balasan' ? 'text-orange-700' : 'text-slate-900' }}">
+                                                {{ $history->action === 'Edit Balasan' ? '✏️ Edit Balasan' : $history->action }}
                                             </span>
                                             <span class="text-[10px] text-slate-400">
                                                 {{ $history->created_at->format('d/m/Y H:i') }}
@@ -383,5 +395,58 @@
                 </form>
             </div>
         </div>
+
+        <!-- MODAL 3: EDIT BALASAN KEPUTUSAN -->
+        @if($rkbmd->canEditReply(Auth::user()))
+            <div x-show="editReplyModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+                <div @click.away="editReplyModalOpen = false" class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-5">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
+                            <span>✏️</span> Edit Balasan Permohonan RKBMD
+                        </h3>
+                        <button type="button" @click="editReplyModalOpen = false" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+                    </div>
+
+                    <form method="POST" action="{{ route('operator.rkbmd.reply.update', $rkbmd) }}" class="space-y-4">
+                        @csrf
+                        @method('PUT')
+
+                        <div>
+                            <label for="edit_reply_status" class="block text-xs font-bold text-slate-700 mb-1">
+                                Status Keputusan Balasan <span class="text-rose-500">*</span>
+                            </label>
+                            <select id="edit_reply_status" name="status" required
+                                class="w-full text-xs rounded-xl border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 py-2.5">
+                                <option value="Dipenuhi" {{ old('status', $rkbmd->status) === 'Dipenuhi' ? 'selected' : '' }}>✅ Dipenuhi (Diakomodir penuh dalam usulan belanja)</option>
+                                <option value="Dipenuhi Sebagian" {{ old('status', $rkbmd->status) === 'Dipenuhi Sebagian' ? 'selected' : '' }}>☑️ Dipenuhi Sebagian (Akomodir sebagian jumlah/item)</option>
+                                <option value="Substitusi" {{ old('status', $rkbmd->status) === 'Substitusi' ? 'selected' : '' }}>🔄 Substitusi (Dipenuhi dengan spesifikasi/barang alternatif)</option>
+                                <option value="Optimalisasi" {{ old('status', $rkbmd->status) === 'Optimalisasi' ? 'selected' : '' }}>🏢 Optimalisasi (Dipenuhi mutasi aset BMD eksisting)</option>
+                                <option value="Ditolak" {{ old('status', $rkbmd->status) === 'Ditolak' ? 'selected' : '' }}>❌ Ditolak (Tidak dapat dipenuhi tahun anggaran ini)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="edit_reply_notes" class="block text-xs font-bold text-slate-700 mb-1">
+                                Teks Catatan / Alasan / Instruksi Balasan <span class="text-rose-500">*</span>
+                            </label>
+                            <textarea id="edit_reply_notes" name="reply_notes" rows="4" required
+                                class="w-full text-xs rounded-xl border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
+                                placeholder="Tuliskan keterangan lengkap atau revisi tindak lanjut pemenuhan barang...">{{ old('reply_notes', $rkbmd->reply_notes) }}</textarea>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                            <button type="button" @click="editReplyModalOpen = false"
+                                class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900">
+                                Batal
+                            </button>
+                            <button type="submit"
+                                class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs">
+                                Simpan Perubahan Balasan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endif
     </div>
 </x-app-layout>
