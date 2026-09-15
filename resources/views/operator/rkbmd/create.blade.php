@@ -80,7 +80,7 @@
 
                     <!-- Judul Permohonan & Tahun Anggaran -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="md:col-span-3">
+                        <div class="col-span-3">
                             <x-input-label for="title" :value="__('Perihal / Judul Permohonan Kebutuhan')" />
                             <x-text-input id="title" class="block mt-1 w-full text-sm" type="text" name="title"
                                 :value="old('title')" placeholder="Contoh: Permohonan Pengadaan Alat Pendingin & Perabot Poli Jantung" required />
