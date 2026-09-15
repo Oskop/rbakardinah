@@ -54,7 +54,7 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($items as $item)
+                                @foreach($items as $item)
                                     <tr>
                                         <!-- Kode Barang -->
                                         <td class="px-6 py-4 whitespace-nowrap text-xs font-mono font-bold text-indigo-700">
@@ -98,13 +98,7 @@
                                             </form>
                                         </td>
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                            Belum ada data master barang BMD.
-                                        </td>
-                                    </tr>
-                                @endforelse
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
@@ -126,6 +120,8 @@
                 $('#master-barangs-table').DataTable({
                     responsive: true,
                     language: {
+                        emptyTable: "Belum ada data master barang BMD.",
+                        zeroRecords: "Tidak ada data barang yang sesuai dengan pencarian",
                         search: "Cari Barang:",
                         searchPlaceholder: "Kode, nama barang, satuan...",
                         lengthMenu: "Tampilkan _MENU_ data",
@@ -140,7 +136,8 @@
                         }
                     },
                     columnDefs: [
-                        { orderable: false, targets: [4] }
+                        { orderable: false, searchable: false, targets: [4] },
+                        { defaultContent: "-", targets: "_all" }
                     ]
                 });
             });

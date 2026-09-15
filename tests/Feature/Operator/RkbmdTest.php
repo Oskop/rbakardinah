@@ -342,4 +342,17 @@ class RkbmdTest extends TestCase
             'user_id' => $this->admin->id,
         ]);
     }
+
+    public function test_admin_master_barangs_index_handles_empty_table_without_breaking_datatables()
+    {
+        // Pastikan tabel kosong
+        MasterBarang::query()->delete();
+
+        $response = $this->actingAs($this->admin)->get(route('admin.master-barangs.index'));
+        $response->assertStatus(200);
+        $response->assertSee('master-barangs-table');
+        $response->assertSee('emptyTable: "Belum ada data master barang BMD."', false);
+        // Pastikan tidak ada td colspan di tbody yang merusak inisialisasi DataTables
+        $response->assertDontSee('colspan="5"');
+    }
 }
