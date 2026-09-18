@@ -473,4 +473,226 @@ class RbaDetailTest extends TestCase
         $resSubmit->assertSessionHas('success');
         $this->assertTrue($detail->fresh()->is_submitted);
     }
+
+    public function test_operator_can_create_detail_with_named_document()
+    {
+        $file = UploadedFile::fake()->create('nota_dinas_atk.pdf', 100);
+
+        $response = $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Kertas HVS A4 80gr',
+            'volume' => 50,
+            'satuan' => 'Rim',
+            'harga_satuan' => 60000,
+            'document_source' => 'new',
+            'document_name' => 'Nota Dinas Pengadaan ATK Q1',
+            'attachment' => $file,
+        ]);
+
+        $response->assertRedirect(route('operator.submissions.show', $this->submission->id));
+        $this->assertDatabaseHas('rba_detail_documents', [
+            'rba_submission_id' => $this->submission->id,
+            'document_name' => 'Nota Dinas Pengadaan ATK Q1',
+        ]);
+
+        $detail = RbaDetail::where('description', 'Kertas HVS A4 80gr')->first();
+        $this->assertNotNull($detail);
+        $this->assertEquals('Nota Dinas Pengadaan ATK Q1', $detail->document()?->document_name);
+        $this->assertEquals(1, $detail->latestAttachment()->version_number);
+    }
+
+    public function test_operator_can_create_subsequent_detail_using_existing_shared_pdf()
+    {
+        // 1. Usulan pertama membuat dokumen PDF baru
+        $file = UploadedFile::fake()->create('nota_dinas_atk.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item 1: Kertas HVS',
+            'volume' => 10,
+            'satuan' => 'Rim',
+            'harga_satuan' => 50000,
+            'document_source' => 'new',
+            'document_name' => 'Nota Dinas ATK 2026',
+            'attachment' => $file,
+        ]);
+
+        $item1 = RbaDetail::where('description', 'Item 1: Kertas HVS')->first();
+        $doc = $item1->document();
+        $this->assertNotNull($doc);
+
+        // 2. Usulan kedua memilih dokumen yang sudah ada (tanpa upload file baru)
+        $response = $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item 2: Tinta Printer',
+            'volume' => 5,
+            'satuan' => 'Botol',
+            'harga_satuan' => 120000,
+            'document_source' => 'existing',
+            'rba_detail_document_id' => $doc->id,
+        ]);
+
+        $response->assertRedirect(route('operator.submissions.show', $this->submission->id));
+
+        $item2 = RbaDetail::where('description', 'Item 2: Tinta Printer')->first();
+        $this->assertNotNull($item2);
+
+        // Keduanya berbagi file attachment yang sama persis
+        $this->assertEquals($item1->latestAttachment()->id, $item2->latestAttachment()->id);
+        $this->assertEquals(2, $item1->latestAttachment()->details()->count());
+    }
+
+    public function test_shared_pdf_revising_updates_selected_items_and_leaves_unselected()
+    {
+        // 1. Buat dokumen dengan 3 usulan
+        $file = UploadedFile::fake()->create('nota_dinas_atk.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Usulan 1',
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 10000,
+            'document_name' => 'Nota Dinas ATK Bersama',
+            'attachment' => $file,
+        ]);
+        $item1 = RbaDetail::where('description', 'Usulan 1')->first();
+        $doc = $item1->document();
+
+        // Usulan 2 dan 3 gunakan dokumen yang sama
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Usulan 2',
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 20000,
+            'document_source' => 'existing',
+            'rba_detail_document_id' => $doc->id,
+        ]);
+        $item2 = RbaDetail::where('description', 'Usulan 2')->first();
+
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Usulan 3 (Ditolak)',
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 30000,
+            'document_source' => 'existing',
+            'rba_detail_document_id' => $doc->id,
+        ]);
+        $item3 = RbaDetail::where('description', 'Usulan 3 (Ditolak)')->first();
+
+        // 2. Operator unggah versi revisi V2 untuk Usulan 1 dan Usulan 2 saja (Usulan 3 dikecualikan)
+        $fileV2 = UploadedFile::fake()->create('nota_dinas_atk_rev.pdf', 100);
+        $res = $this->actingAs($this->operator)->post(route('operator.details.upload-version', $item1), [
+            'attachment' => $fileV2,
+            'upload_mode' => 'shared_update',
+            'target_detail_ids' => [$item1->id, $item2->id], // hanya item 1 dan 2
+        ]);
+        $res->assertSessionHas('success');
+
+        $fresh1 = $item1->fresh();
+        $fresh2 = $item2->fresh();
+        $fresh3 = $item3->fresh();
+
+        // Usulan 1 dan 2 sekarang memiliki versi 2
+        $this->assertEquals(2, $fresh1->latestAttachment()->version_number);
+        $this->assertEquals(2, $fresh2->latestAttachment()->version_number);
+        $this->assertEquals($fresh1->latestAttachment()->id, $fresh2->latestAttachment()->id);
+
+        // Usulan 3 tetap berada di versi 1
+        $this->assertEquals(1, $fresh3->latestAttachment()->version_number);
+    }
+
+    public function test_detaching_item_to_new_document_creates_standalone_history()
+    {
+        // 1. Buat 2 usulan berbagi dokumen
+        $file = UploadedFile::fake()->create('dokumen_gabung.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Tetap',
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 10000,
+            'document_name' => 'Dokumen Gabung',
+            'attachment' => $file,
+        ]);
+        $item1 = RbaDetail::where('description', 'Item Tetap')->first();
+        $doc = $item1->document();
+
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Pisah',
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 20000,
+            'document_source' => 'existing',
+            'rba_detail_document_id' => $doc->id,
+        ]);
+        $item2 = RbaDetail::where('description', 'Item Pisah')->first();
+
+        // 2. Item 2 memilih mode standalone (Pisahkan Dokumen)
+        $fileNew = UploadedFile::fake()->create('dokumen_mandiri_baru.pdf', 100);
+        $res = $this->actingAs($this->operator)->post(route('operator.details.upload-version', $item2), [
+            'attachment' => $fileNew,
+            'upload_mode' => 'standalone',
+            'document_name' => 'Dokumen Mandiri Item 2',
+        ]);
+        $res->assertSessionHas('success');
+
+        $fresh1 = $item1->fresh();
+        $fresh2 = $item2->fresh();
+
+        // Dokumen Item 1 tidak berubah
+        $this->assertEquals('Dokumen Gabung', $fresh1->document()->document_name);
+
+        // Dokumen Item 2 sekarang adalah dokumen mandiri baru
+        $this->assertEquals('Dokumen Mandiri Item 2', $fresh2->document()->document_name);
+        $this->assertNotEquals($fresh1->latestAttachment()->id, $fresh2->latestAttachment()->id);
+
+        // Riwayat Item 2 memiliki 2 versi lampiran (versi 1 lama dan versi 2 baru)
+        $this->assertEquals(2, $fresh2->attachments()->count());
+    }
+
+    public function test_deleting_one_item_preserves_shared_attachment_for_other_items()
+    {
+        $file = UploadedFile::fake()->create('dokumen_share.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item A',
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 10000,
+            'attachment' => $file,
+        ]);
+        $itemA = RbaDetail::where('description', 'Item A')->first();
+
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item B',
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 20000,
+            'document_source' => 'existing',
+            'rba_detail_document_id' => $itemA->document()->id,
+        ]);
+        $itemB = RbaDetail::where('description', 'Item B')->first();
+        $attachmentId = $itemB->latestAttachment()->id;
+
+        // Hapus Item A
+        $this->actingAs($this->operator)->delete(route('operator.details.destroy', $itemA));
+
+        // Attachment dan Item B tetap aman
+        $this->assertSoftDeleted('rba_details', ['id' => $itemA->id]);
+        $this->assertDatabaseHas('rba_attachments', ['id' => $attachmentId]);
+        $this->assertEquals($attachmentId, $itemB->fresh()->latestAttachment()->id);
+    }
 }

@@ -474,12 +474,24 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-2 text-sm text-center">
-                                            @php $latest = $detail->latestAttachment(); @endphp
+                                            @php 
+                                                $latest = $detail->latestAttachment(); 
+                                                $sharedCount = $latest ? $latest->details->count() : 0;
+                                            @endphp
                                             @if($latest)
                                                 @if(\Illuminate\Support\Facades\Storage::disk('public')->exists($latest->file_path))
-                                                    <a href="{{ Storage::url($latest->file_path) }}" target="_blank" class="text-blue-600 hover:underline text-xs font-bold">
-                                                        PDF V{{ $latest->version_number }}
-                                                    </a>
+                                                    <div class="flex flex-col items-center">
+                                                        <a href="{{ Storage::url($latest->file_path) }}" target="_blank" class="text-blue-600 hover:underline text-xs font-bold inline-flex items-center gap-1">
+                                                            <span>PDF V{{ $latest->version_number }}</span>
+                                                            <svg class="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                                        </a>
+                                                        @if($sharedCount > 1)
+                                                            <span class="inline-flex items-center gap-0.5 text-[9px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded-full mt-0.5 cursor-help"
+                                                                  title="Dokumen: {{ $latest->document?->document_name ?? 'Dokumen Bersama' }} (Digunakan bersama oleh {{ $sharedCount }} usulan belanja)">
+                                                                <span>👥 Bersama ({{ $sharedCount }})</span>
+                                                            </span>
+                                                        @endif
+                                                    </div>
                                                 @else
                                                     <span class="text-amber-600 font-bold text-[10px] bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded cursor-help" title="File PDF fisik tidak ditemukan di storage server. Minta Operator unggah ulang.">
                                                         ⚠️ File Tidak Ditemukan (V{{ $latest->version_number }})

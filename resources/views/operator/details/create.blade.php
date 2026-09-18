@@ -129,12 +129,118 @@
                                 class="w-full border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed font-semibold text-gray-700" value="Rp 0">
                         </div>
 
-                        <div class="mb-6">
-                            <label class="block text-gray-700 text-sm font-bold mb-2">Upload PDF Rincian (V1)</label>
-                            <input type="file" name="attachment" accept="application/pdf"
-                                class="w-full border-gray-300 rounded-md shadow-sm" required>
-                            <p class="text-gray-500 text-xs mt-1">Hanya file PDF (Max 10MB)</p>
-                            @error('attachment') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <div class="mb-6 p-5 rounded-2xl bg-slate-50 border border-slate-200"
+                             x-data="{ 
+                                docSource: @js($existingDocuments->isNotEmpty() ? old('document_source', 'existing') : 'new'),
+                                selectedDocId: @js(old('rba_detail_document_id', $existingDocuments->first()?->id ?? ''))
+                             }">
+                            <input type="hidden" name="document_source" :value="docSource">
+
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                                <div>
+                                    <label class="block text-gray-800 text-sm font-black">
+                                        Berkas Lampiran PDF Pendukung <span class="text-rose-500">*</span>
+                                    </label>
+                                    <p class="text-xs text-gray-500 mt-0.5">
+                                        1 berkas PDF (seperti Nota Dinas / KAK) dapat digunakan bersama oleh beberapa usulan rincian belanja.
+                                    </p>
+                                </div>
+
+                                @if($existingDocuments->isNotEmpty())
+                                    <div class="inline-flex p-1 bg-white border border-gray-200 rounded-xl shadow-2xs">
+                                        <button type="button"
+                                                @click="docSource = 'existing'"
+                                                :class="docSource === 'existing' ? 'bg-indigo-600 text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'"
+                                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                                            <span>📄 Gunakan Dokumen yang Ada</span>
+                                            <span class="px-1.5 py-0.2 bg-indigo-500/30 text-[10px] rounded-full">{{ $existingDocuments->count() }}</span>
+                                        </button>
+                                        <button type="button"
+                                                @click="docSource = 'new'"
+                                                :class="docSource === 'new' ? 'bg-indigo-600 text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'"
+                                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                                            <span>📤 Unggah PDF Baru</span>
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
+
+                            @if($existingDocuments->isNotEmpty())
+                                <!-- Opsi 1: Pilih dari Dokumen yang Sudah Ada -->
+                                <div x-show="docSource === 'existing'" x-cloak class="space-y-3">
+                                    <div class="text-xs text-indigo-700 bg-indigo-50/80 p-3 rounded-xl border border-indigo-100 flex items-start gap-2">
+                                        <span class="text-base">💡</span>
+                                        <div class="leading-relaxed">
+                                            Pilih dokumen PDF yang sudah pernah diunggah untuk pengajuan ini. Usulan belanja ini akan langsung terikat ke dokumen tersebut tanpa perlu mengunggah ulang berkas.
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 gap-2.5 max-h-72 overflow-y-auto pr-1">
+                                        @foreach($existingDocuments as $doc)
+                                            @php
+                                                $latest = $doc->latestVersion;
+                                                $detailCount = $latest ? $latest->details->count() : 0;
+                                            @endphp
+                                            <label class="relative flex items-center justify-between p-3.5 rounded-xl border-2 transition-all cursor-pointer bg-white"
+                                                   :class="selectedDocId == {{ $doc->id }} ? 'border-indigo-600 bg-indigo-50/30 shadow-xs' : 'border-gray-200 hover:border-indigo-200'">
+                                                <div class="flex items-center gap-3">
+                                                    <input type="radio" name="rba_detail_document_id" value="{{ $doc->id }}"
+                                                           x-model="selectedDocId"
+                                                           class="text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                                                    <div>
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="font-bold text-sm text-gray-900">{{ $doc->document_name }}</span>
+                                                            @if($latest)
+                                                                <span class="px-2 py-0.5 rounded text-[10px] font-black bg-sky-100 text-sky-800">
+                                                                    V{{ $latest->version_number }}
+                                                                </span>
+                                                            @endif
+                                                        </div>
+                                                        <div class="flex items-center gap-3 mt-1 text-[11px] text-gray-500">
+                                                            <span>📁 {{ $latest?->original_filename ?? basename($latest?->file_path ?? '-') }}</span>
+                                                            <span>•</span>
+                                                            <span class="text-indigo-600 font-semibold">{{ $detailCount }} usulan belanja terikat</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                @if($latest && \Illuminate\Support\Facades\Storage::disk('public')->exists($latest->file_path))
+                                                    <a href="{{ \Illuminate\Support\Facades\Storage::url($latest->file_path) }}" target="_blank"
+                                                       @click.stop
+                                                       class="px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 inline-flex items-center gap-1">
+                                                        <span>Lihat PDF</span>
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                                    </a>
+                                                @endif
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    @error('rba_detail_document_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                                </div>
+                            @endif
+
+                            <!-- Opsi 2: Unggah Dokumen PDF Baru -->
+                            <div x-show="docSource === 'new'" class="space-y-4" @if($existingDocuments->isNotEmpty()) x-cloak @endif>
+                                <div>
+                                    <label class="block text-gray-700 text-xs font-bold mb-1">
+                                        Nama / Judul Dokumen (Opsional)
+                                    </label>
+                                    <input type="text" name="document_name" value="{{ old('document_name') }}"
+                                           placeholder="Contoh: Nota Dinas Belanja ATK 2026 (kosongkan untuk menggunakan nama file)"
+                                           class="w-full border-gray-300 rounded-lg shadow-xs text-xs">
+                                </div>
+
+                                <div>
+                                    <label class="block text-gray-700 text-xs font-bold mb-1">
+                                        Pilih Berkas PDF <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="file" name="attachment" accept="application/pdf"
+                                           :required="docSource === 'new'"
+                                           class="w-full border-gray-300 rounded-lg shadow-xs text-xs file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                                    <p class="text-gray-500 text-[11px] mt-1">Format PDF, Ukuran Maksimal 10 MB. Berkas ini nantinya dapat dipilih kembali untuk usulan lainnya.</p>
+                                    @error('attachment') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
                         </div>
 
                         <div class="flex items-center justify-end">

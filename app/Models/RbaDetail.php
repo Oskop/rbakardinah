@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\LogsActivity;
@@ -74,14 +75,20 @@ class RbaDetail extends Model
         return $this->belongsTo(User::class, 'rejected_by');
     }
 
-    public function attachments(): HasMany
+    public function attachments(): BelongsToMany
     {
-        return $this->hasMany(RbaAttachment::class);
+        return $this->belongsToMany(RbaAttachment::class, 'rba_detail_attachments')
+            ->withTimestamps();
     }
 
     public function latestAttachment()
     {
-        return $this->attachments()->orderByDesc('version_number')->first();
+        return $this->attachments()->orderByDesc('rba_attachments.version_number')->first();
+    }
+
+    public function document(): ?RbaDetailDocument
+    {
+        return $this->latestAttachment()?->document;
     }
 
     public function isExceedingPagu(): bool

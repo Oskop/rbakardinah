@@ -7,6 +7,7 @@ use App\Models\RbaDetail;
 use App\Models\RbaSubmission;
 use App\Models\AccountCode;
 use App\Models\RbaAttachment;
+use App\Models\RbaDetailDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -42,7 +43,13 @@ class DetailController extends Controller
             ->whereNotIn('id', $lockedAccountIds)
             ->orderBy('code')
             ->get();
-        return view('operator.details.create', compact('submission', 'accountCodes'));
+
+        $existingDocuments = RbaDetailDocument::where('rba_submission_id', $submission->id)
+            ->with(['latestVersion.details.accountCode'])
+            ->orderByDesc('id')
+            ->get();
+
+        return view('operator.details.create', compact('submission', 'accountCodes', 'existingDocuments'));
     }
 
     public function edit(RbaDetail $detail)
@@ -63,7 +70,13 @@ class DetailController extends Controller
             ->whereNotIn('id', $lockedAccountIds)
             ->orderBy('code')
             ->get();
-        return view('operator.details.edit', compact('detail', 'accountCodes'));
+
+        $existingDocuments = RbaDetailDocument::where('rba_submission_id', $detail->rba_submission_id)
+            ->with(['latestVersion.details.accountCode'])
+            ->orderByDesc('id')
+            ->get();
+
+        return view('operator.details.edit', compact('detail', 'accountCodes', 'existingDocuments'));
     }
 
     public function update(Request $request, RbaDetail $detail)
@@ -74,6 +87,7 @@ class DetailController extends Controller
             'volume' => 'required|numeric|min:0.01',
             'satuan' => 'required|string|max:50',
             'harga_satuan' => 'required|numeric|min:0',
+            'rba_detail_document_id' => 'nullable|exists:rba_detail_documents,id',
         ]);
 
         $validated['nominal_request'] = $validated['volume'] * $validated['harga_satuan'];
@@ -94,7 +108,18 @@ class DetailController extends Controller
         $validated['rejected_by'] = null;
         $validated['rejection_reason'] = null;
 
+        $docId = $validated['rba_detail_document_id'] ?? null;
+        unset($validated['rba_detail_document_id']);
+
         $detail->update($validated);
+
+        // Jika operator memilih beralih ke dokumen yang sudah ada
+        if ($docId) {
+            $doc = RbaDetailDocument::where('rba_submission_id', $detail->rba_submission_id)->find($docId);
+            if ($doc && $doc->latestVersion) {
+                $detail->attachments()->syncWithoutDetaching([$doc->latestVersion->id]);
+            }
+        }
 
         return redirect()->route('operator.submissions.show', $detail->rba_submission_id)
             ->with('success', 'RBA Detail berhasil diperbarui dan status kembali menjadi Draft (perlu diajukan dan divalidasi ulang oleh Supervisor).');
@@ -102,16 +127,27 @@ class DetailController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $rules = [
             'rba_submission_id' => 'required|exists:rba_submissions,id',
             'account_code_id' => 'required|exists:account_codes,id',
             'description' => 'required|string',
             'volume' => 'required|numeric|min:0.01',
             'satuan' => 'required|string|max:50',
             'harga_satuan' => 'required|numeric|min:0',
-            'attachment' => 'required|file|mimes:pdf|max:10240', // 10MB
-        ]);
+            'document_source' => 'nullable|in:new,existing',
+            'rba_detail_document_id' => 'nullable|exists:rba_detail_documents,id',
+            'document_name' => 'nullable|string|max:255',
+        ];
 
+        // Jika mode pemilihan dokumen yang sudah ada
+        if ($request->input('document_source') === 'existing') {
+            $rules['rba_detail_document_id'] = 'required|exists:rba_detail_documents,id';
+        } else {
+            // Unggah file baru wajib jika tidak memilih dokumen eksisting
+            $rules['attachment'] = 'required|file|mimes:pdf|max:10240';
+        }
+
+        $validated = $request->validate($rules);
         $validated['nominal_request'] = $validated['volume'] * $validated['harga_satuan'];
 
         $submission = RbaSubmission::findOrFail($validated['rba_submission_id']);
@@ -140,14 +176,41 @@ class DetailController extends Controller
                 'created_by' => Auth::id(),
             ]);
 
-            $path = $request->file('attachment')->store('attachments', 'public');
+            if ($request->input('document_source') === 'existing' && $request->filled('rba_detail_document_id')) {
+                $doc = RbaDetailDocument::where('rba_submission_id', $submission->id)
+                    ->findOrFail($request->rba_detail_document_id);
+                
+                $latestAttachment = $doc->latestVersion;
+                if (!$latestAttachment) {
+                    throw new \Exception('Dokumen terpilih tidak memiliki berkas lampiran yang valid.');
+                }
 
-            RbaAttachment::create([
-                'rba_detail_id' => $detail->id,
-                'file_path' => $path,
-                'version_number' => 1,
-                'uploaded_by' => Auth::id(),
-            ]);
+                $detail->attachments()->syncWithoutDetaching([$latestAttachment->id]);
+            } else {
+                $file = $request->file('attachment');
+                $docName = $request->filled('document_name')
+                    ? $request->document_name
+                    : ($file ? $file->getClientOriginalName() : 'Dokumen Usulan Belanja');
+
+                $doc = RbaDetailDocument::create([
+                    'rba_submission_id' => $submission->id,
+                    'document_name' => $docName,
+                    'created_by' => Auth::id(),
+                ]);
+
+                $path = $file->store('attachments', 'public');
+
+                $attachment = RbaAttachment::create([
+                    'rba_detail_document_id' => $doc->id,
+                    'rba_detail_id' => $detail->id,
+                    'file_path' => $path,
+                    'original_filename' => $file->getClientOriginalName(),
+                    'version_number' => 1,
+                    'uploaded_by' => Auth::id(),
+                ]);
+
+                $detail->attachments()->syncWithoutDetaching([$attachment->id]);
+            }
         });
 
         return redirect()->route('operator.submissions.show', $submission->id)
@@ -158,6 +221,10 @@ class DetailController extends Controller
     {
         $request->validate([
             'attachment' => 'required|file|mimes:pdf|max:10240',
+            'upload_mode' => 'nullable|in:standalone,shared_update',
+            'document_name' => 'nullable|string|max:255',
+            'target_detail_ids' => 'nullable|array',
+            'target_detail_ids.*' => 'integer|exists:rba_details,id',
         ]);
 
         if ($detail->submission->unit_id !== Auth::user()->unit_id) {
@@ -166,34 +233,94 @@ class DetailController extends Controller
 
         Gate::authorize('uploadVersion', $detail);
 
-        // Versioning logic
-        $latestVersion = $detail->attachments()->max('version_number') ?? 0;
-        $newVersion = $latestVersion + 1;
+        $uploadMode = $request->input('upload_mode', 'shared_update');
+        $file = $request->file('attachment');
+        $path = $file->store('attachments', 'public');
+        $originalFilename = $file->getClientOriginalName();
+        $newVersion = 1;
+        $affectedCount = 1;
 
-        $path = $request->file('attachment')->store('attachments', 'public');
+        \DB::transaction(function () use ($request, $detail, $uploadMode, $path, $originalFilename, &$newVersion, &$affectedCount) {
+            $currentDoc = $detail->document();
 
-        RbaAttachment::create([
-            'rba_detail_id' => $detail->id,
-            'file_path' => $path,
-            'version_number' => $newVersion,
-            'uploaded_by' => Auth::id(),
-        ]);
+            if ($uploadMode === 'standalone' || !$currentDoc) {
+                // Mode Standalone: Pisahkan usulan ini menjadi dokumen mandiri baru
+                $docName = $request->filled('document_name')
+                    ? $request->document_name
+                    : ($currentDoc ? $currentDoc->document_name . ' (Revisi Mandiri)' : $originalFilename);
 
-        // Reset validation and rejection status back to Draft
-        $detail->update([
-            'is_validated' => false,
-            'validated_at' => null,
-            'validated_by' => null,
-            'is_submitted' => false,
-            'is_rejected' => false,
-            'rejected_at' => null,
-            'rejected_by' => null,
-            'rejection_reason' => null,
-        ]);
+                $newDoc = RbaDetailDocument::create([
+                    'rba_submission_id' => $detail->rba_submission_id,
+                    'document_name' => $docName,
+                    'created_by' => Auth::id(),
+                ]);
+
+                $newVersion = ($detail->attachments()->max('rba_attachments.version_number') ?? 0) + 1;
+
+                $attachment = RbaAttachment::create([
+                    'rba_detail_document_id' => $newDoc->id,
+                    'rba_detail_id' => $detail->id,
+                    'file_path' => $path,
+                    'original_filename' => $originalFilename,
+                    'version_number' => $newVersion,
+                    'uploaded_by' => Auth::id(),
+                ]);
+
+                $detail->attachments()->syncWithoutDetaching([$attachment->id]);
+
+                $targetDetails = collect([$detail]);
+            } else {
+                // Mode Shared Update: Perbarui dokumen bersama ke versi berikutnya
+                $newVersion = ($currentDoc->versions()->max('version_number') ?? 0) + 1;
+
+                $attachment = RbaAttachment::create([
+                    'rba_detail_document_id' => $currentDoc->id,
+                    'rba_detail_id' => $detail->id,
+                    'file_path' => $path,
+                    'original_filename' => $originalFilename,
+                    'version_number' => $newVersion,
+                    'uploaded_by' => Auth::id(),
+                ]);
+
+                // Ambil daftar target usulan yang dicentang ikut menggunakan revisi ini
+                $targetIds = $request->input('target_detail_ids', [$detail->id]);
+                if (!in_array($detail->id, $targetIds)) {
+                    $targetIds[] = $detail->id;
+                }
+
+                $targetDetails = RbaDetail::where('rba_submission_id', $detail->rba_submission_id)
+                    ->whereIn('id', $targetIds)
+                    ->get();
+
+                foreach ($targetDetails as $td) {
+                    $td->attachments()->syncWithoutDetaching([$attachment->id]);
+                }
+            }
+
+            // Atur ulang status usulan terkait ke Draft agar disinkronkan ke Supervisor
+            foreach ($targetDetails as $td) {
+                $td->update([
+                    'is_validated' => false,
+                    'validated_at' => null,
+                    'validated_by' => null,
+                    'is_submitted' => false,
+                    'is_rejected' => false,
+                    'rejected_at' => null,
+                    'rejected_by' => null,
+                    'rejection_reason' => null,
+                ]);
+            }
+
+            $affectedCount = $targetDetails->count();
+        });
 
         $detail->submission->syncValidationStatus();
 
-        return back()->with('success', "Versi PDF baru (V{$newVersion}) berhasil diunggah. Status usulan kembali menjadi Draft (silakan klik Ajukan ke Supervisor).");
+        $msg = $affectedCount > 1
+            ? "Versi PDF baru (V{$newVersion}) berhasil diunggah untuk {$affectedCount} rincian belanja. Status kembali menjadi Draft."
+            : "Versi PDF baru (V{$newVersion}) berhasil diunggah. Status usulan kembali menjadi Draft (silakan klik Ajukan ke Supervisor).";
+
+        return back()->with('success', $msg);
     }
 
     public function submitItem(RbaDetail $detail)

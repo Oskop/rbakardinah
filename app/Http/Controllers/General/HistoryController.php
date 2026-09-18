@@ -16,8 +16,8 @@ class HistoryController extends Controller
             abort(403);
         }
 
-        $detail->load(['attachments.user', 'accountCode']);
-        $attachments = $detail->attachments()->orderByDesc('version_number')->get();
+        $detail->load(['attachments.user', 'attachments.document', 'attachments.details.accountCode', 'accountCode']);
+        $attachments = $detail->attachments()->with(['document', 'details.accountCode'])->orderByDesc('rba_attachments.version_number')->get();
 
         return view('general.history', compact('detail', 'attachments'));
     }

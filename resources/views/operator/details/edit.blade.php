@@ -129,6 +129,72 @@
                                 class="w-full border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed font-semibold text-gray-700" value="Rp 0">
                         </div>
 
+                        <!-- Info Dokumen Lampiran Saat Ini & Opsi Ganti -->
+                        <div class="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-200" x-data="{ changeDoc: false }">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label class="block text-gray-800 text-xs font-black uppercase tracking-wider">
+                                        Dokumen Lampiran PDF Terpasang
+                                    </label>
+                                    @php
+                                        $latestAtt = $detail->latestAttachment();
+                                        $currentDoc = $detail->document();
+                                    @endphp
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-sm font-bold text-gray-900">
+                                            📄 {{ $currentDoc?->document_name ?? 'Dokumen Usulan Belanja' }}
+                                        </span>
+                                        @if($latestAtt)
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-black bg-sky-100 text-sky-800">
+                                                V{{ $latestAtt->version_number }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <div class="text-[11px] text-gray-500 mt-0.5">
+                                        Berkas: {{ $latestAtt?->original_filename ?? basename($latestAtt?->file_path ?? '-') }}
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    @if($latestAtt && \Illuminate\Support\Facades\Storage::disk('public')->exists($latestAtt->file_path))
+                                        <a href="{{ \Illuminate\Support\Facades\Storage::url($latestAtt->file_path) }}" target="_blank"
+                                           class="px-2.5 py-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-white border border-indigo-200 rounded-lg inline-flex items-center gap-1 shadow-2xs">
+                                            <span>Lihat PDF</span>
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                        </a>
+                                    @endif
+
+                                    @if(isset($existingDocuments) && $existingDocuments->count() > 1)
+                                        <button type="button" @click="changeDoc = !changeDoc"
+                                                class="px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-white border border-slate-300 rounded-lg shadow-2xs cursor-pointer">
+                                            <span x-text="changeDoc ? 'Tutup Pilihan' : 'Ganti Dokumen'"></span>
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+
+                            @if(isset($existingDocuments) && $existingDocuments->count() > 1)
+                                <div x-show="changeDoc" x-cloak class="mt-4 pt-3 border-t border-slate-200">
+                                    <label class="block text-xs font-bold text-gray-700 mb-1.5">
+                                        Pilih Dokumen Lain yang Tersedia di Pengajuan Ini:
+                                    </label>
+                                    <select name="rba_detail_document_id" class="w-full text-xs border-gray-300 rounded-lg shadow-xs">
+                                        <option value="">-- Tetap Gunakan Dokumen Saat Ini --</option>
+                                        @foreach($existingDocuments as $doc)
+                                            @if(!$currentDoc || $doc->id !== $currentDoc->id)
+                                                <option value="{{ $doc->id }}">
+                                                    {{ $doc->document_name }} (V{{ $doc->latestVersion?->version_number }}) - {{ $doc->latestVersion?->original_filename }}
+                                                </option>
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                    <p class="text-[11px] text-gray-500 mt-1 italic">
+                                        * Memilih dokumen lain akan menautkan usulan ini ke dokumen tersebut tanpa menghapus dokumen sebelumnya.
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
+
                         <div class="flex items-center justify-end">
                             <a href="{{ route('operator.submissions.show', $detail->rba_submission_id) }}"
                                 class="mr-4 text-sm text-gray-600 hover:text-gray-900">Batal</a>
