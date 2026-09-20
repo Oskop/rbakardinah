@@ -120,6 +120,13 @@ Route::middleware(['auth', 'role:Operator'])->prefix('operator')->name('operator
     Route::post('submissions/{submission}/submit', [\App\Http\Controllers\Operator\SubmissionController::class, 'submit'])->name('submissions.submit');
     Route::put('submissions/{submission}/background', [\App\Http\Controllers\Operator\SubmissionController::class, 'updateBackground'])->name('submissions.update-background');
     Route::post('submissions/{submission}/documents/upload', [\App\Http\Controllers\Operator\DocumentController::class, 'uploadDocument'])->name('submissions.documents.upload');
+
+    // Berita Acara Asistensi / Desk RBA Routes
+    Route::post('submissions/{submission}/berita-acara', [\App\Http\Controllers\Operator\DeskVerificationController::class, 'storeOrUpdate'])->name('submissions.berita-acara.save');
+    Route::get('submissions/{submission}/berita-acara/print', [\App\Http\Controllers\Operator\DeskVerificationController::class, 'print'])->name('submissions.berita-acara.print');
+    Route::post('submissions/{submission}/berita-acara/upload', [\App\Http\Controllers\Operator\DeskVerificationController::class, 'uploadSignedDocument'])->name('submissions.berita-acara.upload');
+    Route::get('submissions/{submission}/berita-acara/history', [\App\Http\Controllers\Operator\DeskVerificationController::class, 'history'])->name('submissions.berita-acara.history');
+
     Route::resource('details', \App\Http\Controllers\Operator\DetailController::class);
     Route::post('details/{detail}/submit-item', [\App\Http\Controllers\Operator\DetailController::class, 'submitItem'])->name('details.submit-item');
     Route::post('details/{detail}/upload-version', [\App\Http\Controllers\Operator\DetailController::class, 'uploadVersion'])->name('details.upload-version');
@@ -132,6 +139,10 @@ Route::middleware(['auth', 'role:Operator'])->prefix('operator')->name('operator
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('submissions/{submission}/berita-acara/print', [\App\Http\Controllers\Operator\DeskVerificationController::class, 'print'])->name('submissions.berita-acara.print');
+    Route::get('submissions/{submission}/berita-acara/print-alias', [\App\Http\Controllers\Operator\DeskVerificationController::class, 'print'])->name('berita-acara.print');
+    Route::get('submissions/{submission}/berita-acara/history', [\App\Http\Controllers\Operator\DeskVerificationController::class, 'history'])->name('submissions.berita-acara.history');
+    Route::get('submissions/{submission}/berita-acara/history-alias', [\App\Http\Controllers\Operator\DeskVerificationController::class, 'history'])->name('berita-acara.history');
     Route::get('/reports', [\App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

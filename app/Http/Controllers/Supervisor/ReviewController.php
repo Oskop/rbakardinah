@@ -43,11 +43,13 @@ class ReviewController extends Controller
             'documents' => function ($query) {
                 $query->with(['user.subUnit', 'versions.uploader', 'latestVersion']);
             },
-            'operatorBackgrounds.user.subUnit'
+            'operatorBackgrounds.user.subUnit',
+            'deskVerifications.latestDocument'
         ]);
 
         $documents = $submission->documents->groupBy('user_id');
         $operatorBackgrounds = $submission->operatorBackgrounds->keyBy('user_id');
+        $deskVerifications = $submission->deskVerifications->keyBy('user_id');
 
         // Load pagu for indicators
         $pagus = RbaAccountPagu::where('rba_header_id', $submission->rba_header_id)->get()->keyBy('account_code_id');
@@ -96,7 +98,7 @@ class ReviewController extends Controller
             ->get()
             ->keyBy('account_code_id');
 
-        return view('supervisor.submissions.show', compact('submission', 'pagus', 'headerTotals', 'operators', 'documents', 'previousPagus', 'operatorBackgrounds'));
+        return view('supervisor.submissions.show', compact('submission', 'pagus', 'headerTotals', 'operators', 'documents', 'previousPagus', 'operatorBackgrounds', 'deskVerifications'));
     }
 
     public function printPreview(Request $request, RbaSubmission $submission)

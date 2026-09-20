@@ -130,7 +130,13 @@ class SubmissionController extends Controller
                 ->get();
         }
 
-        return view('operator.submissions.show', compact('submission', 'pagus', 'headerTotals', 'previousPagus', 'myBackground', 'otherOperatorBackgrounds'));
+        $myDeskVerification = $submission->deskVerifications()->where('user_id', Auth::id())->with('latestDocument')->first();
+        $otherDeskVerifications = $submission->deskVerifications()
+            ->with(['user.subUnit', 'latestDocument'])
+            ->where('user_id', '!=', Auth::id())
+            ->get();
+
+        return view('operator.submissions.show', compact('submission', 'pagus', 'headerTotals', 'previousPagus', 'myBackground', 'otherOperatorBackgrounds', 'myDeskVerification', 'otherDeskVerifications'));
     }
 
     public function submit(RbaSubmission $submission)

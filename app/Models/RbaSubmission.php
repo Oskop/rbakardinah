@@ -38,6 +38,11 @@ class RbaSubmission extends Model
         return $this->hasMany(RbaSubmissionOperatorBackground::class);
     }
 
+    public function deskVerifications(): HasMany
+    {
+        return $this->hasMany(RbaDeskVerification::class);
+    }
+
     /**
      * Synchronize and automatically compute the macro status of this submission
      * based on its submitted details validation states.

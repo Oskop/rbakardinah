@@ -190,6 +190,18 @@ trait LogsActivity
             return "{$actor} mencatat riwayat {$act} pada Permohonan RKBMD #{$model->rkbmd_submission_id}";
         }
 
+        if ($modelName === 'RbaDeskVerification') {
+            $subUnit = $model->sub_unit_name ?? ($model->user?->subUnit?->name ?? ($model->user?->name ?? "#{$key}"));
+            return "{$actor} {$actionVerb} data Berita Acara Asistensi / Desk RBA untuk {$subUnit}";
+        }
+
+        if ($modelName === 'RbaDeskVerificationDocument') {
+            $ver = $model->version_number ?? '1';
+            $subUnit = $model->deskVerification?->sub_unit_name ?? '';
+            $subUnitText = $subUnit ? " untuk {$subUnit}" : '';
+            return "{$actor} mengunggah berkas Berita Acara Ditandatangani (Versi {$ver}){$subUnitText}";
+        }
+
         return "{$actor} {$actionVerb} data {$modelName} #{$key}";
     }
 }

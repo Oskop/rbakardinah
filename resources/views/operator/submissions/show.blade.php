@@ -858,6 +858,10 @@
                     </div>
                 </div>
             @endif
+
+            {{-- Kartu & Modal Berita Acara Asistensi / Desk RBA --}}
+            @include('operator.submissions.partials.berita_acara_card')
+
         </div>
     </div>
 </x-app-layout>

@@ -73,6 +73,8 @@ class ActivityLogController extends Controller
             'RbaAttachment' => 'Lampiran PDF RBA',
             'RbaSubmissionDocument' => 'Dokumen KAK/RAK/RTP',
             'RbaSubmissionDocumentVersion' => 'Versi Dokumen KAK/RAK/RTP',
+            'RbaDeskVerification' => 'Berita Acara Asistensi Desk',
+            'RbaDeskVerificationDocument' => 'Versi Dokumen Berita Acara',
         ];
 
         return view('admin.logs.index', compact(

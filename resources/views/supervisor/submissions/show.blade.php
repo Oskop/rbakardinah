@@ -323,6 +323,58 @@
                                             <span>Operator ini belum mengisi data latar belakang usulan RBA untuk periode ini.</span>
                                         </div>
                                     @endif
+
+                                    {{-- Berita Acara Asistensi / Desk Operator --}}
+                                    @php
+                                        $opBa = isset($deskVerifications) ? $deskVerifications->get($op->id) : null;
+                                    @endphp
+                                    <div class="mt-4 pt-3 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-xs font-bold text-gray-700">📋 Berita Acara Desk:</span>
+                                            @if($opBa && $opBa->latestDocument)
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                    Scan V{{ $opBa->latestDocument->version_number }} Terunggah
+                                                </span>
+                                            @elseif($opBa)
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                                    Parameter Tersimpan
+                                                </span>
+                                            @else
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600">
+                                                    Belum Dibuat
+                                                </span>
+                                            @endif
+
+                                            @if($opBa && $opBa->kriteria_latar_belakang === 'Perlu Perbaikan')
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                                    ⚠️ Latar Belakang Perlu Perbaikan
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                        <div class="flex items-center gap-2">
+                                            <a href="{{ route('submissions.berita-acara.print', ['submission' => $submission->id, 'user_id' => $op->id]) }}" target="_blank"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition">
+                                                <span>🖨️ Cetak Lembar BA</span>
+                                            </a>
+                                            @if($opBa && $opBa->latestDocument)
+                                                <a href="{{ \Illuminate\Support\Facades\Storage::url($opBa->latestDocument->file_path) }}" target="_blank"
+                                                    class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition">
+                                                    <span>Unduh Scan V{{ $opBa->latestDocument->version_number }}</span>
+                                                </a>
+                                                <a href="{{ route('submissions.berita-acara.history', ['submission' => $submission->id, 'user_id' => $op->id]) }}"
+                                                    class="text-[11px] text-gray-500 hover:text-indigo-600 underline">
+                                                    Riwayat Versi
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    @if($opBa && $opBa->kriteria_latar_belakang === 'Perlu Perbaikan' && !empty($opBa->catatan_perbaikan_latar_belakang))
+                                        <div class="mt-2.5 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+                                            <span class="font-bold text-[11px] uppercase tracking-wider block text-amber-800">Catatan Perbaikan dari Tim Asistensi:</span>
+                                            <p class="mt-0.5 whitespace-pre-wrap">{{ $opBa->catatan_perbaikan_latar_belakang }}</p>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         @empty
