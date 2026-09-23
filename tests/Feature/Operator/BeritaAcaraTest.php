@@ -208,6 +208,48 @@ class BeritaAcaraTest extends TestCase
         $response->assertSee('M. Riza F., A.Md.');
         $response->assertSee('Ananta Bayu, S.Kom');
         $response->assertSee('Operator PDE');
+        $response->assertSee('sign-subtable');
+        $response->assertSee('sign-name-col');
+        $response->assertSee('sign-dots-col');
+    }
+
+    public function test_operator_print_preview_handles_long_names_and_titles_without_distortion()
+    {
+        $longSubUnitName = 'Sub Bagian Tata Usaha dan Kepegawaian serta Hukum dan Hubungan Masyarakat';
+        $longOperator1 = 'dr. H. Muhammad Reza Pahlevi, Sp.A, M.Kes, FINASIM';
+        $longOperator2 = 'Ns. Siti Fatimah Nurjanah, S.Kep., M.Kep., Sp.Kep.MB';
+        $timLong = ['M. Riza Fauzi Rahman, S.Kom., M.Eng.', 'Ananta Bayu Pradana, S.Kom.', 'Nurul Lathifah Rahmawati, S.I.Pus.'];
+
+        RbaDeskVerification::create([
+            'rba_submission_id' => $this->submission->id,
+            'user_id' => $this->operator->id,
+            'hari' => 'Rabu',
+            'tanggal_desk' => '2026-09-23',
+            'tanggal_desk_spelled' => 'tanggal Dua Puluh Tiga Bulan September Tahun Dua Ribu Dua Puluh Enam',
+            'ruang_desk' => 'Ruang Rapat Direksi RSUD Kardinah',
+            'sub_unit_name' => $longSubUnitName,
+            'catatan' => 'Verifikasi usulan belanja dengan nama operator dan gelar spesialis lengkap.',
+            'is_usulan_sipakar' => 'Ya',
+            'kriteria_latar_belakang' => 'Ya',
+            'is_dokumen_rab_uploaded' => 'Ya',
+            'tim_asistensi' => $timLong,
+            'anggota_sub_unit' => [$longOperator1, $longOperator2],
+            'created_by' => $this->operator->id,
+        ]);
+
+        $response = $this->actingAs($this->operator)
+            ->get(route('operator.submissions.berita-acara.print', $this->submission));
+
+        $response->assertStatus(200);
+        $response->assertSee($longSubUnitName);
+        $response->assertSee($longOperator1);
+        $response->assertSee($longOperator2);
+        $response->assertSee('M. Riza Fauzi Rahman, S.Kom., M.Eng.');
+        $response->assertSee('sign-column-left');
+        $response->assertSee('sign-column-right');
+        $response->assertSee('sign-subtable');
+        $response->assertSee('sign-name-col');
+        $response->assertSee('sign-dots-col');
     }
 
     public function test_operator_can_upload_signed_berita_acara_document_and_increments_version()
