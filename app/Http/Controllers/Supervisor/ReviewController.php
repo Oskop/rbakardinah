@@ -256,7 +256,9 @@ class ReviewController extends Controller
             $operatorFilterLabel = implode(', ', $filteredOperatorNames);
         }
 
-        return view('reports.supervisor_rba_final_print', compact('submission', 'pagus', 'filteredBackground', 'includeBackground', 'previousPagus', 'allOperators', 'selectedOperatorIds', 'operatorFilterLabel'));
+        $grouping = in_array($request->get('grouping'), ['account', 'flat']) ? $request->get('grouping') : 'account';
+
+        return view('reports.supervisor_rba_final_print', compact('submission', 'pagus', 'filteredBackground', 'includeBackground', 'previousPagus', 'allOperators', 'selectedOperatorIds', 'operatorFilterLabel', 'grouping'));
     }
 
     private function getFilteredBackground(RbaSubmission $submission, array $selectedOperatorIds, $allOperators, bool $includeBackgroundRequested): ?string

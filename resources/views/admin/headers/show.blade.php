@@ -4,7 +4,7 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('RBA Submissions') }} - {{ $header->year }} ({{ $header->period->name }})
             </h2>
-            <div class="flex items-center space-x-3" x-data="{ openPrintModal: false, printType: 'usulan', filterScope: 'all', selectedUnits: [], selectedOperators: [] }">
+            <div class="flex items-center space-x-3" x-data="{ openPrintModal: false, printType: 'usulan', grouping: 'account', filterScope: 'all', selectedUnits: [], selectedOperators: [] }">
                 <!-- Tombol Cetak Admin -->
                 <button @click="openPrintModal = true" type="button"
                     class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded text-sm inline-flex items-center gap-1.5 shadow transition-all">
@@ -53,6 +53,31 @@
                                                     <span class="text-xs font-bold text-indigo-900">Rincian Belanja & Pagu (RBA Final)</span>
                                                 </div>
                                                 <span class="text-[10px] text-gray-500 pl-5">Laporan RBA Final bersandingan dengan nominal Pagu.</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- 1.5. Opsi Format Rekening (Hanya jika printType === 'final') -->
+                                    <div x-show="printType === 'final'" x-transition class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                                        <label class="block text-xs font-bold text-indigo-950 uppercase tracking-wider mb-2">
+                                            Format Tata Letak Rekening RBA Final
+                                        </label>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <label class="flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer transition"
+                                                :class="grouping === 'account' ? 'border-indigo-500 bg-white shadow-xs text-indigo-950 font-bold' : 'border-gray-200 bg-white/60 text-gray-700'">
+                                                <input type="radio" name="grouping" value="account" x-model="grouping" class="text-indigo-600 focus:ring-indigo-500 mt-0.5">
+                                                <div>
+                                                    <div class="text-xs font-bold">Terkelompok Rekening</div>
+                                                    <div class="text-[9.5px] text-gray-500 font-normal">Dikelompokkan per akun dengan subtotal.</div>
+                                                </div>
+                                            </label>
+                                            <label class="flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer transition"
+                                                :class="grouping === 'flat' ? 'border-indigo-500 bg-white shadow-xs text-indigo-950 font-bold' : 'border-gray-200 bg-white/60 text-gray-700'">
+                                                <input type="radio" name="grouping" value="flat" x-model="grouping" class="text-indigo-600 focus:ring-indigo-500 mt-0.5">
+                                                <div>
+                                                    <div class="text-xs font-bold">Per Baris Usulan (Flat)</div>
+                                                    <div class="text-[9.5px] text-gray-500 font-normal">Satu baris per usulan, kode & nama rekening terulang.</div>
+                                                </div>
                                             </label>
                                         </div>
                                     </div>

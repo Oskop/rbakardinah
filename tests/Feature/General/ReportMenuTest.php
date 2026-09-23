@@ -128,6 +128,15 @@ class ReportMenuTest extends TestCase
         ]));
         $adminFinalRes->assertOk();
 
+        // Admin Final with Flat Grouping
+        $adminFinalFlatRes = $this->actingAs($this->admin)->get(route('admin.headers.print-preview-final', [
+            'header' => $this->header->id,
+            'include_background' => 1,
+            'grouping' => 'flat',
+        ]));
+        $adminFinalFlatRes->assertOk();
+        $adminFinalFlatRes->assertSee('FORMAT PER BARIS USULAN / FLAT');
+
         // Supervisor
         $supRes = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.print-preview', [
             'submission' => $this->submission->id,
@@ -135,11 +144,27 @@ class ReportMenuTest extends TestCase
         ]));
         $supRes->assertOk();
 
+        $supFinalFlatRes = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.print-preview-final', [
+            'submission' => $this->submission->id,
+            'include_background' => 1,
+            'grouping' => 'flat',
+        ]));
+        $supFinalFlatRes->assertOk();
+        $supFinalFlatRes->assertSee('FORMAT PER BARIS USULAN / FLAT');
+
         // Operator
         $opRes = $this->actingAs($this->operator)->get(route('operator.submissions.print-preview', [
             'submission' => $this->submission->id,
             'include_background' => 1,
         ]));
         $opRes->assertOk();
+
+        $opFinalFlatRes = $this->actingAs($this->operator)->get(route('operator.submissions.print-preview-final', [
+            'submission' => $this->submission->id,
+            'include_background' => 1,
+            'grouping' => 'flat',
+        ]));
+        $opFinalFlatRes->assertOk();
+        $opFinalFlatRes->assertSee('FORMAT PER BARIS USULAN / FLAT');
     }
 }

@@ -330,7 +330,17 @@
         <div>
             <h3>🖨️ Pratinjau Cetak RBA Final dengan Pagu</h3>
         </div>
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="display: inline-flex; background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 2px;">
+                <a href="{{ request()->fullUrlWithQuery(['grouping' => 'account']) }}" 
+                   style="padding: 4px 10px; font-size: 11px; text-decoration: none; border-radius: 4px; font-weight: 600; {{ ($grouping ?? 'account') === 'account' ? 'background: #2563eb; color: #ffffff;' : 'color: #94a3b8;' }}">
+                    📑 Terkelompok Rekening
+                </a>
+                <a href="{{ request()->fullUrlWithQuery(['grouping' => 'flat']) }}" 
+                   style="padding: 4px 10px; font-size: 11px; text-decoration: none; border-radius: 4px; font-weight: 600; {{ ($grouping ?? 'account') === 'flat' ? 'background: #2563eb; color: #ffffff;' : 'color: #94a3b8;' }}">
+                    📋 Per Baris Usulan (Flat)
+                </a>
+            </div>
             <a href="{{ route('operator.submissions.show', $submission->id) }}" class="btn-action btn-back">
                 ← Kembali ke Workboard
             </a>
@@ -381,7 +391,7 @@
                 <td class="meta-label">STATUS SUBMISSION</td>
                 <td class="meta-value">: <strong>{{ $submission->status_submission ?? 'Draft' }}</strong></td>
                 <td class="meta-label">OPSI CETAK</td>
-                <td class="meta-value">: {{ $includeBackground ? 'Dengan Latar Belakang' : 'Tanpa Latar Belakang' }}</td>
+                <td class="meta-value">: {{ $includeBackground ? 'Dengan Latar Belakang' : 'Tanpa Latar Belakang' }} ({{ ($grouping ?? 'account') === 'flat' ? 'Format Per Baris Usulan / Flat' : 'Format Terkelompok Rekening' }})</td>
             </tr>
         </table>
 
@@ -400,44 +410,55 @@
         @endif
 
         <!-- Section II / I: Tabel Rincian Belanja & Pagu Final -->
-        <div class="section-header">{{ $sectionIndex++ }}. RINCIAN BELANJA DAN PAGU FINAL</div>
+        <div class="section-header">{{ $sectionIndex++ }}. RINCIAN BELANJA DAN PAGU FINAL {{ ($grouping ?? 'account') === 'flat' ? '(FORMAT PER BARIS USULAN / FLAT)' : '(FORMAT TERKELOMPOK REKENING)' }}</div>
 
+        @if(($grouping ?? 'account') === 'flat')
+        <!-- ================= FORMAT FLAT / PER BARIS USULAN ================= -->
         <table class="data-table">
             <thead>
                 <tr>
                     <th style="width: 3%;">NO</th>
-                    <th style="width: 10%;">KODE REKENING</th>
-                    <th style="width: 22%;">URAIAN & SPESIFIKASI BELANJA</th>
-                    <th style="width: 10%;">AWAL (Rp)</th>
-                    <th style="width: 6%;">VOL</th>
-                    <th style="width: 6%;">SATUAN</th>
-                    <th style="width: 10%;">HARGA SATUAN (Rp)</th>
-                    <th style="width: 12%;">TOTAL USULAN (Rp)</th>
-                    <th style="width: 12%;">PAGU FINAL (Rp)</th>
-                    <th style="width: 9%;">STATUS</th>
+                    <th style="width: 10%;">NOMOR REKENING</th>
+                    <th style="width: 15%;">NAMA REKENING</th>
+                    <th style="width: 20%;">URAIAN & SPESIFIKASI BELANJA</th>
+                    <th style="width: 9%;">AWAL (Rp)</th>
+                    <th style="width: 5%;">VOL</th>
+                    <th style="width: 5%;">SATUAN</th>
+                    <th style="width: 9%;">HARGA SATUAN (Rp)</th>
+                    <th style="width: 11%;">TOTAL USULAN (Rp)</th>
+                    <th style="width: 9%;">PAGU FINAL (Rp)</th>
+                    <th style="width: 4%;">STATUS</th>
                 </tr>
             </thead>
             <tbody>
                 @php 
                     $totalUsulan = 0;
+                    $accountCodeIdsSeen = [];
                     $totalAwal = 0;
                     $totalPaguFinal = 0;
                 @endphp
                 @forelse($submission->details as $index => $detail)
                     @php 
                         $totalUsulan += $detail->nominal_request;
-                        $previousPagu = $previousPagus[$detail->account_code_id]->nominal_pagu ?? 0;
-                        $totalAwal += $previousPagu;
-                        $paguFinal = $pagus[$detail->account_code_id]->nominal_pagu ?? 0;
-                        $totalPaguFinal += $paguFinal;
+                        $accId = $detail->account_code_id;
+                        $previousPagu = $previousPagus[$accId]->nominal_pagu ?? 0;
+                        $paguFinal = $pagus[$accId]->nominal_pagu ?? 0;
+                        if (!in_array($accId, $accountCodeIdsSeen)) {
+                            $accountCodeIdsSeen[] = $accId;
+                            $totalAwal += $previousPagu;
+                            $totalPaguFinal += $paguFinal;
+                        }
                     @endphp
                     <tr>
-                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td class="text-center font-mono">{{ $index + 1 }}</td>
                         <td class="font-mono text-center font-bold">{{ $detail->accountCode->code ?? '-' }}</td>
+                        <td class="text-left font-bold" style="color: #1e3a8a;">
+                            {{ $detail->accountCode->name ?? '-' }}
+                        </td>
                         <td class="text-left">
-                            <strong>{{ $detail->accountCode->name ?? '-' }}</strong>
-                            @if(!empty($detail->description))
-                                <br><span style="color: #475569; font-size: 9.5px;">{{ $detail->description }}</span>
+                            <strong>{{ $detail->description }}</strong>
+                            @if(!empty($detail->spesifikasi))
+                                <br><span style="color: #64748b; font-size: 8.5px;">Spesifikasi: {{ $detail->spesifikasi }}</span>
                             @endif
                         </td>
                         <td class="text-right font-mono">
@@ -452,9 +473,9 @@
                         </td>
                         <td class="text-center">
                             @if($detail->is_validated)
-                                <span class="badge badge-validated">✓ Validated</span>
+                                <span class="badge badge-validated">✓ Valid</span>
                             @elseif($detail->is_rejected)
-                                <span class="badge badge-rejected">✖ Rejected</span>
+                                <span class="badge badge-rejected">✖ Tolak</span>
                             @elseif($detail->is_submitted)
                                 <span class="badge badge-pending">⌛ Pending</span>
                             @else
@@ -464,7 +485,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" class="text-center" style="padding: 20px; color: #64748b; font-style: italic;">
+                        <td colspan="11" class="text-center" style="padding: 20px; color: #64748b; font-style: italic;">
                             Belum ada rincian belanja usulan yang diinput oleh operator.
                         </td>
                     </tr>
@@ -472,7 +493,7 @@
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="3" class="text-right">TOTAL AKUMULASI:</td>
+                    <td colspan="4" class="text-right font-bold">TOTAL KESELURUHAN (RBA FINAL):</td>
                     <td class="text-right font-mono font-bold">
                         {{ $totalAwal > 0 ? 'Rp ' . number_format($totalAwal, 0, ',', '.') : '-' }}
                     </td>
@@ -487,6 +508,134 @@
                 </tr>
             </tfoot>
         </table>
+        @else
+        <!-- ================= FORMAT GROUPED / TERKELOMPOK REKENING ================= -->
+        @php
+            $groupedDetails = $submission->details->groupBy('account_code_id');
+            $grandTotalUsulan = 0;
+            $grandTotalPaguFinal = 0;
+            $grandTotalAwal = 0;
+            $counter = 1;
+        @endphp
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 3%;">NO</th>
+                    <th style="width: 10%;">KODE REKENING</th>
+                    <th style="width: 25%;">URAIAN & SPESIFIKASI BELANJA</th>
+                    <th style="width: 10%;">AWAL (Rp)</th>
+                    <th style="width: 5%;">VOL</th>
+                    <th style="width: 5%;">SATUAN</th>
+                    <th style="width: 10%;">HARGA SATUAN (Rp)</th>
+                    <th style="width: 12%;">TOTAL USULAN (Rp)</th>
+                    <th style="width: 12%;">PAGU FINAL (Rp)</th>
+                    <th style="width: 8%;">STATUS</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($groupedDetails as $accountCodeId => $details)
+                    @php
+                        $firstDetail = $details->first();
+                        $accountCode = $firstDetail->accountCode;
+                        $paguFinal = $pagus[$accountCodeId]->nominal_pagu ?? 0;
+                        $paguAwal = $previousPagus[$accountCodeId]->nominal_pagu ?? 0;
+                        $subtotalUsulan = $details->sum('nominal_request');
+                        $grandTotalUsulan += $subtotalUsulan;
+                        $grandTotalPaguFinal += $paguFinal;
+                        $grandTotalAwal += $paguAwal;
+                    @endphp
+
+                    <!-- Group Header Row -->
+                    <tr style="background-color: #e2e8f0; font-weight: 800; color: #0f172a;">
+                        <td class="text-center font-mono">{{ $counter++ }}</td>
+                        <td class="font-mono text-center font-bold">{{ $accountCode->code ?? '-' }}</td>
+                        <td colspan="6">
+                            <strong>{{ $accountCode->name ?? '-' }}</strong>
+                        </td>
+                        <td class="text-right font-mono font-bold" style="color: #047857;">
+                            {{ $paguFinal > 0 ? 'Rp ' . number_format($paguFinal, 0, ',', '.') : '-' }}
+                        </td>
+                        <td class="text-center">-</td>
+                    </tr>
+
+                    <!-- Item Detail Rows -->
+                    @foreach($details as $detail)
+                        <tr>
+                            <td></td>
+                            <td class="font-mono text-center" style="font-size: 8.5px; color: #64748b;">
+                                {{ $accountCode->code ?? '-' }}
+                            </td>
+                            <td class="text-left">
+                                <strong>{{ $detail->description }}</strong>
+                                @if(!empty($detail->spesifikasi))
+                                    <br><span style="color: #64748b; font-size: 8.5px;">Spesifikasi: {{ $detail->spesifikasi }}</span>
+                                @endif
+                            </td>
+                            <td class="text-right font-mono">
+                                {{ $paguAwal > 0 ? number_format($paguAwal, 0, ',', '.') : '-' }}
+                            </td>
+                            <td class="text-center font-mono">{{ number_format($detail->volume ?? 1, 2, ',', '.') }}</td>
+                            <td class="text-center">{{ $detail->satuan ?? 'Pkt' }}</td>
+                            <td class="text-right font-mono">Rp {{ number_format($detail->harga_satuan ?? 0, 0, ',', '.') }}</td>
+                            <td class="text-right font-mono font-bold">Rp {{ number_format($detail->nominal_request, 0, ',', '.') }}</td>
+                            <td class="text-right font-mono" style="color: #047857;">
+                                {{ $paguFinal > 0 ? 'Rp ' . number_format($paguFinal, 0, ',', '.') : '-' }}
+                            </td>
+                            <td class="text-center">
+                                @if($detail->is_validated)
+                                    <span class="badge badge-validated">✓ Valid</span>
+                                @elseif($detail->is_rejected)
+                                    <span class="badge badge-rejected">✖ Tolak</span>
+                                @elseif($detail->is_submitted)
+                                    <span class="badge badge-pending">⌛ Pending</span>
+                                @else
+                                    <span class="badge badge-draft">Draft</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+
+                    <!-- Subtotal Row per Kode Rekening -->
+                    <tr style="background-color: #f1f5f9; font-weight: 700; color: #0f172a; border-top: 1.5px solid #64748b; border-bottom: 1.5px solid #64748b;">
+                        <td colspan="3" class="text-right">
+                            SUBTOTAL KODE REKENING [{{ $accountCode->code ?? '-' }}]:
+                        </td>
+                        <td class="text-right font-mono">{{ $paguAwal > 0 ? number_format($paguAwal, 0, ',', '.') : '-' }}</td>
+                        <td colspan="3"></td>
+                        <td class="text-right font-mono font-bold" style="color: #1e3a8a;">
+                            Rp {{ number_format($subtotalUsulan, 0, ',', '.') }}
+                        </td>
+                        <td class="text-right font-mono font-bold" style="color: #047857;">
+                            {{ $paguFinal > 0 ? 'Rp ' . number_format($paguFinal, 0, ',', '.') : '-' }}
+                        </td>
+                        <td></td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="10" class="text-center" style="padding: 20px; color: #64748b; font-style: italic;">
+                            Belum ada rincian belanja usulan yang diinput oleh operator.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+            <tfoot>
+                <tr style="background-color: #0f172a; color: #ffffff; font-weight: 800;">
+                    <td colspan="3" class="text-right">TOTAL KESELURUHAN RINCIAN BELANJA & PAGU FINAL:</td>
+                    <td class="text-right font-mono font-bold">
+                        {{ $grandTotalAwal > 0 ? 'Rp ' . number_format($grandTotalAwal, 0, ',', '.') : '-' }}
+                    </td>
+                    <td colspan="3"></td>
+                    <td class="text-right font-mono font-bold" style="color: #60a5fa;">
+                        Rp {{ number_format($grandTotalUsulan, 0, ',', '.') }}
+                    </td>
+                    <td class="text-right font-mono font-bold" style="color: #34d399;">
+                        {{ $grandTotalPaguFinal > 0 ? 'Rp ' . number_format($grandTotalPaguFinal, 0, ',', '.') : '-' }}
+                    </td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+        @endif
 
         <!-- Lembar Pengesahan / Tanda Tangan -->
         <div class="signatures-container">

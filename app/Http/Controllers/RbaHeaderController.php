@@ -570,9 +570,11 @@ class RbaHeaderController extends Controller
         }
         $filterLabel = implode(' | ', $filterLabels);
 
+        $grouping = in_array($request->get('grouping'), ['account', 'flat']) ? $request->get('grouping') : 'account';
+
         return view('reports.admin_rba_final_print', compact(
             'header', 'submissions', 'details', 'pagus', 'includeBackground', 'previousPagus',
-            'units', 'allOperators', 'selectedUnitIds', 'selectedOperatorIds', 'filterLabel', 'reportAccountCodes'
+            'units', 'allOperators', 'selectedUnitIds', 'selectedOperatorIds', 'filterLabel', 'reportAccountCodes', 'grouping'
         ));
     }
 }

@@ -191,6 +191,21 @@ class AdminDashboardTest extends TestCase
         $resUnit1->assertSee('Unit Rawat Inap');
         // Account not proposed by Unit 1 must NOT appear in Unit 1 filter
         $resUnit1->assertDontSee('Belanja Barang Tanpa Usulan');
+
+        // 3. Test Admin Print RBA Final Flat Mode (Per Baris Usulan)
+        $resFlat = $this->actingAs($admin)->get(route('admin.headers.print-preview-final', [
+            'header' => $header->id,
+            'grouping' => 'flat'
+        ]));
+        $resFlat->assertStatus(200);
+        $resFlat->assertSee('FORMAT PER BARIS USULAN / FLAT');
+        $resFlat->assertSee('NOMOR REKENING');
+        $resFlat->assertSee('NAMA REKENING');
+        $resFlat->assertSee('Item Inap');
+        $resFlat->assertSee('Item Farmasi');
+        $resFlat->assertSee('Unit Rawat Inap');
+        $resFlat->assertSee('Unit Farmasi');
+        $resFlat->assertDontSee('SUBTOTAL KODE REKENING');
     }
 
     public function test_admin_can_view_unit_monitoring_with_supervisor_and_operator_progress()

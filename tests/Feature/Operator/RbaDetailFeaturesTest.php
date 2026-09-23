@@ -212,4 +212,38 @@ class RbaDetailFeaturesTest extends TestCase
         $response->assertSee('PAGU FINAL (Rp)');
         $response->assertSee('Rp 50.000.000');
     }
+
+    public function test_operator_can_access_print_preview_final_flat_mode()
+    {
+        \App\Models\RbaAccountPagu::create([
+            'rba_header_id' => $this->submission->rba_header_id,
+            'account_code_id' => $this->accountCode->id,
+            'nominal_pagu' => 50000000
+        ]);
+
+        RbaDetail::create([
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Testing RBA Final Flat Mode',
+            'volume' => 2,
+            'satuan' => 'Unit',
+            'harga_satuan' => 15000000,
+            'nominal_request' => 30000000,
+            'created_by' => $this->operator->id
+        ]);
+
+        $response = $this->actingAs($this->operator)->get(route('operator.submissions.print-preview-final', [
+            'submission' => $this->submission->id,
+            'include_background' => 1,
+            'grouping' => 'flat'
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('FORMAT PER BARIS USULAN / FLAT');
+        $response->assertSee('NOMOR REKENING');
+        $response->assertSee('NAMA REKENING');
+        $response->assertSee('Item Testing RBA Final Flat Mode');
+        $response->assertSee($this->accountCode->code);
+        $response->assertSee($this->accountCode->name);
+    }
 }

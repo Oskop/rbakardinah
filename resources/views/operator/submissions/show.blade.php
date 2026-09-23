@@ -39,18 +39,31 @@
                         </div>
 
                         <!-- Kategori 2: Rincian Belanja & Pagu (RBA Final) -->
-                        <div class="px-3 py-2">
+                        <div class="px-3 py-2 border-t border-gray-100">
                             <div class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">2. Rincian Belanja & Pagu (RBA Final)</div>
                             <div class="flex flex-col gap-1">
-                                <a href="{{ route('operator.submissions.print-preview-final', ['submission' => $submission->id, 'include_background' => 1]) }}" target="_blank"
-                                    class="text-xs text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 px-2 py-1.5 rounded-lg flex items-center justify-between transition-colors">
-                                    <span>📊 Cetak RBA Final (Dengan Latar Belakang)</span>
+                                <div class="text-[9.5px] font-semibold text-gray-400 mt-1 uppercase">Format Terkelompok Rekening</div>
+                                <a href="{{ route('operator.submissions.print-preview-final', ['submission' => $submission->id, 'include_background' => 1, 'grouping' => 'account']) }}" target="_blank"
+                                    class="text-xs text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 px-2 py-1 rounded-lg flex items-center justify-between transition-colors">
+                                    <span>📊 Terkelompok (Dgn Background)</span>
                                     <span class="text-[9px] bg-indigo-100 text-indigo-800 px-1 py-0.5 rounded font-mono">PAGU</span>
                                 </a>
-                                <a href="{{ route('operator.submissions.print-preview-final', ['submission' => $submission->id, 'include_background' => 0]) }}" target="_blank"
-                                    class="text-xs text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 px-2 py-1.5 rounded-lg flex items-center justify-between transition-colors">
-                                    <span>📊 Cetak RBA Final (Tanpa Latar Belakang)</span>
+                                <a href="{{ route('operator.submissions.print-preview-final', ['submission' => $submission->id, 'include_background' => 0, 'grouping' => 'account']) }}" target="_blank"
+                                    class="text-xs text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 px-2 py-1 rounded-lg flex items-center justify-between transition-colors">
+                                    <span>📊 Terkelompok (Tanpa Background)</span>
                                     <span class="text-[9px] bg-indigo-100 text-indigo-800 px-1 py-0.5 rounded font-mono">PAGU</span>
+                                </a>
+                                
+                                <div class="text-[9.5px] font-semibold text-emerald-600 mt-1.5 uppercase">Format Per Baris Usulan (Flat)</div>
+                                <a href="{{ route('operator.submissions.print-preview-final', ['submission' => $submission->id, 'include_background' => 1, 'grouping' => 'flat']) }}" target="_blank"
+                                    class="text-xs text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 px-2 py-1 rounded-lg flex items-center justify-between transition-colors">
+                                    <span>📋 Baris Datar / Flat (Dgn Background)</span>
+                                    <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1 py-0.5 rounded font-mono">FLAT</span>
+                                </a>
+                                <a href="{{ route('operator.submissions.print-preview-final', ['submission' => $submission->id, 'include_background' => 0, 'grouping' => 'flat']) }}" target="_blank"
+                                    class="text-xs text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 px-2 py-1 rounded-lg flex items-center justify-between transition-colors">
+                                    <span>📋 Baris Datar / Flat (Tanpa Background)</span>
+                                    <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1 py-0.5 rounded font-mono">FLAT</span>
                                 </a>
                             </div>
                         </div>

@@ -27,6 +27,7 @@
             role: '{{ $role }}',
             selectedId: '{{ $selectedPeriodId ?? '' }}',
             printType: 'usulan',
+            grouping: 'account',
             includeBackground: '1',
             filterScope: 'all',
             operatorScope: 'all',
@@ -241,10 +242,35 @@
                                 </div>
                             </div>
 
+                            <!-- 1.5. Opsi Format Rekening (Hanya tampil saat printType === 'final') -->
+                            <div x-show="printType === 'final'" x-transition class="p-4 bg-indigo-50/60 rounded-xl border border-indigo-100 space-y-2">
+                                <label class="block text-xs font-bold text-indigo-950 uppercase tracking-wider">
+                                    B. Format Tata Letak Rekening (RBA Final)
+                                </label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <label class="flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition"
+                                        :class="grouping === 'account' ? 'border-indigo-500 bg-white shadow-xs text-indigo-950 font-bold' : 'border-gray-200 bg-white/70 text-gray-700'">
+                                        <input type="radio" name="grouping" value="account" x-model="grouping" class="text-indigo-600 focus:ring-indigo-500 mt-0.5">
+                                        <div>
+                                            <div class="text-xs font-bold">📑 Terkelompok Rekening (Default)</div>
+                                            <div class="text-[11px] text-gray-500 font-normal mt-0.5">Usulan dikelompokkan dalam subtotal per kode rekening.</div>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition"
+                                        :class="grouping === 'flat' ? 'border-indigo-500 bg-white shadow-xs text-indigo-950 font-bold' : 'border-gray-200 bg-white/70 text-gray-700'">
+                                        <input type="radio" name="grouping" value="flat" x-model="grouping" class="text-indigo-600 focus:ring-indigo-500 mt-0.5">
+                                        <div>
+                                            <div class="text-xs font-bold">📋 Per Baris Usulan (Flat)</div>
+                                            <div class="text-[11px] text-gray-500 font-normal mt-0.5">1 usulan = 1 baris, nomor rekening & nama rekening terulang.</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
                             <!-- 2. Opsi Latar Belakang -->
                             <div>
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2.5">
-                                    B. Lampiran Latar Belakang Sub-Unit
+                                    <span x-show="printType === 'final'">C.</span><span x-show="printType !== 'final'">B.</span> Lampiran Latar Belakang Sub-Unit
                                 </label>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <label class="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 hover:border-emerald-500 cursor-pointer bg-slate-50 text-xs font-semibold text-gray-700 transition">
@@ -261,7 +287,7 @@
                             <!-- 3. Scope & Filter (Disesuaikan menurut Role) -->
                             <div>
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2.5">
-                                    C. Filter Cakupan Data (Scope)
+                                    <span x-show="printType === 'final'">D.</span><span x-show="printType !== 'final'">C.</span> Filter Cakupan Data (Scope)
                                 </label>
 
                                 @if($role === 'Administrator')

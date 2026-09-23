@@ -288,6 +288,20 @@ class ReviewTest extends TestCase
         $resAlpha->assertSee('Operator Alpha');
         $resAlpha->assertSee('Latar belakang khusus Alpha');
         $resAlpha->assertDontSee('Latar belakang khusus Beta');
+
+        // 3. Test Print RBA Final Flat Mode (Per Baris Usulan)
+        $resFlat = $this->actingAs($this->supervisor)->get(route('supervisor.submissions.print-preview-final', [
+            'submission' => $this->submission->id,
+            'include_background' => 0,
+            'grouping' => 'flat'
+        ]));
+        $resFlat->assertStatus(200);
+        $resFlat->assertSee('FORMAT PER BARIS USULAN / FLAT');
+        $resFlat->assertSee('NOMOR REKENING');
+        $resFlat->assertSee('NAMA REKENING');
+        $resFlat->assertSee('Laptop Op Alpha');
+        $resFlat->assertSee('Printer Op Beta');
+        $resFlat->assertDontSee('SUBTOTAL KODE REKENING');
     }
 
     public function test_supervisor_cannot_see_draft_unsubmitted_details()

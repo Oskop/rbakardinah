@@ -316,7 +316,9 @@ class SubmissionController extends Controller
             ? RbaAccountPagu::where('rba_header_id', $previousHeader->id)->get()->keyBy('account_code_id')
             : collect();
 
-        return view('reports.operator_rba_final_print', compact('submission', 'includeBackground', 'pagus', 'previousPagus'));
+        $grouping = in_array($request->get('grouping'), ['account', 'flat']) ? $request->get('grouping') : 'account';
+
+        return view('reports.operator_rba_final_print', compact('submission', 'includeBackground', 'pagus', 'previousPagus', 'grouping'));
     }
 
     public function exportPdf(Request $request, RbaSubmission $submission)
