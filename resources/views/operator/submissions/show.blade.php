@@ -202,6 +202,20 @@
                 </div>
             </div>
 
+            @php
+                $documentsData = ($existingDocuments ?? collect())->map(function($doc) {
+                    $latest = $doc->latestVersion;
+                    return [
+                        'id' => $doc->id,
+                        'name' => $doc->document_name,
+                        'version' => $latest ? 'V' . $latest->version_number : '-',
+                        'filename' => $latest?->original_filename ?? basename($latest?->file_path ?? '-'),
+                        'file_url' => $latest && \Illuminate\Support\Facades\Storage::disk('public')->exists($latest->file_path) ? \Illuminate\Support\Facades\Storage::url($latest->file_path) : null,
+                        'details_count' => $latest ? $latest->details->count() : 0,
+                    ];
+                })->values();
+            @endphp
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <div x-data="{ 
@@ -210,6 +224,12 @@
                             return 'Rp ' + Number(val).toLocaleString('id-ID');
                         },
                         uploadModalOpen: false,
+                        sourceMode: 'upload',
+                        selectedExistingDocId: null,
+                        allDocuments: @js($documentsData),
+                        get availableExistingDocs() {
+                            return this.allDocuments.filter(d => !this.uploadTargetDetail.currentDocId || d.id !== this.uploadTargetDetail.currentDocId);
+                        },
                         uploadMode: 'shared_update',
                         targetDetailIds: [],
                         uploadTargetDetail: {
@@ -218,6 +238,7 @@
                             description: '',
                             nominal: '',
                             currentVersion: '',
+                            currentDocId: null,
                             documentName: '',
                             sharedDetails: [],
                             uploadUrl: '',
@@ -228,6 +249,8 @@
                         openUploadModal(detail) {
                             this.uploadTargetDetail = detail;
                             this.selectedFileName = '';
+                            this.sourceMode = 'upload';
+                            this.selectedExistingDocId = null;
                             this.uploadMode = (detail.sharedDetails && detail.sharedDetails.length > 0) ? 'shared_update' : 'standalone';
                             this.targetDetailIds = [detail.id, ...(detail.sharedDetails ? detail.sharedDetails.map(d => d.id) : [])];
                             this.uploadModalOpen = true;
@@ -235,6 +258,8 @@
                         closeUploadModal() {
                             this.uploadModalOpen = false;
                             this.selectedFileName = '';
+                            this.selectedExistingDocId = null;
+                            this.sourceMode = 'upload';
                         },
                         get totals() {
                             let rows = Array.from(this.$refs.tbody.querySelectorAll('tr[data-usulan]'));
@@ -373,6 +398,20 @@
                                                 @php 
                                                     $latest = $detail->latestAttachment(); 
                                                     $sharedCount = $latest ? $latest->details->count() : 0;
+                                                    $currentDoc = $latest?->document;
+                                                    $sharedWithOthers = [];
+                                                    if ($latest) {
+                                                        $sharedWithOthers = $latest->details
+                                                            ->where('id', '!=', $detail->id)
+                                                            ->map(function($d) {
+                                                                return [
+                                                                    'id' => $d->id,
+                                                                    'label' => ($d->accountCode?->code ?? '') . ' - ' . \Illuminate\Support\Str::limit($d->description, 35),
+                                                                    'nominal' => 'Rp ' . number_format($d->nominal_request, 0, ',', '.'),
+                                                                    'status' => $d->is_validated ? 'Valid' : ($d->is_rejected ? 'Tolak' : ($d->is_submitted ? 'Ajuan' : 'Draft')),
+                                                                ];
+                                                            })->values()->all();
+                                                    }
                                                 @endphp
                                                 @if($latest)
                                                     @if(\Illuminate\Support\Facades\Storage::disk('public')->exists($latest->file_path))
@@ -434,21 +473,6 @@
                                                             </svg>
                                                         </a>
 
-                                                        @php
-                                                            $sharedWithOthers = [];
-                                                            if ($latest) {
-                                                                $sharedWithOthers = $latest->details
-                                                                    ->where('id', '!=', $detail->id)
-                                                                    ->map(function($d) {
-                                                                        return [
-                                                                            'id' => $d->id,
-                                                                            'label' => ($d->accountCode?->code ?? '') . ' - ' . \Illuminate\Support\Str::limit($d->description, 35),
-                                                                            'nominal' => 'Rp ' . number_format($d->nominal_request, 0, ',', '.'),
-                                                                            'status' => $d->is_validated ? 'Valid' : ($d->is_rejected ? 'Tolak' : ($d->is_submitted ? 'Ajuan' : 'Draft')),
-                                                                        ];
-                                                                    })->values()->all();
-                                                            }
-                                                        @endphp
                                                         <!-- Tombol Unggah Revisi PDF (Icon Upload Document) -->
                                                         <button type="button"
                                                             @click="openUploadModal({
@@ -457,7 +481,8 @@
                                                                 description: @js($detail->description),
                                                                 nominal: @js('Rp ' . number_format($detail->nominal_request, 0, ',', '.')),
                                                                 currentVersion: @js($latest ? 'V' . $latest->version_number : '-'),
-                                                                documentName: @js($latest?->document?->document_name ?? 'Dokumen Usulan Belanja'),
+                                                                currentDocId: {{ $currentDoc?->id ?? 'null' }},
+                                                                documentName: @js($currentDoc?->document_name ?? 'Dokumen Usulan Belanja'),
                                                                 sharedDetails: @js($sharedWithOthers),
                                                                 uploadUrl: @js(route('operator.details.upload-version', $detail)),
                                                                 isExceeding: false,
@@ -509,6 +534,9 @@
                                                                         description: @js($detail->description),
                                                                         nominal: @js('Rp ' . number_format($detail->nominal_request, 0, ',', '.')),
                                                                         currentVersion: @js($latest ? 'V' . $latest->version_number : '-'),
+                                                                        currentDocId: {{ $currentDoc?->id ?? 'null' }},
+                                                                        documentName: @js($currentDoc?->document_name ?? 'Dokumen Usulan Belanja'),
+                                                                        sharedDetails: @js($sharedWithOthers),
                                                                         uploadUrl: @js(route('operator.details.upload-version', $detail)),
                                                                         isExceeding: true,
                                                                         hasRevision: false
@@ -545,6 +573,9 @@
                                                                         description: @js($detail->description),
                                                                         nominal: @js('Rp ' . number_format($detail->nominal_request, 0, ',', '.')),
                                                                         currentVersion: @js($latest ? 'V' . $latest->version_number : '-'),
+                                                                        currentDocId: {{ $currentDoc?->id ?? 'null' }},
+                                                                        documentName: @js($currentDoc?->document_name ?? 'Dokumen Usulan Belanja'),
+                                                                        sharedDetails: @js($sharedWithOthers),
                                                                         uploadUrl: @js(route('operator.details.upload-version', $detail)),
                                                                         isExceeding: true,
                                                                         hasRevision: true
@@ -618,10 +649,12 @@
                                         </button>
                                     </div>
 
-                                    <!-- Form Upload -->
+                                    <!-- Form Upload / Ganti Dokumen -->
                                     <form :action="uploadTargetDetail.uploadUrl" method="POST" enctype="multipart/form-data">
                                         @csrf
+                                        <input type="hidden" name="source_mode" :value="sourceMode">
                                         <input type="hidden" name="upload_mode" :value="uploadMode">
+                                        <input type="hidden" name="rba_detail_document_id" :value="selectedExistingDocId">
 
                                         <div class="p-6 space-y-4">
                                             <!-- Detail Context Card -->
@@ -639,123 +672,205 @@
                                                     <span class="font-black text-indigo-600" x-text="uploadTargetDetail.nominal"></span>
                                                 </div>
                                                 <div class="flex justify-between items-center">
-                                                    <span class="text-gray-500 font-semibold">Versi PDF Saat Ini:</span>
-                                                    <span class="px-2 py-0.5 bg-sky-100 text-sky-800 rounded font-bold text-[10px]" x-text="uploadTargetDetail.currentVersion"></span>
+                                                    <span class="text-gray-500 font-semibold">Dokumen & Versi Saat Ini:</span>
+                                                    <div class="flex items-center gap-1.5">
+                                                        <span class="font-semibold text-gray-700 truncate max-w-[160px]" x-text="uploadTargetDetail.documentName"></span>
+                                                        <span class="px-2 py-0.5 bg-sky-100 text-sky-800 rounded font-bold text-[10px]" x-text="uploadTargetDetail.currentVersion"></span>
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <!-- Pilihan Cakupan Revisi jika Dokumen Dipakai Bersama -->
-                                            <template x-if="uploadTargetDetail.sharedDetails && uploadTargetDetail.sharedDetails.length > 0">
-                                                <div class="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200 text-xs space-y-3">
-                                                    <div class="flex items-center justify-between">
-                                                        <span class="font-bold text-indigo-950 flex items-center gap-1.5">
-                                                            <span>👥</span> Dokumen Bersama (<span x-text="uploadTargetDetail.sharedDetails.length + 1"></span> usulan)
-                                                        </span>
-                                                        <span class="text-[10px] text-indigo-700 bg-white px-2 py-0.5 rounded border border-indigo-200 font-semibold truncate max-w-[180px]"
-                                                              x-text="uploadTargetDetail.documentName"></span>
-                                                    </div>
+                                            <!-- Segmented Control / Pemilih Mode Sumber Dokumen -->
+                                            <div class="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
+                                                <button type="button"
+                                                        @click="sourceMode = 'upload'"
+                                                        :class="sourceMode === 'upload' ? 'bg-white text-indigo-700 shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900 font-semibold'"
+                                                        class="flex-1 py-1.5 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                                                    <span>📤 Unggah Berkas PDF Revisi</span>
+                                                </button>
+                                                <button type="button"
+                                                        @click="sourceMode = 'existing'"
+                                                        :class="sourceMode === 'existing' ? 'bg-white text-indigo-700 shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900 font-semibold'"
+                                                        class="flex-1 py-1.5 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                                                    <span>🔄 Pilih Dokumen Lain</span>
+                                                    <span class="px-1.5 py-0.2 bg-indigo-100 text-indigo-800 text-[10px] rounded-full font-black"
+                                                          x-text="availableExistingDocs.length"></span>
+                                                </button>
+                                            </div>
 
-                                                    <!-- Mode Selector -->
-                                                    <div class="grid grid-cols-2 gap-2">
-                                                        <label class="p-2.5 rounded-lg border text-left cursor-pointer transition-all bg-white"
-                                                               :class="uploadMode === 'shared_update' ? 'border-indigo-600 ring-2 ring-indigo-200 bg-indigo-50/40 shadow-2xs' : 'border-gray-200 hover:border-indigo-300'">
-                                                            <input type="radio" name="_mode_selector" value="shared_update" x-model="uploadMode" class="sr-only">
-                                                            <div class="font-bold text-gray-900 text-xs">Perbarui Bersama</div>
-                                                            <p class="text-[10px] text-gray-500 mt-0.5">Unggah revisi baru untuk usulan-usulan terkait</p>
-                                                        </label>
-                                                        <label class="p-2.5 rounded-lg border text-left cursor-pointer transition-all bg-white"
-                                                               :class="uploadMode === 'standalone' ? 'border-indigo-600 ring-2 ring-indigo-200 bg-indigo-50/40 shadow-2xs' : 'border-gray-200 hover:border-indigo-300'">
-                                                            <input type="radio" name="_mode_selector" value="standalone" x-model="uploadMode" class="sr-only">
-                                                            <div class="font-bold text-gray-900 text-xs">Pisahkan Dokumen</div>
-                                                            <p class="text-[10px] text-gray-500 mt-0.5">Khusus usulan ini saja, usulan lain tidak berubah</p>
-                                                        </label>
-                                                    </div>
+                                            <!-- ================= MODE 1: UNGGAH BERKAS PDF REVISI (ALUR ASLI) ================= -->
+                                            <div x-show="sourceMode === 'upload'" class="space-y-4">
+                                                <!-- Pilihan Cakupan Revisi jika Dokumen Dipakai Bersama -->
+                                                <template x-if="uploadTargetDetail.sharedDetails && uploadTargetDetail.sharedDetails.length > 0">
+                                                    <div class="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200 text-xs space-y-3">
+                                                        <div class="flex items-center justify-between">
+                                                            <span class="font-bold text-indigo-950 flex items-center gap-1.5">
+                                                                <span>👥</span> Dokumen Bersama (<span x-text="uploadTargetDetail.sharedDetails.length + 1"></span> usulan)
+                                                            </span>
+                                                            <span class="text-[10px] text-indigo-700 bg-white px-2 py-0.5 rounded border border-indigo-200 font-semibold truncate max-w-[180px]"
+                                                                  x-text="uploadTargetDetail.documentName"></span>
+                                                        </div>
 
-                                                    <!-- Checklist usulan yang ikut jika Perbarui Bersama -->
-                                                    <div x-show="uploadMode === 'shared_update'" class="pt-2 border-t border-indigo-100">
-                                                        <span class="block text-[11px] font-bold text-gray-700 mb-1.5">
-                                                            Pilih usulan yang ikut menggunakan berkas revisi baru:
-                                                        </span>
-                                                        <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                                                            <label class="flex items-center gap-2 text-xs bg-white p-2 rounded border border-gray-200">
-                                                                <input type="checkbox" checked disabled class="text-indigo-600 rounded">
-                                                                <span class="font-semibold text-gray-800" x-text="uploadTargetDetail.description + ' (Usulan ini)'"></span>
+                                                        <!-- Mode Selector -->
+                                                        <div class="grid grid-cols-2 gap-2">
+                                                            <label class="p-2.5 rounded-lg border text-left cursor-pointer transition-all bg-white"
+                                                                   :class="uploadMode === 'shared_update' ? 'border-indigo-600 ring-2 ring-indigo-200 bg-indigo-50/40 shadow-2xs' : 'border-gray-200 hover:border-indigo-300'">
+                                                                <input type="radio" name="_mode_selector" value="shared_update" x-model="uploadMode" class="sr-only">
+                                                                <div class="font-bold text-gray-900 text-xs">Perbarui Bersama</div>
+                                                                <p class="text-[10px] text-gray-500 mt-0.5">Unggah revisi baru untuk usulan-usulan terkait</p>
                                                             </label>
-                                                            <template x-for="item in uploadTargetDetail.sharedDetails" :key="item.id">
-                                                                <label class="flex items-center justify-between gap-2 text-xs bg-white p-2 rounded border border-gray-200 hover:bg-slate-50 cursor-pointer">
-                                                                    <div class="flex items-center gap-2">
-                                                                        <input type="checkbox" :value="item.id" x-model="targetDetailIds" name="target_detail_ids[]" class="text-indigo-600 rounded focus:ring-indigo-500">
-                                                                        <span class="text-gray-800" x-text="item.label"></span>
-                                                                    </div>
-                                                                    <span class="text-[10px] text-gray-500 font-mono" x-text="item.nominal"></span>
+                                                            <label class="p-2.5 rounded-lg border text-left cursor-pointer transition-all bg-white"
+                                                                   :class="uploadMode === 'standalone' ? 'border-indigo-600 ring-2 ring-indigo-200 bg-indigo-50/40 shadow-2xs' : 'border-gray-200 hover:border-indigo-300'">
+                                                                <input type="radio" name="_mode_selector" value="standalone" x-model="uploadMode" class="sr-only">
+                                                                <div class="font-bold text-gray-900 text-xs">Pisahkan Dokumen</div>
+                                                                <p class="text-[10px] text-gray-500 mt-0.5">Khusus usulan ini saja, usulan lain tidak berubah</p>
+                                                            </label>
+                                                        </div>
+
+                                                        <!-- Checklist usulan yang ikut jika Perbarui Bersama -->
+                                                        <div x-show="uploadMode === 'shared_update'" class="pt-2 border-t border-indigo-100">
+                                                            <span class="block text-[11px] font-bold text-gray-700 mb-1.5">
+                                                                Pilih usulan yang ikut menggunakan berkas revisi baru:
+                                                            </span>
+                                                            <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                                                                <label class="flex items-center gap-2 text-xs bg-white p-2 rounded border border-gray-200">
+                                                                    <input type="checkbox" checked disabled class="text-indigo-600 rounded">
+                                                                    <span class="font-semibold text-gray-800" x-text="uploadTargetDetail.description + ' (Usulan ini)'"></span>
                                                                 </label>
+                                                                <template x-for="item in uploadTargetDetail.sharedDetails" :key="item.id">
+                                                                    <label class="flex items-center justify-between gap-2 text-xs bg-white p-2 rounded border border-gray-200 hover:bg-slate-50 cursor-pointer">
+                                                                        <div class="flex items-center gap-2">
+                                                                            <input type="checkbox" :value="item.id" x-model="targetDetailIds" name="target_detail_ids[]" class="text-indigo-600 rounded focus:ring-indigo-500">
+                                                                            <span class="text-gray-800" x-text="item.label"></span>
+                                                                        </div>
+                                                                        <span class="text-[10px] text-gray-500 font-mono" x-text="item.nominal"></span>
+                                                                    </label>
+                                                                </template>
+                                                            </div>
+                                                            <p class="text-[10px] text-gray-500 mt-1 italic">
+                                                                * Usulan yang tidak dicentang akan tetap berada pada versi dokumen sebelumnya.
+                                                            </p>
+                                                        </div>
+
+                                                        <!-- Input Dokumen Baru jika Pisahkan Dokumen -->
+                                                        <div x-show="uploadMode === 'standalone'" class="pt-2 border-t border-indigo-100">
+                                                            <label class="block text-[11px] font-bold text-gray-700 mb-1">
+                                                                Nama Dokumen Baru (Opsional):
+                                                            </label>
+                                                            <input type="text" name="document_name" placeholder="Contoh: Nota Dinas Khusus Pulpen..."
+                                                                   class="w-full text-xs border-gray-300 rounded-lg shadow-xs">
+                                                            <p class="text-[10px] text-gray-500 mt-1 italic">
+                                                                * Usulan ini akan terpisah mandiri dan memiliki riwayat tersendiri tanpa mengubah usulan lainnya.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Alert Khusus jika Over Pagu -->
+                                                <template x-if="uploadTargetDetail.isExceeding && !uploadTargetDetail.hasRevision">
+                                                    <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
+                                                        <span class="text-base">⚠️</span>
+                                                        <div class="leading-relaxed">
+                                                            <strong>Rincian ini melebihi pagu yang ditetapkan!</strong><br>
+                                                            Anda wajib mengunggah berkas PDF penyesuaian baru agar usulan ini dapat diajukan kembali ke Supervisor.
+                                                        </div>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Dropzone File Picker -->
+                                                <div>
+                                                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
+                                                        Pilih Berkas PDF Revisi Baru <span class="text-rose-500">*</span>
+                                                    </label>
+                                                    <div class="relative border-2 border-dashed border-gray-300 hover:border-indigo-400 rounded-xl p-6 text-center transition-colors bg-white hover:bg-slate-50/50 cursor-pointer"
+                                                         @click="$refs.fileInput.click()">
+                                                        <input type="file" name="attachment" x-ref="fileInput" accept=".pdf,application/pdf"
+                                                               :required="sourceMode === 'upload'" class="sr-only"
+                                                               @change="selectedFileName = $event.target.files[0] ? $event.target.files[0].name : ''">
+                                                        
+                                                        <div class="flex flex-col items-center">
+                                                            <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2 shadow-2xs">
+                                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                                </svg>
+                                                            </div>
+                                                            <template x-if="!selectedFileName">
+                                                                <div>
+                                                                    <span class="text-xs font-bold text-indigo-600 hover:text-indigo-700">Pilih berkas PDF</span>
+                                                                    <span class="text-xs text-gray-500"> atau seret ke sini</span>
+                                                                    <p class="text-[10px] text-gray-400 mt-1">Format PDF, Ukuran Maksimal 10 MB</p>
+                                                                </div>
+                                                            </template>
+                                                            <template x-if="selectedFileName">
+                                                                <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200">
+                                                                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                                    <span class="text-xs font-bold truncate max-w-[280px]" x-text="selectedFileName"></span>
+                                                                </div>
                                                             </template>
                                                         </div>
-                                                        <p class="text-[10px] text-gray-500 mt-1 italic">
-                                                            * Usulan yang tidak dicentang akan tetap berada pada versi dokumen sebelumnya.
-                                                        </p>
-                                                    </div>
-
-                                                    <!-- Input Dokumen Baru jika Pisahkan Dokumen -->
-                                                    <div x-show="uploadMode === 'standalone'" class="pt-2 border-t border-indigo-100">
-                                                        <label class="block text-[11px] font-bold text-gray-700 mb-1">
-                                                            Nama Dokumen Baru (Opsional):
-                                                        </label>
-                                                        <input type="text" name="document_name" placeholder="Contoh: Nota Dinas Khusus Pulpen..."
-                                                               class="w-full text-xs border-gray-300 rounded-lg shadow-xs">
-                                                        <p class="text-[10px] text-gray-500 mt-1 italic">
-                                                            * Usulan ini akan terpisah mandiri dan memiliki riwayat tersendiri tanpa mengubah usulan lainnya.
-                                                        </p>
                                                     </div>
                                                 </div>
-                                            </template>
 
-                                            <!-- Alert Khusus jika Over Pagu -->
-                                            <template x-if="uploadTargetDetail.isExceeding && !uploadTargetDetail.hasRevision">
-                                                <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
-                                                    <span class="text-base">⚠️</span>
-                                                    <div class="leading-relaxed">
-                                                        <strong>Rincian ini melebihi pagu yang ditetapkan!</strong><br>
-                                                        Anda wajib mengunggah berkas PDF penyesuaian baru agar usulan ini dapat diajukan kembali ke Supervisor.
-                                                    </div>
-                                                </div>
-                                            </template>
-
-                                            <!-- Dropzone File Picker -->
-                                            <div>
-                                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">
-                                                    Pilih Berkas PDF Revisi Baru <span class="text-rose-500">*</span>
-                                                </label>
-                                                <div class="relative border-2 border-dashed border-gray-300 hover:border-indigo-400 rounded-xl p-6 text-center transition-colors bg-white hover:bg-slate-50/50 cursor-pointer"
-                                                     @click="$refs.fileInput.click()">
-                                                    <input type="file" name="attachment" x-ref="fileInput" accept=".pdf,application/pdf" required class="sr-only"
-                                                           @change="selectedFileName = $event.target.files[0] ? $event.target.files[0].name : ''">
-                                                    
-                                                    <div class="flex flex-col items-center">
-                                                        <div class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mb-2 shadow-2xs">
-                                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                                            </svg>
-                                                        </div>
-                                                        <template x-if="!selectedFileName">
-                                                            <div>
-                                                                <span class="text-xs font-bold text-indigo-600 hover:text-indigo-700">Pilih berkas PDF</span>
-                                                                <span class="text-xs text-gray-500"> atau seret ke sini</span>
-                                                                <p class="text-[10px] text-gray-400 mt-1">Format PDF, Ukuran Maksimal 10 MB</p>
-                                                            </div>
-                                                        </template>
-                                                        <template x-if="selectedFileName">
-                                                            <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200">
-                                                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                                <span class="text-xs font-bold truncate max-w-[280px]" x-text="selectedFileName"></span>
-                                                            </div>
-                                                        </template>
-                                                    </div>
+                                                <div class="text-[11px] text-gray-400 italic">
+                                                    * Catatan: Mengunggah versi PDF baru akan otomatis mengatur ulang status usulan rincian ini menjadi <strong>Draft</strong> agar dapat ditinjau kembali sebelum diajukan.
                                                 </div>
                                             </div>
 
-                                            <div class="text-[11px] text-gray-400 italic">
-                                                * Catatan: Mengunggah versi PDF baru akan otomatis mengatur ulang status usulan rincian ini menjadi <strong>Draft</strong> agar dapat ditinjau kembali sebelum diajukan.
+                                            <!-- ================= MODE 2: PILIH DOKUMEN LAIN YANG ADA ================= -->
+                                            <div x-show="sourceMode === 'existing'" x-cloak class="space-y-3">
+                                                <div class="text-xs text-indigo-900 bg-indigo-50/80 p-3 rounded-xl border border-indigo-200 flex items-start gap-2">
+                                                    <span class="text-base">💡</span>
+                                                    <div class="leading-relaxed">
+                                                        Pilih dokumen PDF yang sudah pernah diunggah untuk pengajuan ini. Usulan belanja ini akan dialihkan ke dokumen tersebut tanpa perlu mengunggah ulang berkas fisik.
+                                                    </div>
+                                                </div>
+
+                                                <!-- Daftar Dokumen Eksisting Tersedia -->
+                                                <template x-if="availableExistingDocs.length > 0">
+                                                    <div class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                                                        <template x-for="doc in availableExistingDocs" :key="doc.id">
+                                                            <label class="relative flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer bg-white"
+                                                                   :class="selectedExistingDocId == doc.id ? 'border-indigo-600 bg-indigo-50/30 shadow-xs ring-1 ring-indigo-200' : 'border-gray-200 hover:border-indigo-300'">
+                                                                <div class="flex items-center gap-3">
+                                                                    <input type="radio" name="_existing_doc_radio" :value="doc.id"
+                                                                           x-model="selectedExistingDocId"
+                                                                           class="text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                                                                    <div>
+                                                                        <div class="flex items-center gap-2">
+                                                                            <span class="font-bold text-xs text-gray-900" x-text="doc.name"></span>
+                                                                            <span class="px-2 py-0.5 rounded text-[10px] font-black bg-sky-100 text-sky-800" x-text="doc.version"></span>
+                                                                        </div>
+                                                                        <div class="flex items-center gap-2 mt-0.5 text-[10px] text-gray-500">
+                                                                            <span x-text="'📁 ' + doc.filename"></span>
+                                                                            <span>•</span>
+                                                                            <span class="text-indigo-600 font-semibold" x-text="doc.details_count + ' usulan terikat'"></span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <template x-if="doc.file_url">
+                                                                    <a :href="doc.file_url" target="_blank" @click.stop
+                                                                       class="px-2.5 py-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg inline-flex items-center gap-1">
+                                                                        <span>Lihat PDF</span>
+                                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                                                    </a>
+                                                                </template>
+                                                            </label>
+                                                        </template>
+                                                    </div>
+                                                </template>
+
+                                                <!-- State saat tidak ada dokumen lain -->
+                                                <template x-if="availableExistingDocs.length === 0">
+                                                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center text-xs text-gray-500">
+                                                        <span class="text-xl block mb-1">📂</span>
+                                                        Belum ada dokumen PDF lain yang tersedia pada pengajuan ini.<br>
+                                                        Silakan gunakan opsi <strong>Unggah Berkas PDF Revisi</strong> di atas.
+                                                    </div>
+                                                </template>
+
+                                                <div class="text-[11px] text-gray-400 italic">
+                                                    * Catatan: Beralih ke dokumen eksisting akan otomatis mengatur ulang status usulan rincian ini menjadi <strong>Draft</strong> agar dapat diajukan kembali ke Supervisor.
+                                                </div>
                                             </div>
                                         </div>
 
@@ -765,13 +880,28 @@
                                                     class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-50 transition-all cursor-pointer">
                                                 Batal
                                             </button>
-                                            <button type="submit"
-                                                    :disabled="!selectedFileName"
-                                                    :class="!selectedFileName ? 'opacity-50 cursor-not-allowed bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700 shadow-sm hover:shadow-md cursor-pointer'"
-                                                    class="inline-flex items-center gap-1.5 px-5 py-2 text-white rounded-xl text-xs font-bold transition-all">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                                                <span>Simpan & Unggah PDF</span>
-                                            </button>
+                                            
+                                            <!-- Tombol Submit Mode Unggah Revisi -->
+                                            <template x-if="sourceMode === 'upload'">
+                                                <button type="submit"
+                                                        :disabled="!selectedFileName"
+                                                        :class="!selectedFileName ? 'opacity-50 cursor-not-allowed bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700 shadow-sm hover:shadow-md cursor-pointer'"
+                                                        class="inline-flex items-center gap-1.5 px-5 py-2 text-white rounded-xl text-xs font-bold transition-all">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                                    <span>Simpan & Unggah PDF</span>
+                                                </button>
+                                            </template>
+
+                                            <!-- Tombol Submit Mode Pilih Dokumen Eksisting -->
+                                            <template x-if="sourceMode === 'existing'">
+                                                <button type="submit"
+                                                        :disabled="!selectedExistingDocId"
+                                                        :class="!selectedExistingDocId ? 'opacity-50 cursor-not-allowed bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700 shadow-sm hover:shadow-md cursor-pointer'"
+                                                        class="inline-flex items-center gap-1.5 px-5 py-2 text-white rounded-xl text-xs font-bold transition-all">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                                                    <span>Ganti ke Dokumen Terpilih</span>
+                                                </button>
+                                            </template>
                                         </div>
                                     </form>
                                 </div>

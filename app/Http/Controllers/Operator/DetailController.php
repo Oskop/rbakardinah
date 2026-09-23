@@ -267,6 +267,46 @@ class DetailController extends Controller
 
     public function uploadVersion(Request $request, RbaDetail $detail)
     {
+        if ($detail->submission->unit_id !== Auth::user()->unit_id) {
+            abort(403);
+        }
+
+        Gate::authorize('uploadVersion', $detail);
+
+        // Opsi Baru: Beralih ke PDF eksisting tanpa upload file baru
+        if ($request->input('source_mode') === 'existing') {
+            $request->validate([
+                'rba_detail_document_id' => 'required|exists:rba_detail_documents,id',
+            ]);
+
+            $doc = RbaDetailDocument::where('rba_submission_id', $detail->rba_submission_id)
+                ->findOrFail($request->rba_detail_document_id);
+
+            if (!$doc->latestVersion) {
+                return back()->with('error', 'Dokumen yang dipilih tidak memiliki lampiran berkas.');
+            }
+
+            \DB::transaction(function () use ($detail, $doc) {
+                $detail->attachments()->sync([$doc->latestVersion->id]);
+
+                $detail->update([
+                    'is_validated' => false,
+                    'validated_at' => null,
+                    'validated_by' => null,
+                    'is_submitted' => false,
+                    'is_rejected' => false,
+                    'rejected_at' => null,
+                    'rejected_by' => null,
+                    'rejection_reason' => null,
+                ]);
+            });
+
+            $detail->submission->syncValidationStatus();
+
+            return back()->with('success', "Berhasil mengganti ke dokumen eksisting: '{$doc->document_name}' (V{$doc->latestVersion->version_number}). Status usulan kembali menjadi Draft.");
+        }
+
+        // Alur Lama: Unggah berkas revisi PDF fisik baru (100% UTUH)
         $request->validate([
             'attachment' => 'required|file|mimes:pdf|max:10240',
             'upload_mode' => 'nullable|in:standalone,shared_update',
@@ -274,12 +314,6 @@ class DetailController extends Controller
             'target_detail_ids' => 'nullable|array',
             'target_detail_ids.*' => 'integer|exists:rba_details,id',
         ]);
-
-        if ($detail->submission->unit_id !== Auth::user()->unit_id) {
-            abort(403);
-        }
-
-        Gate::authorize('uploadVersion', $detail);
 
         $uploadMode = $request->input('upload_mode', 'shared_update');
         $file = $request->file('attachment');

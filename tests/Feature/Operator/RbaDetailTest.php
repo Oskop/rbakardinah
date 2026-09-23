@@ -819,4 +819,102 @@ class RbaDetailTest extends TestCase
         $this->assertEquals($initialAttId, $freshDetail->latestAttachment()->id);
         $this->assertEquals('Dokumen Tetap', $freshDetail->document()->document_name);
     }
+
+    public function test_operator_can_switch_detail_to_existing_document_via_upload_version()
+    {
+        // 1. Buat usulan 1 dengan Dokumen A
+        $fileA = UploadedFile::fake()->create('doc_a.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Dokumen A',
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 10000,
+            'document_name' => 'Dokumen Sumber A',
+            'attachment' => $fileA,
+        ]);
+        $item1 = RbaDetail::where('description', 'Item Dokumen A')->first();
+        $docA = $item1->document();
+
+        // 2. Buat usulan 2 dengan Dokumen B
+        $fileB = UploadedFile::fake()->create('doc_b.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Dokumen B',
+            'volume' => 2,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 25000,
+            'document_name' => 'Dokumen Target B',
+            'attachment' => $fileB,
+        ]);
+        $item2 = RbaDetail::where('description', 'Item Dokumen B')->first();
+        $docB = $item2->document();
+
+        // 3. Alihkan Item 1 ke Dokumen B via route operator.details.upload-version
+        $response = $this->actingAs($this->operator)->post(route('operator.details.upload-version', $item1), [
+            'source_mode' => 'existing',
+            'rba_detail_document_id' => $docB->id,
+        ]);
+
+        $response->assertSessionHas('success');
+        $fresh1 = $item1->fresh();
+        $this->assertEquals($docB->id, $fresh1->document()->id);
+        $this->assertEquals('Dokumen Target B', $fresh1->document()->document_name);
+        $this->assertEquals($docB->latestVersion->id, $fresh1->latestAttachment()->id);
+        $this->assertFalse($fresh1->is_validated);
+        $this->assertFalse($fresh1->is_submitted);
+    }
+
+    public function test_switching_to_existing_document_resets_rejected_status_to_draft()
+    {
+        $file = UploadedFile::fake()->create('doc_awal.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Ditolak',
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 10000,
+            'document_name' => 'Dokumen Awal',
+            'attachment' => $file,
+        ]);
+        $item = RbaDetail::where('description', 'Item Ditolak')->first();
+
+        // Buat dokumen lain yang valid
+        $file2 = UploadedFile::fake()->create('doc_pengganti.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Lain',
+            'volume' => 2,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 20000,
+            'document_name' => 'Dokumen Pengganti',
+            'attachment' => $file2,
+        ]);
+        $itemOther = RbaDetail::where('description', 'Item Lain')->first();
+        $docReplacement = $itemOther->document();
+
+        // Tandai item sebagai ditolak
+        $item->update([
+            'is_submitted' => true,
+            'is_rejected' => true,
+            'rejection_reason' => 'Perbaiki berkas pendukung',
+        ]);
+
+        // Alihkan item ditolak ke dokumen pengganti
+        $res = $this->actingAs($this->operator)->post(route('operator.details.upload-version', $item), [
+            'source_mode' => 'existing',
+            'rba_detail_document_id' => $docReplacement->id,
+        ]);
+
+        $res->assertSessionHas('success');
+        $freshItem = $item->fresh();
+        $this->assertFalse($freshItem->is_rejected);
+        $this->assertNull($freshItem->rejection_reason);
+        $this->assertFalse($freshItem->is_submitted);
+        $this->assertEquals($docReplacement->id, $freshItem->document()->id);
+    }
 }

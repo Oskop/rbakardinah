@@ -136,7 +136,12 @@ class SubmissionController extends Controller
             ->where('user_id', '!=', Auth::id())
             ->get();
 
-        return view('operator.submissions.show', compact('submission', 'pagus', 'headerTotals', 'previousPagus', 'myBackground', 'otherOperatorBackgrounds', 'myDeskVerification', 'otherDeskVerifications'));
+        $existingDocuments = \App\Models\RbaDetailDocument::where('rba_submission_id', $submission->id)
+            ->with(['latestVersion.details.accountCode'])
+            ->orderByDesc('id')
+            ->get();
+
+        return view('operator.submissions.show', compact('submission', 'pagus', 'headerTotals', 'previousPagus', 'myBackground', 'otherOperatorBackgrounds', 'myDeskVerification', 'otherDeskVerifications', 'existingDocuments'));
     }
 
     public function submit(RbaSubmission $submission)
