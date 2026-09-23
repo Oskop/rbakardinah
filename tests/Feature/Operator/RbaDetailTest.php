@@ -695,4 +695,128 @@ class RbaDetailTest extends TestCase
         $this->assertDatabaseHas('rba_attachments', ['id' => $attachmentId]);
         $this->assertEquals($attachmentId, $itemB->fresh()->latestAttachment()->id);
     }
+
+    public function test_operator_can_edit_detail_and_upload_new_pdf_document()
+    {
+        $file1 = UploadedFile::fake()->create('dokumen_awal.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Awal',
+            'volume' => 5,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 10000,
+            'document_name' => 'Dokumen Lama Awal',
+            'attachment' => $file1,
+        ]);
+
+        $detail = RbaDetail::where('description', 'Item Awal')->first();
+        $this->assertEquals('Dokumen Lama Awal', $detail->document()->document_name);
+
+        // Edit dan unggah berkas PDF baru
+        $fileNew = UploadedFile::fake()->create('dokumen_baru_edit.pdf', 150);
+        $response = $this->actingAs($this->operator)->put(route('operator.details.update', $detail), [
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Awal Diperbarui',
+            'volume' => 8,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 12000,
+            'document_action' => 'new',
+            'document_name' => 'Dokumen Baru Pasca Edit',
+            'attachment' => $fileNew,
+        ]);
+
+        $response->assertRedirect(route('operator.submissions.show', $this->submission->id));
+        $response->assertSessionHas('success');
+
+        $freshDetail = $detail->fresh();
+        $this->assertEquals('Item Awal Diperbarui', $freshDetail->description);
+        $this->assertEquals(8, $freshDetail->volume);
+        $this->assertEquals('Dokumen Baru Pasca Edit', $freshDetail->document()->document_name);
+        $this->assertEquals('dokumen_baru_edit.pdf', $freshDetail->latestAttachment()->original_filename);
+        $this->assertFalse($freshDetail->is_submitted);
+        $this->assertFalse($freshDetail->is_validated);
+    }
+
+    public function test_operator_can_edit_detail_and_switch_to_existing_document()
+    {
+        // 1. Dokumen 1
+        $file1 = UploadedFile::fake()->create('doc1.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item 1',
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 10000,
+            'document_name' => 'Dokumen 1',
+            'attachment' => $file1,
+        ]);
+        $item1 = RbaDetail::where('description', 'Item 1')->first();
+
+        // 2. Dokumen 2
+        $file2 = UploadedFile::fake()->create('doc2.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item 2',
+            'volume' => 1,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 20000,
+            'document_name' => 'Dokumen 2 Target',
+            'attachment' => $file2,
+        ]);
+        $item2 = RbaDetail::where('description', 'Item 2')->first();
+        $doc2 = $item2->document();
+
+        // 3. Edit Item 1 beralih ke Dokumen 2
+        $response = $this->actingAs($this->operator)->put(route('operator.details.update', $item1), [
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item 1 Switch Doc',
+            'volume' => 2,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 10000,
+            'document_action' => 'existing',
+            'rba_detail_document_id' => $doc2->id,
+        ]);
+
+        $response->assertRedirect(route('operator.submissions.show', $this->submission->id));
+        $freshItem1 = $item1->fresh();
+        $this->assertEquals($doc2->id, $freshItem1->document()->id);
+        $this->assertEquals('Dokumen 2 Target', $freshItem1->document()->document_name);
+    }
+
+    public function test_operator_can_edit_detail_keeping_current_document()
+    {
+        $file = UploadedFile::fake()->create('doc_tetap.pdf', 100);
+        $this->actingAs($this->operator)->post(route('operator.details.store'), [
+            'rba_submission_id' => $this->submission->id,
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Tetap Doc',
+            'volume' => 3,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 15000,
+            'document_name' => 'Dokumen Tetap',
+            'attachment' => $file,
+        ]);
+        $detail = RbaDetail::where('description', 'Item Tetap Doc')->first();
+        $initialAttId = $detail->latestAttachment()->id;
+
+        // Edit tanpa mengubah dokumen (document_action = keep)
+        $response = $this->actingAs($this->operator)->put(route('operator.details.update', $detail), [
+            'account_code_id' => $this->accountCode->id,
+            'description' => 'Item Tetap Doc Diperbarui',
+            'volume' => 5,
+            'satuan' => 'Pcs',
+            'harga_satuan' => 15000,
+            'document_action' => 'keep',
+        ]);
+
+        $response->assertRedirect(route('operator.submissions.show', $this->submission->id));
+        $freshDetail = $detail->fresh();
+        $this->assertEquals('Item Tetap Doc Diperbarui', $freshDetail->description);
+        $this->assertEquals(5, $freshDetail->volume);
+        $this->assertEquals($initialAttId, $freshDetail->latestAttachment()->id);
+        $this->assertEquals('Dokumen Tetap', $freshDetail->document()->document_name);
+    }
 }
