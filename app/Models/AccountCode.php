@@ -32,4 +32,11 @@ class AccountCode extends Model
     {
         return $this->hasMany(RbaAccountPagu::class);
     }
+
+    public function subUnits(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(SubUnit::class, 'sub_unit_account_codes')
+                    ->withPivot(['fiscal_year', 'keterangan_khusus'])
+                    ->withTimestamps();
+    }
 }

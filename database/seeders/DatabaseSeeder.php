@@ -95,6 +95,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call(SubUnitSeeder::class);
+        $this->call(SubUnitAccountCodeSeeder::class);
 
         // // Admin User
         // User::factory()->create([

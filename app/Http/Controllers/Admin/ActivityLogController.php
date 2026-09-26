@@ -61,6 +61,7 @@ class ActivityLogController extends Controller
 
         // Available models for filter dropdown
         $availableModels = [
+            'SubUnitAccountCode' => 'Mapping Rekening ke Sub Unit',
             'RbaDetail' => 'Usulan RBA Detail',
             'RbaSubmission' => 'RBA Submission',
             'RbaAccountPagu' => 'Penetapan Pagu Rekening',

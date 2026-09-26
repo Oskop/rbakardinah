@@ -202,6 +202,17 @@ trait LogsActivity
             return "{$actor} mengunggah berkas Berita Acara Ditandatangani (Versi {$ver}){$subUnitText}";
         }
 
+        if ($modelName === 'SubUnitAccountCode') {
+            $subUnitName = $model->subUnit?->name ?? 'Sub Unit';
+            $accountCode = $model->accountCode?->code ?? '';
+            $accountName = $model->accountCode?->name ?? '';
+            $tahun = $model->fiscal_year ? " (Tahun {$model->fiscal_year})" : '';
+            if ($accountCode) {
+                return "{$actor} {$actionVerb} mapping rekening [{$accountCode}] {$accountName} ke {$subUnitName}{$tahun}";
+            }
+            return "{$actor} {$actionVerb} mapping rekening ke {$subUnitName}{$tahun}";
+        }
+
         return "{$actor} {$actionVerb} data {$modelName} #{$key}";
     }
 }

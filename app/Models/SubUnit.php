@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Traits\LogsActivity;
 
@@ -42,6 +43,16 @@ class SubUnit extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * Get the account codes assigned to this sub-unit.
+     */
+    public function accountCodes(): BelongsToMany
+    {
+        return $this->belongsToMany(AccountCode::class, 'sub_unit_account_codes')
+                    ->withPivot(['fiscal_year', 'keterangan_khusus'])
+                    ->withTimestamps();
     }
 
     /**
