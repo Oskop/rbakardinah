@@ -22,7 +22,7 @@
     </x-slot>
 
     <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class="w-full mx-auto sm:px-6 lg:px-8 space-y-6">
 
             <!-- Alerts -->
             @if (session('success'))
@@ -222,7 +222,12 @@
                                         <td class="px-4 py-3.5 whitespace-nowrap text-right text-xs font-medium">
                                             <div class="flex items-center justify-end gap-1.5">
                                                 <button type="button" 
-                                                    onclick="openEditModal({{ $item->id }}, {{ $item->sub_unit_id }}, {{ $item->account_code_id }}, '{{ addslashes($item->fiscal_year) }}', '{{ addslashes($item->keterangan_khusus ?? '') }}')"
+                                                    onclick="openEditModal(this)"
+                                                    data-id="{{ $item->id }}"
+                                                    data-sub-unit-id="{{ $item->sub_unit_id }}"
+                                                    data-account-code-id="{{ $item->account_code_id }}"
+                                                    data-year="{{ $item->fiscal_year }}"
+                                                    data-keterangan="{{ $item->keterangan_khusus ?? '' }}"
                                                     class="inline-flex items-center p-1.5 bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
                                                     title="Edit Mapping">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -475,100 +480,145 @@
         </div>
     </div>
 
+    @push('styles')
+        <link rel="stylesheet" href="https://cdn.datatables.net/2.0.3/css/dataTables.tailwindcss.css">
+        <style>
+            /* Custom minimalist DataTables styling */
+            div.dt-container div.dt-layout-row {
+                margin-bottom: 0.75rem;
+            }
+        </style>
+    @endpush
+
     @push('scripts')
-    <script>
-        $(document).ready(function() {
-            var table = $('#mapping-table').DataTable({
-                responsive: true,
-                language: {
-                    search: "Cari Rekening / Sub-Unit:",
-                    lengthMenu: "Tampilkan _MENU_ data",
-                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ mapping",
-                    infoEmpty: "Menampilkan 0 data",
-                    infoFiltered: "(disaring dari _MAX_ total mapping)",
-                    zeroRecords: "Tidak ada data mapping yang sesuai kriteria pencarian",
-                    paginate: {
-                        first: "Pertama",
-                        last: "Terakhir",
-                        next: "Selanjutnya",
-                        previous: "Sebelumnya"
-                    }
-                },
-                columnDefs: [
-                    { orderable: false, targets: [7] }
-                ]
-            });
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.datatables.net/2.0.3/js/dataTables.js"></script>
+        <script src="https://cdn.datatables.net/2.0.3/js/dataTables.tailwindcss.js"></script>
+        <script>
+            // Global Vanilla JS functions for modals (always available, no external library dependency)
+            function openCreateModal() {
+                var modal = document.getElementById('modal-create');
+                if (modal) modal.classList.remove('hidden');
+            }
 
-            // Filter Sub Unit (Kolom index 1)
-            $('#filter-subunit').on('change', function() {
-                table.column(1).search(this.value ? '^' + this.value + '$' : '', true, false).draw();
-            });
+            function closeCreateModal() {
+                var modal = document.getElementById('modal-create');
+                if (modal) modal.classList.add('hidden');
+            }
 
-            // Filter Kelompok Belanja (Kolom index 4)
-            $('#filter-kelompok').on('change', function() {
-                table.column(4).search(this.value ? '^' + this.value + '$' : '', true, false).draw();
-            });
+            function openBulkModal() {
+                var modal = document.getElementById('modal-bulk');
+                if (modal) modal.classList.remove('hidden');
+            }
 
-            // Filter Tahun (Kolom index 6)
-            $('#filter-year').on('change', function() {
-                table.column(6).search(this.value ? '^' + this.value + '$' : '', true, false).draw();
-            });
+            function closeBulkModal() {
+                var modal = document.getElementById('modal-bulk');
+                if (modal) modal.classList.add('hidden');
+            }
 
-            // Reset Button
-            $('#btn-reset-filters').on('click', function() {
-                $('#filter-subunit').val('');
-                $('#filter-kelompok').val('');
-                $('#filter-year').val('');
-                table.columns().search('').draw();
-            });
+            function toggleSelectAllBulk(select) {
+                var container = document.getElementById('bulk-checkbox-container');
+                if (container) {
+                    var items = container.querySelectorAll('.bulk-account-item');
+                    items.forEach(function(item) {
+                        if (item.style.display !== 'none') {
+                            var cb = item.querySelector('input[type="checkbox"]');
+                            if (cb) cb.checked = select;
+                        }
+                    });
+                }
+            }
 
-            // Quick search in Bulk modal
-            $('#bulk-search-box').on('keyup', function() {
-                var q = $(this).val().toLowerCase();
-                $('.bulk-account-item').each(function() {
-                    var text = $(this).data('text');
-                    if (text.indexOf(q) !== -1) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
+            function openEditModal(button) {
+                var id = button.getAttribute('data-id');
+                var subUnitId = button.getAttribute('data-sub-unit-id');
+                var accountCodeId = button.getAttribute('data-account-code-id');
+                var year = button.getAttribute('data-year');
+                var ket = button.getAttribute('data-keterangan');
+
+                var form = document.getElementById('form-edit-mapping');
+                if (form) {
+                    form.action = "{{ url('admin/sub-unit-account-codes') }}/" + id;
+                }
+                var subUnitEl = document.getElementById('edit-sub-unit-id');
+                if (subUnitEl) subUnitEl.value = subUnitId;
+
+                var accountCodeEl = document.getElementById('edit-account-code-id');
+                if (accountCodeEl) accountCodeEl.value = accountCodeId;
+
+                var yearEl = document.getElementById('edit-fiscal-year');
+                if (yearEl) yearEl.value = year;
+
+                var ketEl = document.getElementById('edit-keterangan-khusus');
+                if (ketEl) ketEl.value = ket || '';
+
+                var modal = document.getElementById('modal-edit');
+                if (modal) modal.classList.remove('hidden');
+            }
+
+            function closeEditModal() {
+                var modal = document.getElementById('modal-edit');
+                if (modal) modal.classList.add('hidden');
+            }
+
+            $(document).ready(function() {
+                var table = $('#mapping-table').DataTable({
+                    responsive: true,
+                    language: {
+                        search: "Cari Rekening / Sub-Unit:",
+                        lengthMenu: "Tampilkan _MENU_ data",
+                        info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ mapping",
+                        infoEmpty: "Menampilkan 0 data",
+                        infoFiltered: "(disaring dari _MAX_ total mapping)",
+                        zeroRecords: "Tidak ada data mapping yang sesuai kriteria pencarian",
+                        paginate: {
+                            first: "Pertama",
+                            last: "Terakhir",
+                            next: "Selanjutnya",
+                            previous: "Sebelumnya"
+                        }
+                    },
+                    columnDefs: [
+                        { orderable: false, targets: [7] }
+                    ]
+                });
+
+                // Filter Sub Unit (Kolom index 1)
+                $('#filter-subunit').on('change', function() {
+                    table.column(1).search(this.value ? '^' + this.value + '$' : '', true, false).draw();
+                });
+
+                // Filter Kelompok Belanja (Kolom index 4)
+                $('#filter-kelompok').on('change', function() {
+                    table.column(4).search(this.value ? '^' + this.value + '$' : '', true, false).draw();
+                });
+
+                // Filter Tahun (Kolom index 6)
+                $('#filter-year').on('change', function() {
+                    table.column(6).search(this.value ? '^' + this.value + '$' : '', true, false).draw();
+                });
+
+                // Reset Button
+                $('#btn-reset-filters').on('click', function() {
+                    $('#filter-subunit').val('');
+                    $('#filter-kelompok').val('');
+                    $('#filter-year').val('');
+                    table.columns().search('').draw();
+                });
+
+                // Quick search in Bulk modal
+                $('#bulk-search-box').on('keyup', function() {
+                    var q = $(this).val().toLowerCase();
+                    $('.bulk-account-item').each(function() {
+                        var text = $(this).data('text');
+                        if (text.indexOf(q) !== -1) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                    });
                 });
             });
-        });
-
-        function openCreateModal() {
-            $('#modal-create').removeClass('hidden');
-        }
-
-        function closeCreateModal() {
-            $('#modal-create').addClass('hidden');
-        }
-
-        function openBulkModal() {
-            $('#modal-bulk').removeClass('hidden');
-        }
-
-        function closeBulkModal() {
-            $('#modal-bulk').addClass('hidden');
-        }
-
-        function toggleSelectAllBulk(select) {
-            $('.bulk-account-item:visible input[type="checkbox"]').prop('checked', select);
-        }
-
-        function openEditModal(id, subUnitId, accountCodeId, year, ket) {
-            var url = "{{ url('admin/sub-unit-account-codes') }}/" + id;
-            $('#form-edit-mapping').attr('action', url);
-            $('#edit-sub-unit-id').val(subUnitId);
-            $('#edit-account-code-id').val(accountCodeId);
-            $('#edit-fiscal-year').val(year);
-            $('#edit-keterangan-khusus').val(ket);
-            $('#modal-edit').removeClass('hidden');
-        }
-
-        function closeEditModal() {
-            $('#modal-edit').addClass('hidden');
-        }
-    </script>
+        </script>
     @endpush
 </x-app-layout>
