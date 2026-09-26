@@ -464,9 +464,20 @@ class RbaHeaderController extends Controller
         }
         $filterLabel = implode(' | ', $filterLabels);
 
+        $sortBy = $request->get('sort_by', 'account_code');
+        $sortDir = strtolower($request->get('sort_dir', 'asc'));
+        if (!in_array($sortDir, ['asc', 'desc'])) {
+            $sortDir = 'asc';
+        }
+
+        $sortingService = app(\App\Services\ReportSortingService::class);
+        $details = $sortingService->sortDetails($details, $sortBy, $sortDir, $previousPagus);
+        $sortLabel = $sortingService->getSortLabel($sortBy, $sortDir);
+
         return view('reports.admin_rba_print', compact(
             'header', 'details', 'includeBackground', 'previousPagus',
-            'units', 'allOperators', 'selectedUnitIds', 'selectedOperatorIds', 'filterLabel'
+            'units', 'allOperators', 'selectedUnitIds', 'selectedOperatorIds', 'filterLabel',
+            'sortBy', 'sortDir', 'sortLabel'
         ));
     }
 
@@ -572,9 +583,22 @@ class RbaHeaderController extends Controller
 
         $grouping = in_array($request->get('grouping'), ['account', 'flat']) ? $request->get('grouping') : 'account';
 
+        $sortBy = $request->get('sort_by', 'account_code');
+        $sortDir = strtolower($request->get('sort_dir', 'asc'));
+        if (!in_array($sortDir, ['asc', 'desc'])) {
+            $sortDir = 'asc';
+        }
+
+        $sortingService = app(\App\Services\ReportSortingService::class);
+        $details = $sortingService->sortDetails($details, $sortBy, $sortDir, $pagus);
+        $detailsByAccount = $details->groupBy('account_code_id');
+        $reportAccountCodes = $sortingService->sortAccountCodes($reportAccountCodes, $detailsByAccount, $sortBy, $sortDir, $pagus);
+        $sortLabel = $sortingService->getSortLabel($sortBy, $sortDir);
+
         return view('reports.admin_rba_final_print', compact(
             'header', 'submissions', 'details', 'pagus', 'includeBackground', 'previousPagus',
-            'units', 'allOperators', 'selectedUnitIds', 'selectedOperatorIds', 'filterLabel', 'reportAccountCodes', 'grouping'
+            'units', 'allOperators', 'selectedUnitIds', 'selectedOperatorIds', 'filterLabel', 'reportAccountCodes', 'grouping',
+            'sortBy', 'sortDir', 'sortLabel'
         ));
     }
 }

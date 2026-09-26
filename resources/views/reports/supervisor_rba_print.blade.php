@@ -406,7 +406,14 @@
         @endif
 
         <!-- Section II / I: Tabel Rincian Belanja -->
-        <div class="section-header">{{ $sectionIndex++ }}. RINCIAN BELANJA USULAN (TAMPILAN SUPERVISOR)</div>
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span>{{ $sectionIndex++ }}. RINCIAN BELANJA USULAN (TAMPILAN SUPERVISOR)</span>
+            @if(isset($sortLabel))
+                <span style="font-size: 9px; font-weight: 600; color: #475569; text-transform: none; letter-spacing: normal;">
+                    Urutan Data: {{ $sortLabel }}
+                </span>
+            @endif
+        </div>
 
         <table class="data-table">
             <thead>

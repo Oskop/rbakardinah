@@ -405,7 +405,14 @@
     @endif
 
     <!-- Section II: Tabel Rincian Belanja & Pagu Final Administrator -->
-    <div class="section-title">{{ ($includeBackground && isset($backgroundSubmissions) && $backgroundSubmissions->count() > 0) ? 'II.' : 'I.' }} RINCIAN BELANJA DAN PAGU FINAL {{ ($grouping ?? 'account') === 'flat' ? '(FORMAT PER BARIS USULAN / FLAT)' : '(RBA FINAL)' }}</div>
+    <div class="section-title" style="display: flex; justify-content: space-between; align-items: baseline;">
+        <span>{{ ($includeBackground && isset($backgroundSubmissions) && $backgroundSubmissions->count() > 0) ? 'II.' : 'I.' }} RINCIAN BELANJA DAN PAGU FINAL {{ ($grouping ?? 'account') === 'flat' ? '(FORMAT PER BARIS USULAN / FLAT)' : '(RBA FINAL)' }}</span>
+        @if(isset($sortLabel))
+            <span style="font-size: 9px; font-weight: 600; color: #475569; text-transform: none; letter-spacing: normal;">
+                Urutan Data: {{ $sortLabel }}
+            </span>
+        @endif
+    </div>
 
     @if(($grouping ?? 'account') === 'flat')
     <!-- ================= FORMAT FLAT / PER BARIS USULAN ================= -->
@@ -519,9 +526,16 @@
     <!-- ================= FORMAT GROUPED / TERKELOMPOK REKENING ================= -->
     @php
         $detailsByAccount = $details->groupBy('account_code_id');
-        $accountsToRender = isset($reportAccountCodes) && $reportAccountCodes->isNotEmpty() 
+        $rawAccounts = isset($reportAccountCodes) && $reportAccountCodes->isNotEmpty() 
             ? $reportAccountCodes 
             : \App\Models\AccountCode::whereIn('id', array_keys($detailsByAccount->toArray()))->orderBy('code')->get();
+        $accountsToRender = app(\App\Services\ReportSortingService::class)->sortAccountCodes(
+            $rawAccounts,
+            $detailsByAccount,
+            $sortBy ?? 'account_code',
+            $sortDir ?? 'asc',
+            $pagus ?? null
+        );
         $grandTotalUsulan = 0;
         $grandTotalPaguFinal = 0;
         $counter = 1;

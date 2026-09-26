@@ -410,7 +410,14 @@
         @endif
 
         <!-- Section II / I: Tabel Rincian Belanja & Pagu Final -->
-        <div class="section-header">{{ $sectionIndex++ }}. RINCIAN BELANJA DAN PAGU FINAL {{ ($grouping ?? 'account') === 'flat' ? '(FORMAT PER BARIS USULAN / FLAT)' : '(FORMAT TERKELOMPOK REKENING)' }}</div>
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span>{{ $sectionIndex++ }}. RINCIAN BELANJA DAN PAGU FINAL {{ ($grouping ?? 'account') === 'flat' ? '(FORMAT PER BARIS USULAN / FLAT)' : '(FORMAT TERKELOMPOK REKENING)' }}</span>
+            @if(isset($sortLabel))
+                <span style="font-size: 9px; font-weight: 600; color: #475569; text-transform: none; letter-spacing: normal;">
+                    Urutan Data: {{ $sortLabel }}
+                </span>
+            @endif
+        </div>
 
         @if(($grouping ?? 'account') === 'flat')
         <!-- ================= FORMAT FLAT / PER BARIS USULAN ================= -->
@@ -511,7 +518,13 @@
         @else
         <!-- ================= FORMAT GROUPED / TERKELOMPOK REKENING ================= -->
         @php
-            $groupedDetails = $submission->details->groupBy('account_code_id');
+            $rawGrouped = $submission->details->groupBy('account_code_id');
+            $groupedDetails = app(\App\Services\ReportSortingService::class)->sortGroupedDetails(
+                $rawGrouped,
+                $sortBy ?? 'account_code',
+                $sortDir ?? 'asc',
+                $pagus ?? null
+            );
             $grandTotalUsulan = 0;
             $grandTotalPaguFinal = 0;
             $grandTotalAwal = 0;

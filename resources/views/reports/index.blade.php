@@ -33,6 +33,8 @@
             operatorScope: 'all',
             selectedUnits: [],
             selectedOperators: [],
+            sortBy: 'account_code',
+            sortDir: 'asc',
 
             getActionUrl() {
                 if (!this.selectedId) return '#';
@@ -284,10 +286,49 @@
                                 </div>
                             </div>
 
+                            <!-- Opsi Pengurutan Kolom (Sort By) -->
+                            <div class="p-4 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                        <span x-show="printType === 'final'">D.</span><span x-show="printType !== 'final'">C.</span> Pengurutan Kolom Laporan (Sort By)
+                                    </label>
+                                    <span class="text-[11px] text-gray-500 font-medium">Bawaan: Nomor Rekening (Menaik)</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-[11px] text-gray-500 font-semibold mb-1">Kolom Acuan</label>
+                                        <select name="sort_by" x-model="sortBy" class="w-full text-xs rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-2 bg-white">
+                                            <option value="account_code">🔢 Nomor Rekening Belanja (Default)</option>
+                                            <option value="account_name">🔤 Nama Rekening Belanja</option>
+                                            <option value="description">📝 Uraian & Spesifikasi Belanja</option>
+                                            <option value="nominal_request">💰 Total Usulan Belanja (Rp)</option>
+                                            <template x-if="printType === 'final'">
+                                                <option value="pagu_final">🏷️ Nominal Pagu Final (Rp)</option>
+                                            </template>
+                                            <option value="harga_satuan">💵 Harga Satuan (Rp)</option>
+                                            <option value="volume">📦 Volume Belanja</option>
+                                            @if(in_array($role, ['Supervisor', 'Administrator']))
+                                                <option value="operator">👤 Operator Penyusun</option>
+                                            @endif
+                                            @if($role === 'Administrator')
+                                                <option value="unit">🏢 Unit Kerja</option>
+                                            @endif
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] text-gray-500 font-semibold mb-1">Arah Urutan</label>
+                                        <select name="sort_dir" x-model="sortDir" class="w-full text-xs rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-2 bg-white">
+                                            <option value="asc">⬆️ Menaik (A-Z / 0-9)</option>
+                                            <option value="desc">⬇️ Menurun (Z-A / 9-0)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- 3. Scope & Filter (Disesuaikan menurut Role) -->
                             <div>
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2.5">
-                                    <span x-show="printType === 'final'">D.</span><span x-show="printType !== 'final'">C.</span> Filter Cakupan Data (Scope)
+                                    <span x-show="printType === 'final'">E.</span><span x-show="printType !== 'final'">D.</span> Filter Cakupan Data (Scope)
                                 </label>
 
                                 @if($role === 'Administrator')

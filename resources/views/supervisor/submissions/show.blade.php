@@ -4,7 +4,7 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Review Usulan RBA') }} - {{ $submission->header->year }} ({{ $submission->header->period->name }})
             </h2>
-            <div class="flex space-x-2 items-center" x-data="{ openPrintModal: false, printType: 'usulan', grouping: 'account', operatorScope: 'all', selectedOperators: [] }">
+            <div class="flex space-x-2 items-center" x-data="{ openPrintModal: false, printType: 'usulan', grouping: 'account', operatorScope: 'all', selectedOperators: [], sortBy: 'account_code', sortDir: 'asc' }">
                 <!-- Button Trigger Cetak Rincian -->
                 <button @click="openPrintModal = true" type="button"
                     class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded text-sm inline-flex items-center gap-1.5 shadow-sm transition-all">
@@ -119,9 +119,41 @@
                                         </div>
                                     </div>
 
-                                    <!-- 3. Opsi Filter Operator -->
+                                    <!-- 3. Opsi Pengurutan Kolom -->
+                                    <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                                        <div class="flex items-center justify-between">
+                                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                                3. Pengurutan Kolom Laporan (Sort By)
+                                            </label>
+                                            <span class="text-[10px] text-gray-500 font-medium">Bawaan: Nomor Rekening</span>
+                                        </div>
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <div class="col-span-2">
+                                                <select name="sort_by" x-model="sortBy" class="w-full text-xs rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1.5 bg-white">
+                                                    <option value="account_code">🔢 Nomor Rekening Belanja (Default)</option>
+                                                    <option value="account_name">🔤 Nama Rekening Belanja</option>
+                                                    <option value="description">📝 Uraian & Spesifikasi Belanja</option>
+                                                    <option value="nominal_request">💰 Total Usulan Belanja (Rp)</option>
+                                                    <template x-if="printType === 'final'">
+                                                        <option value="pagu_final">🏷️ Nominal Pagu Final (Rp)</option>
+                                                    </template>
+                                                    <option value="harga_satuan">💵 Harga Satuan (Rp)</option>
+                                                    <option value="volume">📦 Volume Belanja</option>
+                                                    <option value="operator">👤 Operator Penyusun</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <select name="sort_dir" x-model="sortDir" class="w-full text-xs rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1.5 bg-white">
+                                                    <option value="asc">⬆️ Menaik (A-Z / 0-9)</option>
+                                                    <option value="desc">⬇️ Menurun (Z-A / 9-0)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 4. Opsi Filter Operator -->
                                     <div>
-                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">3. Filter Operator Penyusun</label>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">4. Filter Operator Penyusun</label>
                                         <div class="space-y-2 mb-3">
                                             <label class="flex items-center gap-2 text-xs font-semibold text-gray-800 cursor-pointer">
                                                 <input type="radio" x-model="operatorScope" value="all" class="text-emerald-600 focus:ring-emerald-500">

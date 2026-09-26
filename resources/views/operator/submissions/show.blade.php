@@ -4,7 +4,7 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Workboard RBA') }} - {{ $submission->header->year }} ({{ $submission->header->period->name }})
             </h2>
-            <div class="flex space-x-2 items-center" x-data="{ openPrint: false }">
+            <div class="flex space-x-2 items-center" x-data="{ openPrint: false, openPrintModal: false, printType: 'usulan', grouping: 'account', sortBy: 'account_code', sortDir: 'asc' }">
                 <!-- Dropdown Cetak RBA -->
                 <div class="relative">
                     <button @click="openPrint = !openPrint" @click.away="openPrint = false" type="button"
@@ -21,6 +21,18 @@
                         class="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 z-50 py-2 divide-y divide-gray-100"
                         style="display: none;">
                         
+                        <!-- Pilihan Kustomisasi Cetak (Buka Modal) -->
+                        <div class="p-2 border-b border-gray-100 bg-slate-50/80 rounded-t-xl">
+                            <button type="button" @click="openPrint = false; openPrintModal = true"
+                                class="w-full text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 py-1.5 px-2.5 rounded-lg flex items-center justify-between transition-colors shadow-2xs cursor-pointer">
+                                <span class="flex items-center gap-1.5">
+                                    <span>⚙️</span>
+                                    <span>Kustomisasi Urutan Kolom...</span>
+                                </span>
+                                <span class="text-[10px] bg-indigo-200 text-indigo-900 px-1 py-0.5 rounded font-mono">PILIH</span>
+                            </button>
+                        </div>
+
                         <!-- Kategori 1: Usulan Rincian Belanja -->
                         <div class="px-3 py-2">
                             <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">1. Usulan Rincian Belanja</div>
@@ -78,6 +90,134 @@
                                 </span>
                                 <span class="transform group-hover:translate-x-0.5 transition-transform">&rarr;</span>
                             </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Konfigurasi Cetak Operator -->
+                <div x-show="openPrintModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+                    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                        <div x-show="openPrintModal" x-transition.opacity class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" @click="openPrintModal = false"></div>
+
+                        <div x-show="openPrintModal" x-transition:enter="ease-out duration-300"
+                            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                            class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-gray-100">
+                            
+                            <form :action="printType === 'final' ? '{{ route('operator.submissions.print-preview-final', $submission->id) }}' : '{{ route('operator.submissions.print-preview', $submission->id) }}'" method="GET" target="_blank" @submit="openPrintModal = false">
+                                <div class="bg-gradient-to-r from-slate-900 to-slate-800 px-6 py-4 flex items-center justify-between text-white">
+                                    <h3 class="text-base font-bold flex items-center gap-2">
+                                        <span>🖨️ Opsi Konfigurasi Cetak Operator</span>
+                                    </h3>
+                                    <button type="button" @click="openPrintModal = false" class="text-gray-400 hover:text-white font-bold text-xl cursor-pointer">&times;</button>
+                                </div>
+
+                                <div class="p-6 space-y-4">
+                                    <!-- 1. Jenis Dokumen Laporan -->
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">1. Jenis Dokumen Laporan</label>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <label :class="printType === 'usulan' ? 'border-emerald-500 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-500/20' : 'border-gray-200 bg-slate-50 text-gray-700 hover:border-emerald-300'" class="flex flex-col gap-1 p-3 rounded-xl border cursor-pointer transition-all">
+                                                <div class="flex items-center gap-2">
+                                                    <input type="radio" x-model="printType" value="usulan" class="text-emerald-600 focus:ring-emerald-500">
+                                                    <span class="text-xs font-bold">Usulan Rincian Belanja</span>
+                                                </div>
+                                                <span class="text-[10px] text-gray-500 pl-5">Format usulan standar tanpa kolom Pagu Final.</span>
+                                            </label>
+                                            <label :class="printType === 'final' ? 'border-indigo-500 bg-indigo-50 text-indigo-900 ring-2 ring-indigo-500/20' : 'border-gray-200 bg-slate-50 text-gray-700 hover:border-indigo-300'" class="flex flex-col gap-1 p-3 rounded-xl border cursor-pointer transition-all">
+                                                <div class="flex items-center gap-2">
+                                                    <input type="radio" x-model="printType" value="final" class="text-indigo-600 focus:ring-indigo-500">
+                                                    <span class="text-xs font-bold text-indigo-900">Rincian Belanja & Pagu (RBA Final)</span>
+                                                </div>
+                                                <span class="text-[10px] text-gray-500 pl-5">Format RBA Final bersandingan dengan nominal Pagu.</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- 1.5. Opsi Format Rekening (Hanya jika printType === 'final') -->
+                                    <div x-show="printType === 'final'" x-transition class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                                        <label class="block text-xs font-bold text-indigo-950 uppercase tracking-wider mb-2">
+                                            Format Tata Letak Rekening RBA Final
+                                        </label>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <label class="flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer transition"
+                                                :class="grouping === 'account' ? 'border-indigo-500 bg-white shadow-xs text-indigo-950 font-bold' : 'border-gray-200 bg-white/60 text-gray-700'">
+                                                <input type="radio" name="grouping" value="account" x-model="grouping" class="text-indigo-600 focus:ring-indigo-500 mt-0.5">
+                                                <div>
+                                                    <div class="text-xs font-bold">Terkelompok Rekening</div>
+                                                    <div class="text-[9.5px] text-gray-500 font-normal">Dikelompokkan per akun dengan subtotal.</div>
+                                                </div>
+                                            </label>
+                                            <label class="flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer transition"
+                                                :class="grouping === 'flat' ? 'border-indigo-500 bg-white shadow-xs text-indigo-950 font-bold' : 'border-gray-200 bg-white/60 text-gray-700'">
+                                                <input type="radio" name="grouping" value="flat" x-model="grouping" class="text-indigo-600 focus:ring-indigo-500 mt-0.5">
+                                                <div>
+                                                    <div class="text-xs font-bold">Per Baris Usulan (Flat)</div>
+                                                    <div class="text-[9.5px] text-gray-500 font-normal">Satu baris per usulan, kode & nama rekening terulang.</div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- 2. Opsi Latar Belakang -->
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">2. Latar Belakang Sub-Unit</label>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 hover:border-emerald-500 cursor-pointer bg-slate-50 text-xs font-semibold text-gray-700">
+                                                <input type="radio" name="include_background" value="1" checked class="text-emerald-600 focus:ring-emerald-500">
+                                                <span>Dengan Latar Belakang</span>
+                                            </label>
+                                            <label class="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 hover:border-emerald-500 cursor-pointer bg-slate-50 text-xs font-semibold text-gray-700">
+                                                <input type="radio" name="include_background" value="0" class="text-emerald-600 focus:ring-emerald-500">
+                                                <span>Tanpa Latar Belakang</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- 3. Opsi Pengurutan Kolom -->
+                                    <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                                        <div class="flex items-center justify-between">
+                                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                                3. Pengurutan Kolom Laporan (Sort By)
+                                            </label>
+                                            <span class="text-[10px] text-gray-500 font-medium">Bawaan: Nomor Rekening</span>
+                                        </div>
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <div class="col-span-2">
+                                                <select name="sort_by" x-model="sortBy" class="w-full text-xs rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1.5 bg-white">
+                                                    <option value="account_code">🔢 Nomor Rekening Belanja (Default)</option>
+                                                    <option value="account_name">🔤 Nama Rekening Belanja</option>
+                                                    <option value="description">📝 Uraian & Spesifikasi Belanja</option>
+                                                    <option value="nominal_request">💰 Total Usulan Belanja (Rp)</option>
+                                                    <template x-if="printType === 'final'">
+                                                        <option value="pagu_final">🏷️ Nominal Pagu Final (Rp)</option>
+                                                    </template>
+                                                    <option value="harga_satuan">💵 Harga Satuan (Rp)</option>
+                                                    <option value="volume">📦 Volume Belanja</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <select name="sort_dir" x-model="sortDir" class="w-full text-xs rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 py-1.5 bg-white">
+                                                    <option value="asc">⬆️ Menaik (A-Z / 0-9)</option>
+                                                    <option value="desc">⬇️ Menurun (Z-A / 9-0)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-gray-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t border-gray-100">
+                                    <button type="button" @click="openPrintModal = false"
+                                        class="px-4 py-2 border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-100 cursor-pointer">
+                                        Batal
+                                    </button>
+                                    <button type="submit"
+                                        class="px-5 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center gap-1.5">
+                                        <span>🖨️</span>
+                                        <span>Buka Dokumen Cetak</span>
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>

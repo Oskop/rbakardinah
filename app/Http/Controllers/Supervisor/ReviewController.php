@@ -176,7 +176,18 @@ class ReviewController extends Controller
             $operatorFilterLabel = implode(', ', $filteredOperatorNames);
         }
 
-        return view('reports.supervisor_rba_print', compact('submission', 'filteredBackground', 'includeBackground', 'previousPagus', 'allOperators', 'selectedOperatorIds', 'operatorFilterLabel'));
+        $sortBy = $request->get('sort_by', 'account_code');
+        $sortDir = strtolower($request->get('sort_dir', 'asc'));
+        if (!in_array($sortDir, ['asc', 'desc'])) {
+            $sortDir = 'asc';
+        }
+
+        $sortingService = app(\App\Services\ReportSortingService::class);
+        $sortedDetails = $sortingService->sortDetails($submission->details, $sortBy, $sortDir, $previousPagus);
+        $submission->setRelation('details', $sortedDetails);
+        $sortLabel = $sortingService->getSortLabel($sortBy, $sortDir);
+
+        return view('reports.supervisor_rba_print', compact('submission', 'filteredBackground', 'includeBackground', 'previousPagus', 'allOperators', 'selectedOperatorIds', 'operatorFilterLabel', 'sortBy', 'sortDir', 'sortLabel'));
     }
 
     public function printPreviewFinal(Request $request, RbaSubmission $submission)
@@ -258,7 +269,18 @@ class ReviewController extends Controller
 
         $grouping = in_array($request->get('grouping'), ['account', 'flat']) ? $request->get('grouping') : 'account';
 
-        return view('reports.supervisor_rba_final_print', compact('submission', 'pagus', 'filteredBackground', 'includeBackground', 'previousPagus', 'allOperators', 'selectedOperatorIds', 'operatorFilterLabel', 'grouping'));
+        $sortBy = $request->get('sort_by', 'account_code');
+        $sortDir = strtolower($request->get('sort_dir', 'asc'));
+        if (!in_array($sortDir, ['asc', 'desc'])) {
+            $sortDir = 'asc';
+        }
+
+        $sortingService = app(\App\Services\ReportSortingService::class);
+        $sortedDetails = $sortingService->sortDetails($submission->details, $sortBy, $sortDir, $pagus);
+        $submission->setRelation('details', $sortedDetails);
+        $sortLabel = $sortingService->getSortLabel($sortBy, $sortDir);
+
+        return view('reports.supervisor_rba_final_print', compact('submission', 'pagus', 'filteredBackground', 'includeBackground', 'previousPagus', 'allOperators', 'selectedOperatorIds', 'operatorFilterLabel', 'grouping', 'sortBy', 'sortDir', 'sortLabel'));
     }
 
     private function getFilteredBackground(RbaSubmission $submission, array $selectedOperatorIds, $allOperators, bool $includeBackgroundRequested): ?string

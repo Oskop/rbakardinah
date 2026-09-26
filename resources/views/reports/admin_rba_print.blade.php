@@ -379,7 +379,14 @@
         </table>
 
         <!-- Section I: Tabel Rincian Belanja -->
-        <div class="section-header">1. RINCIAN BELANJA USULAN (TAMPILAN ADMINISTRATOR)</div>
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span>1. RINCIAN BELANJA USULAN (TAMPILAN ADMINISTRATOR)</span>
+            @if(isset($sortLabel))
+                <span style="font-size: 9px; font-weight: 600; color: #475569; text-transform: none; letter-spacing: normal;">
+                    Urutan Data: {{ $sortLabel }}
+                </span>
+            @endif
+        </div>
 
         <table class="data-table">
             <thead>
