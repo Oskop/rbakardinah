@@ -27,6 +27,7 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::get('org-chart', [\App\Http\Controllers\Admin\OrgChartController::class, 'index'])->name('org-chart.index');
     Route::resource('kelompok-belanja', \App\Http\Controllers\KelompokBelanjaController::class);
     Route::resource('account-codes', \App\Http\Controllers\AccountCodeController::class);
+    Route::post('sub-unit-account-codes/copy-year', [\App\Http\Controllers\Admin\SubUnitAccountCodeController::class, 'copyYear'])->name('sub-unit-account-codes.copy-year');
     Route::post('sub-unit-account-codes/bulk-store', [\App\Http\Controllers\Admin\SubUnitAccountCodeController::class, 'bulkStore'])->name('sub-unit-account-codes.bulk-store');
     Route::resource('sub-unit-account-codes', \App\Http\Controllers\Admin\SubUnitAccountCodeController::class)->except(['show', 'create', 'edit']);
     Route::resource('periods', \App\Http\Controllers\RbaPeriodController::class);

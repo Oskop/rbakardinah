@@ -190,4 +190,68 @@ class SubUnitAccountCodeController extends Controller
 
         return back()->with('success', 'Mapping rekening berhasil dihapus.');
     }
+
+    /**
+     * Copy mappings from a source fiscal year to a target fiscal year.
+     */
+    public function copyYear(Request $request)
+    {
+        $request->validate([
+            'source_year' => 'required|string|max:10',
+            'target_year' => 'required|string|max:10|different:source_year',
+            'sub_unit_id' => 'nullable|exists:sub_units,id',
+        ], [
+            'source_year.required' => 'Tahun sumber wajib dipilih.',
+            'target_year.required' => 'Tahun tujuan wajib diisi.',
+            'target_year.different' => 'Tahun tujuan harus berbeda dengan tahun sumber.',
+            'sub_unit_id.exists' => 'Sub-unit yang dipilih tidak valid.',
+        ]);
+
+        $query = SubUnitAccountCode::where('fiscal_year', $request->source_year);
+
+        if ($request->filled('sub_unit_id')) {
+            $query->where('sub_unit_id', $request->sub_unit_id);
+        }
+
+        $sourceMappings = $query->get();
+
+        if ($sourceMappings->isEmpty()) {
+            return back()->with('error', 'Tidak ditemukan data mapping pada tahun anggaran sumber (' . $request->source_year . ').');
+        }
+
+        $copiedCount = 0;
+        $skippedCount = 0;
+
+        foreach ($sourceMappings as $src) {
+            $mapping = SubUnitAccountCode::firstOrCreate(
+                [
+                    'sub_unit_id' => $src->sub_unit_id,
+                    'account_code_id' => $src->account_code_id,
+                    'fiscal_year' => $request->target_year,
+                ],
+                [
+                    'keterangan_khusus' => $src->keterangan_khusus,
+                ]
+            );
+
+            if ($mapping->wasRecentlyCreated) {
+                $copiedCount++;
+            } else {
+                $skippedCount++;
+            }
+        }
+
+        $targetSubUnitName = '';
+        if ($request->filled('sub_unit_id')) {
+            $su = SubUnit::find($request->sub_unit_id);
+            $targetSubUnitName = $su ? " untuk " . $su->name : "";
+        }
+
+        $msg = "Berhasil menyalin {$copiedCount} mapping rekening{$targetSubUnitName} dari tahun {$request->source_year} ke tahun {$request->target_year}.";
+        if ($skippedCount > 0) {
+            $msg .= " ({$skippedCount} rekening dilewati karena sudah ada di tahun {$request->target_year}).";
+        }
+
+        return back()->with('success', $msg);
+    }
 }

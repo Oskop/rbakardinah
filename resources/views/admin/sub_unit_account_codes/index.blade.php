@@ -9,6 +9,10 @@
                 <p class="text-xs text-slate-500 mt-1">Konfigurasi hak dan kewenangan pengusulan nomor rekening belanja per sub-unit kerja operasional</p>
             </div>
             <div class="flex items-center gap-2">
+                <button type="button" onclick="openCopyYearModal()"
+                    class="inline-flex items-center px-3.5 py-2 bg-amber-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-wider hover:bg-amber-700 active:bg-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shadow-sm cursor-pointer">
+                    <span>📋</span> <span class="ml-1.5">Salin Antar Tahun</span>
+                </button>
                 <button type="button" onclick="openBulkModal()"
                     class="inline-flex items-center px-3.5 py-2 bg-emerald-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-wider hover:bg-emerald-700 active:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition shadow-sm cursor-pointer">
                     <span>⚡</span> <span class="ml-1.5">Bulk Assign Rekening</span>
@@ -480,6 +484,78 @@
         </div>
     </div>
 
+    <!-- Modal Copy Antar Tahun -->
+    <div id="modal-copy-year" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="modal-copy-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" onclick="closeCopyYearModal()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-100">
+                <form action="{{ route('admin.sub-unit-account-codes.copy-year') }}" method="POST">
+                    @csrf
+                    <div class="bg-gradient-to-r from-amber-600 to-amber-700 px-6 py-4 text-black flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">📋</span>
+                            <div>
+                                <h3 class="font-bold text-base" id="modal-copy-title">Salin Mapping Antar Tahun</h3>
+                                <p class="text-xs text-amber-100">Duplikasi konfigurasi rekening belanja ke tahun anggaran baru</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="closeCopyYearModal()" class="text-amber-200 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+                    </div>
+
+                    <div class="p-6 space-y-4">
+                        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2">
+                            <span class="text-base leading-none">💡</span>
+                            <div>
+                                <strong>Aman & Anti-Duplikasi:</strong> Rekening yang sudah ada di tahun tujuan tidak akan ditimpa ataupun diduplikasi. Hanya relasi yang belum terdaftar yang akan ditambahkan.
+                            </div>
+                        </div>
+
+                        <!-- Source Year -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Tahun Sumber (Asal) <span class="text-rose-500">*</span></label>
+                            <select name="source_year" required class="w-full text-xs rounded-xl border-slate-200 focus:border-amber-500 focus:ring-amber-500 py-2.5 font-mono">
+                                <option value="">-- Pilih Tahun Sumber --</option>
+                                @foreach($years as $yr)
+                                    <option value="{{ $yr }}" {{ $yr == '2027' ? 'selected' : '' }}>Tahun {{ $yr }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Target Year -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Tahun Anggaran Tujuan <span class="text-rose-500">*</span></label>
+                            <input type="text" name="target_year" required placeholder="Contoh: 2028" value="{{ (int)date('Y') + 1 }}"
+                                class="w-full text-xs rounded-xl border-slate-200 focus:border-amber-500 focus:ring-amber-500 py-2.5 font-mono" maxlength="4">
+                            <span class="text-[10px] text-slate-400 mt-1 block">Ketik 4 digit tahun tujuan (misal: 2028).</span>
+                        </div>
+
+                        <!-- Sub Unit Filter (Optional) -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Cakupan Sub-Unit Kerja</label>
+                            <select name="sub_unit_id" class="w-full text-xs rounded-xl border-slate-200 focus:border-amber-500 focus:ring-amber-500 py-2.5">
+                                <option value="">-- Semua Sub-Unit Kerja (Salin Keseluruhan) --</option>
+                                @foreach($subUnits as $su)
+                                    <option value="{{ $su->id }}">{{ $su->name }} ({{ $su->unit?->name ?? 'Tanpa Induk' }})</option>
+                                @endforeach
+                            </select>
+                            <span class="text-[10px] text-slate-400 mt-1 block">Biarkan kosong jika ingin menyalin mapping untuk seluruh sub-unit sekaligus.</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 px-6 py-3 flex justify-end gap-2 border-t border-slate-100">
+                        <button type="button" onclick="closeCopyYearModal()" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">
+                            Batal
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-amber-600 rounded-lg text-xs font-bold text-white hover:bg-amber-700 cursor-pointer shadow-sm flex items-center gap-1.5">
+                            <span>📋</span> Salin Mapping Sekarang
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     @push('styles')
         <link rel="stylesheet" href="https://cdn.datatables.net/2.0.3/css/dataTables.tailwindcss.css">
         <style>
@@ -496,6 +572,16 @@
         <script src="https://cdn.datatables.net/2.0.3/js/dataTables.tailwindcss.js"></script>
         <script>
             // Global Vanilla JS functions for modals (always available, no external library dependency)
+            function openCopyYearModal() {
+                var modal = document.getElementById('modal-copy-year');
+                if (modal) modal.classList.remove('hidden');
+            }
+
+            function closeCopyYearModal() {
+                var modal = document.getElementById('modal-copy-year');
+                if (modal) modal.classList.add('hidden');
+            }
+
             function openCreateModal() {
                 var modal = document.getElementById('modal-create');
                 if (modal) modal.classList.remove('hidden');
