@@ -22,7 +22,7 @@
                             <div class="inline-flex items-center">
                                 <x-dropdown align="left" width="w-56">
                                     <x-slot name="trigger">
-                                        <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('admin.units.*', 'admin.sub-units.*', 'admin.org-chart.*', 'admin.users.*', 'admin.kelompok-belanja.*', 'admin.account-codes.*', 'admin.periods.*', 'admin.master-barangs.*') ? 'border-indigo-400 text-gray-900 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium leading-5 transition duration-150 ease-in-out h-16 focus:outline-none cursor-pointer">
+                                        <button class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('admin.units.*', 'admin.sub-units.*', 'admin.org-chart.*', 'admin.users.*', 'admin.kelompok-belanja.*', 'admin.account-codes.*', 'admin.sub-unit-account-codes.*', 'admin.periods.*', 'admin.master-barangs.*') ? 'border-indigo-400 text-gray-900 font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} text-sm font-medium leading-5 transition duration-150 ease-in-out h-16 focus:outline-none cursor-pointer">
                                             <span>{{ __('Master Data') }}</span>
                                             <div class="ms-1.5 text-gray-400">
                                                 <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -50,6 +50,9 @@
                                         </x-dropdown-link>
                                         <x-dropdown-link :href="route('admin.account-codes.index')" class="{{ request()->routeIs('admin.account-codes.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : '' }}">
                                             💳 {{ __('Nomor Rekening') }}
+                                        </x-dropdown-link>
+                                        <x-dropdown-link :href="route('admin.sub-unit-account-codes.index')" class="{{ request()->routeIs('admin.sub-unit-account-codes.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : '' }}">
+                                            🔗 {{ __('Mapping Rekening Sub-Unit') }}
                                         </x-dropdown-link>
                                         <x-dropdown-link :href="route('admin.periods.index')" class="{{ request()->routeIs('admin.periods.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : '' }}">
                                             📅 {{ __('Periode') }}
@@ -192,13 +195,13 @@
             @if(Auth::user()->role === 'Administrator')
                 <!-- Master Data Responsive Accordion -->
                 <div x-data="{ masterDataOpen: {{ request()->routeIs('admin.units.*', 'admin.users.*', 'admin.kelompok-belanja.*', 'admin.account-codes.*', 'admin.periods.*') ? 'true' : 'false' }} }" class="border-b border-gray-100">
-                    <button @click="masterDataOpen = !masterDataOpen" type="button" class="w-full flex justify-between items-center ps-3 pe-4 py-2 border-l-4 {{ request()->routeIs('admin.units.*', 'admin.users.*', 'admin.kelompok-belanja.*', 'admin.account-codes.*', 'admin.periods.*') ? 'border-indigo-400 text-indigo-700 bg-indigo-50/50 font-semibold' : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50' }} text-base font-medium transition duration-150 ease-in-out cursor-pointer">
+                    <button @click="masterDataOpen = !masterDataOpen" type="button" class="w-full flex justify-between items-center ps-3 pe-4 py-2 border-l-4 {{ request()->routeIs('admin.units.*', 'admin.users.*', 'admin.kelompok-belanja.*', 'admin.account-codes.*', 'admin.sub-unit-account-codes.*', 'admin.periods.*') ? 'border-indigo-400 text-indigo-700 bg-indigo-50/50 font-semibold' : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50' }} text-base font-medium transition duration-150 ease-in-out cursor-pointer">
                         <span>{{ __('Master Data') }}</span>
                         <svg class="h-4 w-4 transform transition-transform duration-200" :class="{'rotate-180': masterDataOpen}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <div x-show="masterDataOpen" class="ps-4 space-y-1 bg-gray-50/60 py-1" style="{{ request()->routeIs('admin.units.*', 'admin.sub-units.*', 'admin.org-chart.*', 'admin.users.*', 'admin.kelompok-belanja.*', 'admin.account-codes.*', 'admin.periods.*') ? '' : 'display: none;' }}">
+                    <div x-show="masterDataOpen" class="ps-4 space-y-1 bg-gray-50/60 py-1" style="{{ request()->routeIs('admin.units.*', 'admin.sub-units.*', 'admin.org-chart.*', 'admin.users.*', 'admin.kelompok-belanja.*', 'admin.account-codes.*', 'admin.sub-unit-account-codes.*', 'admin.periods.*') ? '' : 'display: none;' }}">
                         <x-responsive-nav-link :href="route('admin.units.index')" :active="request()->routeIs('admin.units.*')">
                             🏢 {{ __('Unit Induk (Eselon III)') }}
                         </x-responsive-nav-link>
@@ -216,6 +219,9 @@
                         </x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('admin.account-codes.index')" :active="request()->routeIs('admin.account-codes.*')">
                             💳 {{ __('Nomor Rekening') }}
+                        </x-responsive-nav-link>
+                        <x-responsive-nav-link :href="route('admin.sub-unit-account-codes.index')" :active="request()->routeIs('admin.sub-unit-account-codes.*')">
+                            🔗 {{ __('Mapping Rekening Sub-Unit') }}
                         </x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('admin.periods.index')" :active="request()->routeIs('admin.periods.*')">
                             📅 {{ __('Periode') }}
