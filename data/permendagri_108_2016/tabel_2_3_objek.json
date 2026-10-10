@@ -1,0 +1,587 @@
+[
+  {
+    "kode": "1",
+    "level": 1,
+    "kode_akun": "1",
+    "kode_kelompok": "",
+    "kode_jenis": "",
+    "kode_objek": "",
+    "uraian": "ASET"
+  },
+  {
+    "kode": "1.1",
+    "level": 2,
+    "kode_akun": "1",
+    "kode_kelompok": "1",
+    "kode_jenis": "",
+    "kode_objek": "",
+    "uraian": "ASET LANCAR"
+  },
+  {
+    "kode": "1.1.7",
+    "level": 3,
+    "kode_akun": "1",
+    "kode_kelompok": "1",
+    "kode_jenis": "7",
+    "kode_objek": "",
+    "uraian": "PERSEDIAAN"
+  },
+  {
+    "kode": "1.1.7.01",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "1",
+    "kode_jenis": "7",
+    "kode_objek": "01",
+    "uraian": "BARANG PAKAI HABIS"
+  },
+  {
+    "kode": "1.1.7.02",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "1",
+    "kode_jenis": "7",
+    "kode_objek": "02",
+    "uraian": "BARANG TAK HABIS PAKAI"
+  },
+  {
+    "kode": "1.1.7.03",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "1",
+    "kode_jenis": "7",
+    "kode_objek": "03",
+    "uraian": "BARANG BEKAS DIPAKAI"
+  },
+  {
+    "kode": "1.3",
+    "level": 2,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "",
+    "kode_objek": "",
+    "uraian": "ASET TETAP"
+  },
+  {
+    "kode": "1.3.1",
+    "level": 3,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "1",
+    "kode_objek": "",
+    "uraian": "TANAH"
+  },
+  {
+    "kode": "1.3.1.01",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "1",
+    "kode_objek": "01",
+    "uraian": "TANAH"
+  },
+  {
+    "kode": "1.3.2",
+    "level": 3,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "",
+    "uraian": "PERALATAN DAN MESIN"
+  },
+  {
+    "kode": "1.3.2.01",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "01",
+    "uraian": "ALAT BESAR"
+  },
+  {
+    "kode": "1.3.2.02",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "02",
+    "uraian": "ALAT ANGKUTAN"
+  },
+  {
+    "kode": "1.3.2.03",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "03",
+    "uraian": "ALAT BENGKEL DAN ALAT UKUR"
+  },
+  {
+    "kode": "1.3.2.04",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "04",
+    "uraian": "ALAT PERTANIAN"
+  },
+  {
+    "kode": "1.3.2.05",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "05",
+    "uraian": "ALAT KANTOR DAN RUMAH TANGGA"
+  },
+  {
+    "kode": "1.3.2.06",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "06",
+    "uraian": "ALAT STUDIO, KOMUNIKASI DAN PEMANCAR"
+  },
+  {
+    "kode": "1.3.2.07",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "07",
+    "uraian": "ALAT KEDOKTERAN DAN KESEHATAN"
+  },
+  {
+    "kode": "1.3.2.08",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "08",
+    "uraian": "ALAT LABORATORIUM"
+  },
+  {
+    "kode": "1.3.2.09",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "09",
+    "uraian": "ALAT PERSENJATAAN"
+  },
+  {
+    "kode": "1.3.2.10",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "10",
+    "uraian": "KOMPUTER"
+  },
+  {
+    "kode": "1.3.2.11",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "11",
+    "uraian": "ALAT EKSPLORASI"
+  },
+  {
+    "kode": "1.3.2.12",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "12",
+    "uraian": "ALAT PENGEBORAN"
+  },
+  {
+    "kode": "1.3.2.13",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "13",
+    "uraian": "ALAT PRODUKSI, PENGOLAHAN DAN PEMURNIAN"
+  },
+  {
+    "kode": "1.3.2.14",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "14",
+    "uraian": "ALAT BANTU EKSPLORASI"
+  },
+  {
+    "kode": "1.3.2.15",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "15",
+    "uraian": "ALAT KESELAMATAN KERJA"
+  },
+  {
+    "kode": "1.3.2.16",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "16",
+    "uraian": "ALAT PERAGA"
+  },
+  {
+    "kode": "1.3.2.17",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "17",
+    "uraian": "PERALATAN PROSES/PRODUKSI"
+  },
+  {
+    "kode": "1.3.2.18",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "18",
+    "uraian": "RAMBU - RAMBU"
+  },
+  {
+    "kode": "1.3.2.19",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "2",
+    "kode_objek": "19",
+    "uraian": "PERALATAN OLAH RAGA"
+  },
+  {
+    "kode": "1.3.3",
+    "level": 3,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "3",
+    "kode_objek": "",
+    "uraian": "GEDUNG DAN BANGUNAN"
+  },
+  {
+    "kode": "1.3.3.01",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "3",
+    "kode_objek": "01",
+    "uraian": "BANGUNAN GEDUNG"
+  },
+  {
+    "kode": "1.3.3.02",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "3",
+    "kode_objek": "02",
+    "uraian": "MONUMEN"
+  },
+  {
+    "kode": "1.3.3.03",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "3",
+    "kode_objek": "03",
+    "uraian": "BANGUNAN MENARA"
+  },
+  {
+    "kode": "1.3.3.04",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "3",
+    "kode_objek": "04",
+    "uraian": "TUGU TITIK KONTROL/PASTI"
+  },
+  {
+    "kode": "1.3.4",
+    "level": 3,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "4",
+    "kode_objek": "",
+    "uraian": "JALAN, JARINGAN DAN IRIGASI"
+  },
+  {
+    "kode": "1.3.4.01",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "4",
+    "kode_objek": "01",
+    "uraian": "JALAN DAN JEMBATAN"
+  },
+  {
+    "kode": "1.3.4.02",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "4",
+    "kode_objek": "02",
+    "uraian": "BANGUNAN AIR"
+  },
+  {
+    "kode": "1.3.4.03",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "4",
+    "kode_objek": "03",
+    "uraian": "INSTALASI"
+  },
+  {
+    "kode": "1.3.4.04",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "4",
+    "kode_objek": "04",
+    "uraian": "JARINGAN"
+  },
+  {
+    "kode": "1.3.5",
+    "level": 3,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "5",
+    "kode_objek": "",
+    "uraian": "ASET TETAP LAINNYA"
+  },
+  {
+    "kode": "1.3.5.01",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "5",
+    "kode_objek": "01",
+    "uraian": "BAHAN PERPUSTAKAAN"
+  },
+  {
+    "kode": "1.3.5.02",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "5",
+    "kode_objek": "02",
+    "uraian": "BARANG BERCORAK KESENIAN/KEBUDAYAAN/OLAHRAGA"
+  },
+  {
+    "kode": "1.3.5.03",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "5",
+    "kode_objek": "03",
+    "uraian": "HEWAN"
+  },
+  {
+    "kode": "1.3.5.04",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "5",
+    "kode_objek": "04",
+    "uraian": "BIOTA PERAIRAN"
+  },
+  {
+    "kode": "1.3.5.05",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "5",
+    "kode_objek": "05",
+    "uraian": "TANAMAN"
+  },
+  {
+    "kode": "1.3.5.06",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "5",
+    "kode_objek": "06",
+    "uraian": "BARANG KOLEKSI NON BUDAYA"
+  },
+  {
+    "kode": "1.3.5.07",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "5",
+    "kode_objek": "07",
+    "uraian": "ASET TETAP DALAM RENOVASI"
+  },
+  {
+    "kode": "1.3.6",
+    "level": 3,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "6",
+    "kode_objek": "",
+    "uraian": "KONSTRUKSI DALAM PENGERJAAN"
+  },
+  {
+    "kode": "1.3.6.01",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "6",
+    "kode_objek": "01",
+    "uraian": "KONSTRUKSI DALAM PENGERJAAN"
+  },
+  {
+    "kode": "1.3.7",
+    "level": 3,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "7",
+    "kode_objek": "",
+    "uraian": "AKUMULASI PENYUSUTAN"
+  },
+  {
+    "kode": "1.3.7.01",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "7",
+    "kode_objek": "01",
+    "uraian": "AKUMULASI PENYUSUTAN PERALATAN DAN MESIN"
+  },
+  {
+    "kode": "1.3.7.02",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "7",
+    "kode_objek": "02",
+    "uraian": "AKUMULASI PENYUSUTAN GEDUNG DAN BANGUNAN"
+  },
+  {
+    "kode": "1.3.7.03",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "7",
+    "kode_objek": "03",
+    "uraian": "AKUMULASI PENYUSUTAN JALAN, JARINGAN DAN IRIGASI"
+  },
+  {
+    "kode": "1.3.7.04",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "3",
+    "kode_jenis": "7",
+    "kode_objek": "04",
+    "uraian": "AKUMULASI PENYUSUTAN ASET TETAP LAINNYA"
+  },
+  {
+    "kode": "1.5",
+    "level": 2,
+    "kode_akun": "1",
+    "kode_kelompok": "5",
+    "kode_jenis": "",
+    "kode_objek": "",
+    "uraian": "ASET LAINNYA"
+  },
+  {
+    "kode": "1.5.2",
+    "level": 3,
+    "kode_akun": "1",
+    "kode_kelompok": "5",
+    "kode_jenis": "2",
+    "kode_objek": "",
+    "uraian": "KEMITRAAN DENGAN PIHAK KETIGA"
+  },
+  {
+    "kode": "1.5.2.01",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "5",
+    "kode_jenis": "2",
+    "kode_objek": "01",
+    "uraian": "KEMITRAAN DENGAN PIHAK KETIGA"
+  },
+  {
+    "kode": "1.5.3",
+    "level": 3,
+    "kode_akun": "1",
+    "kode_kelompok": "5",
+    "kode_jenis": "3",
+    "kode_objek": "",
+    "uraian": "ASET TIDAK BERWUJUD"
+  },
+  {
+    "kode": "1.5.3.01",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "5",
+    "kode_jenis": "3",
+    "kode_objek": "01",
+    "uraian": "ASET TIDAK BERWUJUD"
+  },
+  {
+    "kode": "1.5.4",
+    "level": 3,
+    "kode_akun": "1",
+    "kode_kelompok": "5",
+    "kode_jenis": "4",
+    "kode_objek": "",
+    "uraian": "ASET LAIN-LAIN"
+  },
+  {
+    "kode": "1.5.4.01",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "5",
+    "kode_jenis": "4",
+    "kode_objek": "01",
+    "uraian": "ASET LAIN-LAIN"
+  },
+  {
+    "kode": "1.5.5",
+    "level": 3,
+    "kode_akun": "1",
+    "kode_kelompok": "5",
+    "kode_jenis": "5",
+    "kode_objek": "",
+    "uraian": "AKUMULASI AMORTISASI ASET TIDAK BERWUJUD"
+  },
+  {
+    "kode": "1.5.5.01",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "5",
+    "kode_jenis": "5",
+    "kode_objek": "01",
+    "uraian": "AKUMULASI AMORTISASI ASET TIDAK BERWUJUD"
+  },
+  {
+    "kode": "1.5.6",
+    "level": 3,
+    "kode_akun": "1",
+    "kode_kelompok": "5",
+    "kode_jenis": "6",
+    "kode_objek": "",
+    "uraian": "AKUMULASI PENYUSUTAN ASET LAINNYA"
+  },
+  {
+    "kode": "1.5.6.01",
+    "level": 4,
+    "kode_akun": "1",
+    "kode_kelompok": "5",
+    "kode_jenis": "6",
+    "kode_objek": "01",
+    "uraian": "AKUMULASI PENYUSUTAN ASET LAINNYA"
+  }
+]
