@@ -56,9 +56,14 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach($items as $item)
                                     <tr>
-                                        <!-- Kode Barang -->
+                                        <!-- Kode Barang & Kode Permendagri -->
                                         <td class="px-6 py-4 whitespace-nowrap text-xs font-mono font-bold text-indigo-700">
-                                            {{ $item->kode_barang }}
+                                            <div>{{ $item->kode_barang }}</div>
+                                            @if($item->kode_permendagri)
+                                                <div class="text-[10px] text-slate-500 font-normal mt-0.5" title="Kodefikasi Referensi Permendagri No. 108 Tahun 2016">
+                                                    <span class="inline-block px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-semibold border border-slate-200">Ref 108: {{ $item->kode_permendagri }}</span>
+                                                </div>
+                                            @endif
                                         </td>
 
                                         <!-- Nama Barang & Deskripsi -->

@@ -17,8 +17,17 @@
                             <x-input-label for="kode_barang" :value="__('Kode Barang BMD')" />
                             <x-text-input id="kode_barang" class="block mt-1 w-full font-mono" type="text" name="kode_barang"
                                 :value="old('kode_barang')" placeholder="Contoh: 1.3.2.10.01.02.001" required autofocus />
-                            <p class="text-xs text-slate-500 mt-1">Sesuai penomoran klasifikasi kodefikasi Permendagri No. 108 Tahun 2016.</p>
+                            <p class="text-xs text-slate-500 mt-1">Kode identitas unik barang pada sistem SIPAKAR.</p>
                             <x-input-error :messages="$errors->get('kode_barang')" class="mt-2" />
+                        </div>
+
+                        <!-- Kode Permendagri 108 (Referensi) -->
+                        <div>
+                            <x-input-label for="kode_permendagri" :value="__('Kode Permendagri No. 108 Tahun 2016 (Referensi)')" />
+                            <x-text-input id="kode_permendagri" class="block mt-1 w-full font-mono" type="text" name="kode_permendagri"
+                                :value="old('kode_permendagri')" placeholder="Contoh: 1.3.2.10.01.02.001" />
+                            <p class="text-xs text-slate-500 mt-1">Kode klasifikasi regulasi Permendagri 108/2016 sebagai kode referensi (opsional).</p>
+                            <x-input-error :messages="$errors->get('kode_permendagri')" class="mt-2" />
                         </div>
 
                         <!-- Nama Barang -->

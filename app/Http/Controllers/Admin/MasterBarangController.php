@@ -23,6 +23,7 @@ class MasterBarangController extends Controller
     {
         $validated = $request->validate([
             'kode_barang' => 'required|string|max:100|unique:master_barangs,kode_barang',
+            'kode_permendagri' => 'nullable|string|max:50',
             'nama_barang' => 'required|string|max:255',
             'satuan' => 'nullable|string|max:50',
             'deskripsi' => 'nullable|string',
@@ -45,6 +46,7 @@ class MasterBarangController extends Controller
     {
         $validated = $request->validate([
             'kode_barang' => 'required|string|max:100|unique:master_barangs,kode_barang,' . $masterBarang->id,
+            'kode_permendagri' => 'nullable|string|max:50',
             'nama_barang' => 'required|string|max:255',
             'satuan' => 'nullable|string|max:50',
             'deskripsi' => 'nullable|string',

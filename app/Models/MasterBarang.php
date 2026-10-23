@@ -17,6 +17,7 @@ class MasterBarang extends Model
 
     protected $fillable = [
         'kode_barang',
+        'kode_permendagri',
         'nama_barang',
         'satuan',
         'deskripsi',
@@ -41,5 +42,18 @@ class MasterBarang extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopeSearch($query, $keyword)
+    {
+        if (empty($keyword)) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($keyword) {
+            $q->where('nama_barang', 'like', "%{$keyword}%")
+              ->orWhere('kode_barang', 'like', "%{$keyword}%")
+              ->orWhere('kode_permendagri', 'like', "%{$keyword}%");
+        });
     }
 }
