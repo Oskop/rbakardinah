@@ -191,4 +191,16 @@ class MasterBarangCategoryAndSearchTest extends TestCase
             $this->assertEquals('1.3.2.10.01', $it['kode_level5']);
         }
     }
+
+    public function test_admin_index_page_renders_tom_select_and_category_filters(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('admin.master-barangs.index'));
+
+        $response->assertOk();
+        $response->assertSee('tom-select');
+        $response->assertSee('filter-level5');
+        $response->assertSee('filter-level6');
+        $response->assertSee('btn-reset-filters');
+        $response->assertSee('KOMPUTER UNIT');
+    }
 }
