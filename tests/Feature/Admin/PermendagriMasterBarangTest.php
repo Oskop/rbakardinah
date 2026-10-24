@@ -116,4 +116,85 @@ class PermendagriMasterBarangTest extends TestCase
         $countAfterSecond = MasterBarang::count();
         $this->assertEquals($countAfterFirst, $countAfterSecond, 'Menjalankan ulang seeder tidak boleh menambah baris duplikat.');
     }
+
+    public function test_admin_can_fetch_master_barangs_via_datatables_ajax(): void
+    {
+        MasterBarang::create([
+            'kode_barang' => '1.3.2.05.01.01.001',
+            'kode_permendagri' => '1.3.2.05.01.01.001',
+            'nama_barang' => 'Kursi Kerja Pejabat Eselon',
+            'satuan' => 'Buah',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin)->getJson(route('admin.master-barangs.index', [
+            'draw' => 1,
+            'start' => 0,
+            'length' => 10,
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'draw',
+            'recordsTotal',
+            'recordsFiltered',
+            'data' => [
+                '*' => ['kode_barang', 'nama_barang', 'satuan', 'is_active', 'actions']
+            ]
+        ]);
+        $response->assertJson([
+            'draw' => 1,
+            'recordsTotal' => 1,
+            'recordsFiltered' => 1,
+        ]);
+        $this->assertStringContainsString('Kursi Kerja Pejabat Eselon', $response->json('data.0.nama_barang'));
+    }
+
+    public function test_datatables_ajax_handles_search_filtering(): void
+    {
+        MasterBarang::create([
+            'kode_barang' => 'BRG-X1',
+            'kode_permendagri' => '1.3.2.99.01.01.001',
+            'nama_barang' => 'Stetoskop Medis Cardiocare',
+            'satuan' => 'Unit',
+            'is_active' => true,
+        ]);
+
+        MasterBarang::create([
+            'kode_barang' => 'BRG-Y2',
+            'kode_permendagri' => '1.3.2.99.01.01.002',
+            'nama_barang' => 'Meja Rapat Oval Kayu Jati',
+            'satuan' => 'Unit',
+            'is_active' => true,
+        ]);
+
+        // Cari 'Stetoskop'
+        $response = $this->actingAs($this->admin)->getJson(route('admin.master-barangs.index', [
+            'draw' => 2,
+            'start' => 0,
+            'length' => 10,
+            'search' => ['value' => 'Stetoskop'],
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'recordsTotal' => 2,
+            'recordsFiltered' => 1,
+        ]);
+        $this->assertStringContainsString('Stetoskop Medis Cardiocare', $response->json('data.0.nama_barang'));
+
+        // Cari kode permendagri
+        $responseKode = $this->actingAs($this->admin)->getJson(route('admin.master-barangs.index', [
+            'draw' => 3,
+            'start' => 0,
+            'length' => 10,
+            'search' => ['value' => '99.01.01.002'],
+        ]));
+
+        $responseKode->assertStatus(200);
+        $responseKode->assertJson([
+            'recordsFiltered' => 1,
+        ]);
+        $this->assertStringContainsString('Meja Rapat Oval Kayu Jati', $responseKode->json('data.0.nama_barang'));
+    }
 }

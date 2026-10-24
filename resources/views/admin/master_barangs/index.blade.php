@@ -54,56 +54,7 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach($items as $item)
-                                    <tr>
-                                        <!-- Kode Barang & Kode Permendagri -->
-                                        <td class="px-6 py-4 whitespace-nowrap text-xs font-mono font-bold text-indigo-700">
-                                            <div>{{ $item->kode_barang }}</div>
-                                            @if($item->kode_permendagri)
-                                                <div class="text-[10px] text-slate-500 font-normal mt-0.5" title="Kodefikasi Referensi Permendagri No. 108 Tahun 2016">
-                                                    <span class="inline-block px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-semibold border border-slate-200">Ref 108: {{ $item->kode_permendagri }}</span>
-                                                </div>
-                                            @endif
-                                        </td>
-
-                                        <!-- Nama Barang & Deskripsi -->
-                                        <td class="px-6 py-4">
-                                            <div class="text-sm font-semibold text-gray-900">{{ $item->nama_barang }}</div>
-                                            @if($item->deskripsi)
-                                                <div class="text-xs text-gray-500 mt-0.5 line-clamp-1">{{ $item->deskripsi }}</div>
-                                            @endif
-                                        </td>
-
-                                        <!-- Satuan -->
-                                        <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-medium">
-                                            {{ $item->satuan ?? '-' }}
-                                        </td>
-
-                                        <!-- Status -->
-                                        <td class="px-6 py-4 whitespace-nowrap text-xs">
-                                            <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full 
-                                                {{ $item->is_active ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-gray-100 text-gray-600 border border-gray-200' }}">
-                                                {{ $item->is_active ? 'Active' : 'Inactive' }}
-                                            </span>
-                                        </td>
-
-                                        <!-- Aksi -->
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                            <a href="{{ route('admin.master-barangs.edit', $item) }}"
-                                                class="text-indigo-600 hover:text-indigo-900 font-semibold transition-colors">Edit</a>
-                                            <form action="{{ route('admin.master-barangs.destroy', $item) }}" method="POST"
-                                                class="inline-block"
-                                                onsubmit="return confirm('Apakah Anda yakin ingin ' + ({{ $item->is_active ? 'true' : 'false' }} ? 'menonaktifkan' : 'mengaktifkan') + ' master barang ini?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                    class="{{ $item->is_active ? 'text-red-600 hover:text-red-900 font-semibold' : 'text-green-600 hover:text-green-900 font-semibold' }}">
-                                                    {{ $item->is_active ? 'Deactivate' : 'Activate' }}
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @endforeach
+                                <!-- Data dimuat secara dinamis oleh DataTables Server-Side Processing -->
                             </tbody>
                         </table>
                     </div>
@@ -123,8 +74,23 @@
         <script>
             $(document).ready(function() {
                 $('#master-barangs-table').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    ajax: {
+                        url: "{{ route('admin.master-barangs.index') }}",
+                        type: 'GET'
+                    },
                     responsive: true,
+                    order: [[0, 'desc']],
+                    columns: [
+                        { data: 'kode_barang', name: 'kode_barang', className: 'px-6 py-4 whitespace-nowrap text-xs font-mono font-bold text-indigo-700' },
+                        { data: 'nama_barang', name: 'nama_barang', className: 'px-6 py-4' },
+                        { data: 'satuan', name: 'satuan', className: 'px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-medium' },
+                        { data: 'is_active', name: 'is_active', className: 'px-6 py-4 whitespace-nowrap text-xs' },
+                        { data: 'actions', name: 'actions', orderable: false, searchable: false, className: 'px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2' }
+                    ],
                     language: {
+                        processing: '<div class="flex items-center justify-center p-3 text-xs text-indigo-700 font-semibold"><svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>Memuat data katalog barang...</div>',
                         emptyTable: "Belum ada data master barang BMD.",
                         zeroRecords: "Tidak ada data barang yang sesuai dengan pencarian",
                         search: "Cari Barang:",
