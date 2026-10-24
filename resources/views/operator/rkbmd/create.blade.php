@@ -42,7 +42,7 @@
         }
     }">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80">
+            <div class="bg-white shadow-sm sm:rounded-2xl border border-slate-200/80">
                 <form method="POST" action="{{ route('operator.rkbmd.store') }}" enctype="multipart/form-data" @submit="validateBeforeSubmit($event)" class="p-6 space-y-6">
                     @csrf
 
@@ -137,106 +137,7 @@
 
                                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
                                         <!-- Barang BMD Async Combobox -->
-                                        <div class="md:col-span-6" x-data="{
-                                            open: false,
-                                            query: '',
-                                            loading: false,
-                                            results: [],
-                                            highlightedIndex: -1,
-                                            init() {
-                                                if (item.master_barang_id && !item.selected_barang) {
-                                                    const found = masterBarangs.find(b => b.id == item.master_barang_id);
-                                                    if (found) {
-                                                        item.selected_barang = found;
-                                                        if (!item.satuan) item.satuan = found.satuan || '';
-                                                    }
-                                                }
-                                            },
-                                            openDropdown() {
-                                                this.open = true;
-                                                if (this.results.length === 0 && !this.query) {
-                                                    this.results = masterBarangs;
-                                                }
-                                            },
-                                            closeDropdown() {
-                                                this.open = false;
-                                                this.highlightedIndex = -1;
-                                            },
-                                            async search() {
-                                                const q = this.query.trim();
-                                                if (q.length === 0) {
-                                                    this.results = masterBarangs;
-                                                    this.loading = false;
-                                                    return;
-                                                }
-                                                this.loading = true;
-                                                try {
-                                                    const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}&limit=25`, {
-                                                        headers: {
-                                                            'Accept': 'application/json',
-                                                            'X-Requested-With': 'XMLHttpRequest'
-                                                        }
-                                                    });
-                                                    if (resp.ok) {
-                                                        this.results = await resp.json();
-                                                        this.highlightedIndex = this.results.length > 0 ? 0 : -1;
-                                                    }
-                                                } catch (e) {
-                                                    console.error('Gagal memuat barang:', e);
-                                                } finally {
-                                                    this.loading = false;
-                                                }
-                                            },
-                                            selectBarang(b) {
-                                                item.master_barang_id = b.id;
-                                                item.selected_barang = b;
-                                                if (b.satuan) {
-                                                    item.satuan = b.satuan;
-                                                }
-                                                this.query = '';
-                                                this.open = false;
-                                                this.highlightedIndex = -1;
-                                            },
-                                            resetBarang() {
-                                                item.master_barang_id = '';
-                                                item.selected_barang = null;
-                                                this.query = '';
-                                                this.open = true;
-                                                this.results = masterBarangs;
-                                                this.$nextTick(() => {
-                                                    this.$refs.searchInput?.focus();
-                                                });
-                                            },
-                                            highlightNext() {
-                                                if (!this.open) {
-                                                    this.openDropdown();
-                                                    return;
-                                                }
-                                                if (this.results.length === 0) return;
-                                                this.highlightedIndex = (this.highlightedIndex + 1) % this.results.length;
-                                                this.scrollToHighlighted();
-                                            },
-                                            highlightPrev() {
-                                                if (!this.open) {
-                                                    this.openDropdown();
-                                                    return;
-                                                }
-                                                if (this.results.length === 0) return;
-                                                this.highlightedIndex = (this.highlightedIndex - 1 + this.results.length) % this.results.length;
-                                                this.scrollToHighlighted();
-                                            },
-                                            selectHighlighted() {
-                                                if (this.open && this.highlightedIndex >= 0 && this.results[this.highlightedIndex]) {
-                                                    this.selectBarang(this.results[this.highlightedIndex]);
-                                                }
-                                            },
-                                            scrollToHighlighted() {
-                                                this.$nextTick(() => {
-                                                    const el = this.$refs.dropdownList?.children[this.highlightedIndex];
-                                                    if (el) el.scrollIntoView({ block: 'nearest' });
-                                                });
-                                            }
-                                        }">
+                                        <div class="md:col-span-6 relative" :class="open ? 'z-30' : 'z-10'" x-data="rkbmdBarangCombobox(item, masterBarangs, searchUrl)">
                                             <label class="block text-[11px] font-bold text-slate-700 mb-1">
                                                 Nama / Kode Barang BMD Permendagri 108 <span class="text-rose-500">*</span>
                                             </label>
@@ -266,7 +167,7 @@
                                             </template>
 
                                             <!-- TAMPILAN 2: BELUM DIPILIH / MODE PENCARIAN -->
-                                            <div x-show="!item.selected_barang" class="relative">
+                                            <div x-show="!item.selected_barang" class="relative" @click.outside="closeDropdown()">
                                                 <div class="relative flex items-center">
                                                     <span class="absolute left-3 text-slate-400 text-xs pointer-events-none">🔍</span>
                                                     <input type="text"
@@ -294,19 +195,22 @@
 
                                                 <!-- Dropdown List Opsi -->
                                                 <div x-show="open"
-                                                    @click.outside="closeDropdown()"
+                                                    x-ref="dropdownContainer"
+                                                    @mousedown.stop
+                                                    @click.stop
                                                     x-transition:enter="transition ease-out duration-100"
                                                     x-transition:enter-start="opacity-0 translate-y-1"
                                                     x-transition:enter-end="opacity-100 translate-y-0"
                                                     x-transition:leave="transition ease-in duration-75"
                                                     x-transition:leave-start="opacity-100 translate-y-0"
                                                     x-transition:leave-end="opacity-0 translate-y-1"
-                                                    class="absolute z-50 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl divide-y divide-slate-100">
+                                                    class="rkbmd-combobox-dropdown custom-scrollbar divide-y divide-slate-100"
+                                                    style="max-height: 280px; overflow-y: auto; overscroll-behavior: contain;">
                                                     
-                                                    <div x-ref="dropdownList">
+                                                    <div>
                                                         <template x-for="(b, bIdx) in results" :key="b.id">
                                                             <div @click="selectBarang(b)"
-                                                                @mouseenter="highlightedIndex = bIdx"
+                                                                :data-item-index="bIdx"
                                                                 :class="{ 'bg-indigo-50 text-indigo-900': highlightedIndex === bIdx, 'hover:bg-slate-50': highlightedIndex !== bIdx }"
                                                                 class="p-2.5 text-xs cursor-pointer transition-colors flex items-start justify-between gap-2">
                                                                 <div class="min-w-0 flex-1">
@@ -378,39 +282,6 @@
                         </div>
                     </div>
 
-                                        <!-- Jumlah / Volume -->
-                                        <div class="md:col-span-2">
-                                            <label class="block text-[11px] font-bold text-slate-700 mb-1">
-                                                Jumlah <span class="text-rose-500">*</span>
-                                            </label>
-                                            <input type="number" step="0.01" min="0.01" :name="'items[' + index + '][volume]'" x-model="item.volume" required
-                                                class="w-full text-xs font-bold text-right rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2" placeholder="0">
-                                        </div>
-
-                                        <!-- Satuan -->
-                                        <div class="md:col-span-4">
-                                            <label class="block text-[11px] font-bold text-slate-700 mb-1">
-                                                Satuan <span class="text-rose-500">*</span>
-                                            </label>
-                                            <input type="text" :name="'items[' + index + '][satuan]'" x-model="item.satuan" required
-                                                class="w-full text-xs rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2" placeholder="Unit, Buah, Set...">
-                                        </div>
-
-                                        <!-- Spesifikasi Tambahan -->
-                                        <div class="md:col-span-12">
-                                            <label class="block text-[11px] font-bold text-slate-700 mb-1">
-                                                Spesifikasi / Merk / Keterangan Kebutuhan Tambahan (Opsional)
-                                            </label>
-                                            <input type="text" :name="'items[' + index + '][spesifikasi]'" x-model="item.spesifikasi"
-                                                class="w-full text-xs rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-1.5"
-                                                placeholder="Contoh: Ukuran 2 PK, Inverter, bahan stainless steel, dilengkapi laci...">
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
                     <!-- Upload PDF Memo Intern / Nota Dinas -->
                     <div class="bg-indigo-50/40 border border-indigo-200/80 rounded-xl p-4">
                         <label for="attachment" class="block text-xs font-bold text-indigo-950 mb-1">
@@ -440,4 +311,166 @@
             </div>
         </div>
     </div>
+
+    @push('styles')
+    <style>
+        .rkbmd-combobox-dropdown {
+            position: absolute !important;
+            left: 0 !important;
+            right: 0 !important;
+            top: 100% !important;
+            margin-top: 0.25rem !important;
+            max-height: 280px !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            overscroll-behavior: contain !important;
+            -webkit-overflow-scrolling: touch;
+            z-index: 50 !important;
+            background-color: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 0.75rem !important;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+        }
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f8fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 7px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f8fafc;
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+            border: 1px solid #f8fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+    @endpush
+
+    @push('scripts')
+    <script>
+        function rkbmdBarangCombobox(item, masterBarangs, searchUrl) {
+            return {
+                open: false,
+                query: '',
+                loading: false,
+                results: [],
+                highlightedIndex: -1,
+
+                init() {
+                    if (item.master_barang_id && !item.selected_barang) {
+                        const found = masterBarangs.find(b => b.id == item.master_barang_id);
+                        if (found) {
+                            item.selected_barang = found;
+                            if (!item.satuan) item.satuan = found.satuan || '';
+                        }
+                    }
+                },
+
+                openDropdown() {
+                    this.open = true;
+                    if (this.results.length === 0 && !this.query) {
+                        this.results = masterBarangs;
+                    }
+                },
+
+                closeDropdown() {
+                    this.open = false;
+                    this.highlightedIndex = -1;
+                },
+
+                async search() {
+                    const q = this.query.trim();
+                    if (q.length === 0) {
+                        this.results = masterBarangs;
+                        this.loading = false;
+                        return;
+                    }
+                    this.loading = true;
+                    try {
+                        const resp = await fetch(searchUrl + '?q=' + encodeURIComponent(q) + '&limit=25', {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        if (resp.ok) {
+                            this.results = await resp.json();
+                            this.highlightedIndex = this.results.length > 0 ? 0 : -1;
+                        }
+                    } catch (e) {
+                        console.error('Gagal memuat barang:', e);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                selectBarang(b) {
+                    item.master_barang_id = b.id;
+                    item.selected_barang = b;
+                    if (b.satuan) {
+                        item.satuan = b.satuan;
+                    }
+                    this.query = '';
+                    this.open = false;
+                    this.highlightedIndex = -1;
+                },
+
+                resetBarang() {
+                    item.master_barang_id = '';
+                    item.selected_barang = null;
+                    this.query = '';
+                    this.open = true;
+                    this.results = masterBarangs;
+                    this.$nextTick(() => {
+                        this.$refs.searchInput?.focus();
+                    });
+                },
+
+                highlightNext() {
+                    if (!this.open) {
+                        this.openDropdown();
+                        return;
+                    }
+                    if (this.results.length === 0) return;
+                    this.highlightedIndex = (this.highlightedIndex + 1) % this.results.length;
+                    this.scrollToHighlighted();
+                },
+
+                highlightPrev() {
+                    if (!this.open) {
+                        this.openDropdown();
+                        return;
+                    }
+                    if (this.results.length === 0) return;
+                    this.highlightedIndex = (this.highlightedIndex - 1 + this.results.length) % this.results.length;
+                    this.scrollToHighlighted();
+                },
+
+                selectHighlighted() {
+                    if (this.open && this.highlightedIndex >= 0 && this.results[this.highlightedIndex]) {
+                        this.selectBarang(this.results[this.highlightedIndex]);
+                    }
+                },
+
+                scrollToHighlighted() {
+                    this.$nextTick(() => {
+                        const container = this.$refs.dropdownContainer;
+                        if (!container) return;
+                        const itemEl = container.querySelector('[data-item-index="' + this.highlightedIndex + '"]');
+                        if (itemEl) {
+                            itemEl.scrollIntoView({ block: 'nearest' });
+                        }
+                    });
+                }
+            };
+        }
+    </script>
+    @endpush
 </x-app-layout>
