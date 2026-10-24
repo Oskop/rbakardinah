@@ -83,13 +83,24 @@ class RkbmdController extends Controller
     public function searchMasterBarangs(Request $request)
     {
         $q = trim((string) $request->input('q', ''));
+        $level5 = trim((string) $request->input('level5', ''));
+        $level6 = trim((string) $request->input('level6', ''));
         $limit = min(max((int) $request->input('limit', 20), 1), 50);
 
-        $items = MasterBarang::active()
-            ->search($q)
+        $query = MasterBarang::active();
+
+        if ($level5 !== '') {
+            $query->where('kode_level5', $level5);
+        }
+
+        if ($level6 !== '') {
+            $query->where('kode_level6', $level6);
+        }
+
+        $items = $query->search($q)
             ->orderBy('nama_barang')
             ->limit($limit)
-            ->get(['id', 'kode_barang', 'kode_permendagri', 'nama_barang', 'satuan', 'deskripsi']);
+            ->get(['id', 'kode_barang', 'kode_permendagri', 'kode_level5', 'nama_level5', 'kode_level6', 'nama_level6', 'nama_barang', 'satuan', 'deskripsi']);
 
         return response()->json($items);
     }
@@ -107,13 +118,20 @@ class RkbmdController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Daftar Kategori Level 5 untuk opsi filter cepat pada formulir
+        $level5List = MasterBarang::whereNotNull('kode_level5')
+            ->select('kode_level5', 'nama_level5')
+            ->distinct()
+            ->orderBy('nama_level5')
+            ->get();
+
         // Sampel awal Master Barang (15 item saja untuk kecepatan render instan & hemat memori)
         $masterBarangs = MasterBarang::active()
             ->orderBy('nama_barang')
             ->limit(15)
-            ->get(['id', 'kode_barang', 'kode_permendagri', 'nama_barang', 'satuan']);
+            ->get(['id', 'kode_barang', 'kode_permendagri', 'kode_level5', 'nama_level5', 'kode_level6', 'nama_level6', 'nama_barang', 'satuan', 'deskripsi']);
 
-        return view('operator.rkbmd.create', compact('user', 'targetOperators', 'masterBarangs'));
+        return view('operator.rkbmd.create', compact('user', 'targetOperators', 'masterBarangs', 'level5List'));
     }
 
     public function store(Request $request)
@@ -441,14 +459,20 @@ class RkbmdController extends Controller
         // Hanya muat barang yang terpilih di submission ini dan sampel awal (hemat memori)
         $selectedIds = $rkbmd->items->pluck('master_barang_id')->filter()->unique();
         $selectedBarangs = MasterBarang::whereIn('id', $selectedIds)
-            ->get(['id', 'kode_barang', 'kode_permendagri', 'nama_barang', 'satuan']);
+            ->get(['id', 'kode_barang', 'kode_permendagri', 'kode_level5', 'nama_level5', 'kode_level6', 'nama_level6', 'nama_barang', 'satuan', 'deskripsi']);
         $sampleBarangs = MasterBarang::active()
             ->orderBy('nama_barang')
             ->limit(15)
-            ->get(['id', 'kode_barang', 'kode_permendagri', 'nama_barang', 'satuan']);
+            ->get(['id', 'kode_barang', 'kode_permendagri', 'kode_level5', 'nama_level5', 'kode_level6', 'nama_level6', 'nama_barang', 'satuan', 'deskripsi']);
         $masterBarangs = $selectedBarangs->merge($sampleBarangs)->unique('id')->values();
 
-        return view('operator.rkbmd.edit', compact('rkbmd', 'targetOperators', 'masterBarangs', 'user'));
+        $level5List = MasterBarang::whereNotNull('kode_level5')
+            ->select('kode_level5', 'nama_level5')
+            ->distinct()
+            ->orderBy('nama_level5')
+            ->get();
+
+        return view('operator.rkbmd.edit', compact('rkbmd', 'targetOperators', 'masterBarangs', 'user', 'level5List'));
     }
 
     /**

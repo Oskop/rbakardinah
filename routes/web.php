@@ -76,6 +76,7 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
 
 // Menu Delegasi: Master Barang BMD (Dapat diakses Administrator atau User yang didelegasikan izin 'master_barangs')
 Route::middleware(['auth', 'menu_permission:master_barangs'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('master-barangs/api/level6', [\App\Http\Controllers\Admin\MasterBarangController::class, 'getLevel6'])->name('master-barangs.level6');
     Route::resource('master-barangs', \App\Http\Controllers\Admin\MasterBarangController::class);
 });
 

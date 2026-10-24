@@ -175,6 +175,14 @@
                                                             <span x-show="item.selected_barang.satuan" class="text-[10px] text-slate-500 font-medium" x-text="'• Satuan: ' + item.selected_barang.satuan"></span>
                                                         </div>
                                                         <div class="text-xs font-bold text-slate-900 truncate" x-text="item.selected_barang.nama_barang"></div>
+                                                        <template x-if="item.selected_barang.nama_level5 || item.selected_barang.nama_level6">
+                                                            <div class="text-[10px] text-slate-600 mt-1 flex items-center gap-1 flex-wrap">
+                                                                <span x-show="item.selected_barang.nama_level5" class="px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded text-[9px] font-semibold border border-blue-200" x-text="item.selected_barang.nama_level5"></span>
+                                                                <span x-show="item.selected_barang.nama_level5 && item.selected_barang.nama_level6" class="text-slate-400">›</span>
+                                                                <span x-show="item.selected_barang.nama_level6" class="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded text-[9px] font-semibold border border-indigo-200" x-text="item.selected_barang.nama_level6"></span>
+                                                            </div>
+                                                        </template>
+                                                        <div x-show="!item.selected_barang.nama_level5 && item.selected_barang.deskripsi" class="text-[10px] text-slate-500 truncate mt-0.5" x-text="item.selected_barang.deskripsi"></div>
                                                     </div>
                                                     <button type="button" @click="resetBarang()"
                                                         class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-rose-700 bg-white hover:bg-rose-50 border border-rose-200 rounded-lg shadow-2xs transition-colors"
@@ -187,6 +195,19 @@
 
                                             <!-- TAMPILAN 2: BELUM DIPILIH / MODE PENCARIAN -->
                                             <div x-show="!item.selected_barang" class="relative" @click.outside="closeDropdown()">
+                                                <!-- Filter Cepat Kategori Level 5 -->
+                                                <div class="mb-1.5">
+                                                    <select x-model="selectedCategory" @change="search()"
+                                                        class="w-full text-[11px] rounded-lg border-slate-200 bg-slate-50/80 text-slate-700 py-1.5 px-2.5 shadow-2xs focus:border-indigo-500 focus:ring-indigo-500">
+                                                        <option value="">-- Semua Kategori Level 5 (Rincian Objek) --</option>
+                                                        @if(isset($level5List))
+                                                            @foreach ($level5List as $lvl5)
+                                                                <option value="{{ $lvl5->kode_level5 }}">[{{ $lvl5->kode_level5 }}] {{ $lvl5->nama_level5 }}</option>
+                                                            @endforeach
+                                                        @endif
+                                                    </select>
+                                                </div>
+
                                                 <div class="relative flex items-center">
                                                     <span class="absolute left-3 text-slate-400 text-xs pointer-events-none">🔍</span>
                                                     <input type="text"
@@ -198,7 +219,7 @@
                                                         @keydown.arrow-up.prevent="highlightPrev()"
                                                         @keydown.enter.prevent="selectHighlighted()"
                                                         @keydown.escape="closeDropdown()"
-                                                        placeholder="Ketik kode (1.3.2...) atau nama barang..."
+                                                        placeholder="Ketik nama (misal: laptop, whiteboard, 1.3.2...)"
                                                         class="w-full pl-9 pr-9 text-xs rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 placeholder:text-slate-400">
                                                     
                                                     <!-- Loading Indicator -->
@@ -241,7 +262,14 @@
                                                                         <span x-show="b.satuan" class="text-[10px] text-slate-500 font-medium" x-text="'• ' + b.satuan"></span>
                                                                     </div>
                                                                     <div class="font-bold text-slate-800 leading-snug" x-text="b.nama_barang"></div>
-                                                                    <div x-show="b.deskripsi" class="text-[10px] text-slate-400 line-clamp-1 mt-0.5" x-text="b.deskripsi"></div>
+                                                                    <template x-if="b.nama_level5 || b.nama_level6">
+                                                                        <div class="text-[10px] text-slate-500 mt-1 flex items-center gap-1 flex-wrap">
+                                                                            <span x-show="b.nama_level5" class="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[9px] font-semibold border border-blue-200" x-text="'📁 ' + b.nama_level5"></span>
+                                                                            <span x-show="b.nama_level5 && b.nama_level6" class="text-slate-300">›</span>
+                                                                            <span x-show="b.nama_level6" class="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[9px] font-semibold border border-indigo-200" x-text="'📂 ' + b.nama_level6"></span>
+                                                                        </div>
+                                                                    </template>
+                                                                    <div x-show="!b.nama_level5 && b.deskripsi" class="text-[10px] text-slate-400 line-clamp-1 mt-0.5" x-text="b.deskripsi"></div>
                                                                 </div>
                                                                 <span class="text-xs text-indigo-600 font-bold opacity-0 transition-opacity" :class="{ 'opacity-100': highlightedIndex === bIdx }">
                                                                     Pilih ↵
@@ -387,6 +415,7 @@
             return {
                 open: false,
                 query: '',
+                selectedCategory: '',
                 loading: false,
                 results: [],
                 highlightedIndex: -1,
@@ -403,7 +432,7 @@
 
                 openDropdown() {
                     this.open = true;
-                    if (this.results.length === 0 && !this.query) {
+                    if (this.results.length === 0 && !this.query && !this.selectedCategory) {
                         this.results = masterBarangs;
                     }
                 },
@@ -415,14 +444,19 @@
 
                 async search() {
                     const q = this.query.trim();
-                    if (q.length === 0) {
+                    const cat = this.selectedCategory;
+                    if (q.length === 0 && !cat) {
                         this.results = masterBarangs;
                         this.loading = false;
                         return;
                     }
                     this.loading = true;
                     try {
-                        const resp = await fetch(searchUrl + '?q=' + encodeURIComponent(q) + '&limit=25', {
+                        let url = searchUrl + '?q=' + encodeURIComponent(q) + '&limit=25';
+                        if (cat) {
+                            url += '&level5=' + encodeURIComponent(cat);
+                        }
+                        const resp = await fetch(url, {
                             headers: {
                                 'Accept': 'application/json',
                                 'X-Requested-With': 'XMLHttpRequest'
@@ -454,6 +488,7 @@
                     item.master_barang_id = '';
                     item.selected_barang = null;
                     this.query = '';
+                    this.selectedCategory = '';
                     this.open = true;
                     this.results = masterBarangs;
                     this.$nextTick(() => {

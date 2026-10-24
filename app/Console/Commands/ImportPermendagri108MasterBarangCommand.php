@@ -19,14 +19,14 @@ class ImportPermendagri108MasterBarangCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Impor seluruh daftar barang Level 7 dari Permendagri No. 108 Tahun 2016 ke tabel master_barangs';
+    protected $description = 'Impor seluruh daftar barang Level 7 dari Permendagri No. 108 Tahun 2016 ke tabel master_barangs lengkap dengan kategori Level 5 & 6';
 
     /**
      * Execute the console command.
      */
     public function handle(): int
     {
-        $this->info('Memulai impor master barang Permendagri No. 108 Tahun 2016 (Level 7)...');
+        $this->info('Memulai impor master barang Permendagri No. 108 Tahun 2016 (Level 7 + Kategori Level 5 & 6)...');
 
         $seeder = new Permendagri108MasterBarangSeeder();
         $seeder->setCommand($this);

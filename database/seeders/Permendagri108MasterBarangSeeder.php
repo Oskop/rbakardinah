@@ -13,15 +13,37 @@ class Permendagri108MasterBarangSeeder extends Seeder
      */
     public function run(): void
     {
-        $jsonPath = base_path('data/permendagri_108_2016/tabel_2_6_sub_sub_rincian_objek.json');
+        $json26Path = base_path('data/permendagri_108_2016/tabel_2_6_sub_sub_rincian_objek.json');
+        $json16Path = base_path('data/permendagri_108_2016/permendagri_108_master_level1_6.json');
 
-        if (!File::exists($jsonPath)) {
-            $this->command?->error("File sumber tidak ditemukan: {$jsonPath}");
+        if (!File::exists($json26Path)) {
+            $this->command?->error("File sumber Level 7 tidak ditemukan: {$json26Path}");
             return;
         }
 
-        $this->command?->info("Membaca berkas JSON: {$jsonPath} ...");
-        $rawJson = File::get($jsonPath);
+        // 1. Baca data bersih Level 1 s.d. Level 6 dari permendagri_108_master_level1_6.json
+        $lvl5Map = [];
+        $lvl6Map = [];
+        if (File::exists($json16Path)) {
+            $this->command?->info("Membaca data referensi kategori bersih (Level 5 & 6)...");
+            $master16Data = json_decode(File::get($json16Path), true);
+            if (is_array($master16Data)) {
+                foreach ($master16Data as $row) {
+                    $lvl = (int)($row['level'] ?? 0);
+                    $kd = trim($row['kode'] ?? '');
+                    $ur = trim($row['uraian'] ?? '');
+                    if ($lvl === 5 && !empty($kd)) {
+                        $lvl5Map[$kd] = $ur;
+                    } elseif ($lvl === 6 && !empty($kd)) {
+                        $lvl6Map[$kd] = $ur;
+                    }
+                }
+            }
+        }
+
+        // 2. Baca data tabel 2.6 untuk Level 7 dan fallback kategori
+        $this->command?->info("Membaca berkas JSON Level 7: {$json26Path} ...");
+        $rawJson = File::get($json26Path);
         $data = json_decode($rawJson, true);
 
         if (!is_array($data)) {
@@ -29,12 +51,11 @@ class Permendagri108MasterBarangSeeder extends Seeder
             return;
         }
 
-        $this->command?->info("Menyusun peta kategori induk (Level 1 - 6)...");
-        $categoryMap = [];
+        $fallbackCategoryMap = [];
         foreach ($data as $item) {
             $level = (int)($item['level'] ?? 0);
             if ($level >= 1 && $level <= 6 && !empty($item['kode'])) {
-                $categoryMap[trim($item['kode'])] = trim($item['uraian'] ?? '');
+                $fallbackCategoryMap[trim($item['kode'])] = trim($item['uraian'] ?? '');
             }
         }
 
@@ -51,7 +72,7 @@ class Permendagri108MasterBarangSeeder extends Seeder
             }
         }
 
-        $this->command?->info("Memproses dan mengimpor {$level7Count} item Level 7 Permendagri 108...");
+        $this->command?->info("Memproses dan mengimpor {$level7Count} item Level 7 Permendagri 108 dengan kategori Level 5 & 6...");
 
         foreach ($data as $item) {
             if ((int)($item['level'] ?? 0) !== 7) {
@@ -66,8 +87,6 @@ class Permendagri108MasterBarangSeeder extends Seeder
             }
 
             // Tangani 16 pasang kode duplikat regulasi Permendagri 108
-            // kode_permendagri tetap berisi kode asli regulasi
-            // kode_barang diberikan postfix unik .1 untuk baris duplikat kedua
             if (!isset($seenCodes[$rawKode])) {
                 $kodeBarang = $rawKode;
                 $seenCodes[$rawKode] = 1;
@@ -78,22 +97,30 @@ class Permendagri108MasterBarangSeeder extends Seeder
 
             $kodePermendagri = $rawKode;
 
-            // Bentuk hierarki deskripsi kategori (misal Level 5 > Level 6)
-            $parentDescriptions = [];
+            // Ekstrak kode Level 5 (Rincian Objek) dan Level 6 (Sub Rincian Objek)
             $codeParts = explode('.', $rawKode);
-            if (count($codeParts) >= 6) {
-                $lvl5Code = implode('.', array_slice($codeParts, 0, 5));
-                $lvl6Code = implode('.', array_slice($codeParts, 0, 6));
+            $lvl5Code = count($codeParts) >= 5 ? implode('.', array_slice($codeParts, 0, 5)) : null;
+            $lvl6Code = count($codeParts) >= 6 ? implode('.', array_slice($codeParts, 0, 6)) : null;
 
-                if (isset($categoryMap[$lvl5Code])) {
-                    $parentDescriptions[] = $categoryMap[$lvl5Code];
-                }
-                if (isset($categoryMap[$lvl6Code]) && !in_array($categoryMap[$lvl6Code], $parentDescriptions)) {
-                    $parentDescriptions[] = $categoryMap[$lvl6Code];
-                }
+            // Nama Level 5 & 6 diambil dari sumber bersih (100% bebas typo OCR)
+            $namaLvl5 = ($lvl5Code && isset($lvl5Map[$lvl5Code])) 
+                ? $lvl5Map[$lvl5Code] 
+                : ($fallbackCategoryMap[$lvl5Code] ?? null);
+
+            $namaLvl6 = ($lvl6Code && isset($lvl6Map[$lvl6Code])) 
+                ? $lvl6Map[$lvl6Code] 
+                : ($fallbackCategoryMap[$lvl6Code] ?? null);
+
+            // Kolom deskripsi bersih format: "NAMA LEVEL 5 > NAMA LEVEL 6"
+            if ($namaLvl5 && $namaLvl6) {
+                $deskripsi = "{$namaLvl5} > {$namaLvl6}";
+            } elseif ($namaLvl5) {
+                $deskripsi = $namaLvl5;
+            } elseif ($namaLvl6) {
+                $deskripsi = $namaLvl6;
+            } else {
+                $deskripsi = null;
             }
-
-            $deskripsi = !empty($parentDescriptions) ? implode(' > ', $parentDescriptions) : null;
 
             // Penentuan satuan default
             $satuan = 'Unit';
@@ -112,6 +139,10 @@ class Permendagri108MasterBarangSeeder extends Seeder
             $batch[] = [
                 'kode_barang' => $kodeBarang,
                 'kode_permendagri' => $kodePermendagri,
+                'kode_level5' => $lvl5Code,
+                'nama_level5' => $namaLvl5 ? mb_substr($namaLvl5, 0, 255) : null,
+                'kode_level6' => $lvl6Code,
+                'nama_level6' => $namaLvl6 ? mb_substr($namaLvl6, 0, 255) : null,
                 'nama_barang' => mb_substr($rawUraian, 0, 255),
                 'satuan' => $satuan,
                 'deskripsi' => $deskripsi,
@@ -124,7 +155,18 @@ class Permendagri108MasterBarangSeeder extends Seeder
                 DB::table('master_barangs')->upsert(
                     $batch,
                     ['kode_barang'],
-                    ['kode_permendagri', 'nama_barang', 'satuan', 'deskripsi', 'is_active', 'updated_at']
+                    [
+                        'kode_permendagri',
+                        'kode_level5',
+                        'nama_level5',
+                        'kode_level6',
+                        'nama_level6',
+                        'nama_barang',
+                        'satuan',
+                        'deskripsi',
+                        'is_active',
+                        'updated_at'
+                    ]
                 );
                 $totalImported += count($batch);
                 $batch = [];
@@ -135,11 +177,50 @@ class Permendagri108MasterBarangSeeder extends Seeder
             DB::table('master_barangs')->upsert(
                 $batch,
                 ['kode_barang'],
-                ['kode_permendagri', 'nama_barang', 'satuan', 'deskripsi', 'is_active', 'updated_at']
+                [
+                    'kode_permendagri',
+                    'kode_level5',
+                    'nama_level5',
+                    'kode_level6',
+                    'nama_level6',
+                    'nama_barang',
+                    'satuan',
+                    'deskripsi',
+                    'is_active',
+                    'updated_at'
+                ]
             );
             $totalImported += count($batch);
         }
 
-        $this->command?->info("Berhasil mengimpor/menyinkronkan {$totalImported} data Master Barang Permendagri No. 108 Tahun 2016.");
+        // Tangani update untuk 3 data sampel RS awal jika ada
+        DB::table('master_barangs')->where('kode_barang', '1.3.2.07.03.02.001')->update([
+            'kode_level5' => '1.3.2.07.03',
+            'nama_level5' => 'ALAT KEDOKTERAN LAINNYA',
+            'kode_level6' => '1.3.2.07.03.02',
+            'nama_level6' => 'ALAT PENGHISAP LENDIR / SUCTION PUMP',
+            'deskripsi' => 'ALAT KEDOKTERAN LAINNYA > ALAT PENGHISAP LENDIR / SUCTION PUMP',
+            'updated_at' => $now,
+        ]);
+
+        DB::table('master_barangs')->where('kode_barang', '1.3.2.07.04.01.001')->update([
+            'kode_level5' => '1.3.2.07.04',
+            'nama_level5' => 'PERALATAN RUMAH SAKIT',
+            'kode_level6' => '1.3.2.07.04.01',
+            'nama_level6' => 'TEMPAT TIDUR PASIEN (HOSPITAL BED)',
+            'deskripsi' => 'PERALATAN RUMAH SAKIT > TEMPAT TIDUR PASIEN (HOSPITAL BED)',
+            'updated_at' => $now,
+        ]);
+
+        DB::table('master_barangs')->where('kode_barang', '1.3.2.07.04.02.001')->update([
+            'kode_level5' => '1.3.2.07.04',
+            'nama_level5' => 'PERALATAN RUMAH SAKIT',
+            'kode_level6' => '1.3.2.07.04.02',
+            'nama_level6' => 'KURSI RODA PASIEN',
+            'deskripsi' => 'PERALATAN RUMAH SAKIT > KURSI RODA PASIEN',
+            'updated_at' => $now,
+        ]);
+
+        $this->command?->info("✓ Berhasil mengimpor/menyinkronkan {$totalImported} data Master Barang Permendagri No. 108 Tahun 2016 lengkap dengan Level 5 & 6.");
     }
 }

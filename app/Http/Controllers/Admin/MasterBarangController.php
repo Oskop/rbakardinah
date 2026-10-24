@@ -18,14 +18,31 @@ class MasterBarangController extends Controller
             $query = MasterBarang::query();
             $recordsTotal = MasterBarang::count();
 
-            // Pencarian global (kode barang, kode permendagri, nama barang, satuan)
+            // Filter Kategori Level 5 (Rincian Objek)
+            $level5 = trim((string) $request->input('level5', ''));
+            if ($level5 !== '') {
+                $query->where('kode_level5', $level5);
+            }
+
+            // Filter Kategori Level 6 (Sub Rincian Objek)
+            $level6 = trim((string) $request->input('level6', ''));
+            if ($level6 !== '') {
+                $query->where('kode_level6', $level6);
+            }
+
+            // Smart Search (space-insensitive & multi-attribute)
             $searchValue = trim((string) $request->input('search.value', ''));
             if ($searchValue !== '') {
-                $query->where(function ($q) use ($searchValue) {
+                $cleanSearch = str_replace([' ', '-', '_', '.', '/'], '', strtolower($searchValue));
+                $query->where(function ($q) use ($searchValue, $cleanSearch) {
                     $q->where('nama_barang', 'like', "%{$searchValue}%")
+                      ->orWhereRaw("REPLACE(REPLACE(nama_barang, ' ', ''), '-', '') LIKE ?", ["%{$cleanSearch}%"])
                       ->orWhere('kode_barang', 'like', "%{$searchValue}%")
                       ->orWhere('kode_permendagri', 'like', "%{$searchValue}%")
-                      ->orWhere('satuan', 'like', "%{$searchValue}%");
+                      ->orWhere('nama_level5', 'like', "%{$searchValue}%")
+                      ->orWhere('nama_level6', 'like', "%{$searchValue}%")
+                      ->orWhere('satuan', 'like', "%{$searchValue}%")
+                      ->orWhere('deskripsi', 'like', "%{$searchValue}%");
                 });
             }
 
@@ -59,9 +76,25 @@ class MasterBarangController extends Controller
                         . '</div>';
                 }
 
-                // Kolom 1: Nama Barang & Deskripsi
-                $namaHtml = '<div class="text-sm font-semibold text-gray-900">' . e($item->nama_barang) . '</div>';
-                if ($item->deskripsi) {
+                // Kolom 1: Nama Barang & Badge Kategori Level 5 / Level 6
+                $namaHtml = '<div class="text-sm font-semibold text-gray-900 leading-snug">' . e($item->nama_barang) . '</div>';
+                if ($item->nama_level5 || $item->nama_level6) {
+                    $namaHtml .= '<div class="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">';
+                    if ($item->nama_level5) {
+                        $namaHtml .= '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-200 text-[9px] font-semibold" title="Rincian Objek (Level 5)">'
+                            . '<span class="text-[10px]">📁</span> ' . e($item->nama_level5)
+                            . '</span>';
+                    }
+                    if ($item->nama_level5 && $item->nama_level6) {
+                        $namaHtml .= '<span class="text-slate-300 font-bold">›</span>';
+                    }
+                    if ($item->nama_level6) {
+                        $namaHtml .= '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-indigo-50 text-indigo-700 rounded border border-indigo-200 text-[9px] font-semibold" title="Sub Rincian Objek (Level 6)">'
+                            . '<span class="text-[10px]">📂</span> ' . e($item->nama_level6)
+                            . '</span>';
+                    }
+                    $namaHtml .= '</div>';
+                } elseif ($item->deskripsi) {
                     $namaHtml .= '<div class="text-xs text-gray-500 mt-0.5 line-clamp-1">' . e($item->deskripsi) . '</div>';
                 }
 
@@ -106,7 +139,34 @@ class MasterBarangController extends Controller
             ]);
         }
 
-        return view('admin.master_barangs.index');
+        // Ambil daftar unik Level 5 (Rincian Objek) untuk dropdown filter
+        $level5List = MasterBarang::whereNotNull('kode_level5')
+            ->select('kode_level5', 'nama_level5')
+            ->distinct()
+            ->orderBy('nama_level5')
+            ->get();
+
+        return view('admin.master_barangs.index', compact('level5List'));
+    }
+
+    /**
+     * Endpoint API untuk mengambil daftar Sub Rincian Objek (Level 6) berdasarkan Level 5
+     */
+    public function getLevel6(Request $request)
+    {
+        $level5 = trim((string) $request->input('level5', ''));
+        $query = MasterBarang::whereNotNull('kode_level6');
+
+        if ($level5 !== '') {
+            $query->where('kode_level5', $level5);
+        }
+
+        $items = $query->select('kode_level6', 'nama_level6')
+            ->distinct()
+            ->orderBy('nama_level6')
+            ->get();
+
+        return response()->json($items);
     }
 
     public function create()
@@ -119,6 +179,10 @@ class MasterBarangController extends Controller
         $validated = $request->validate([
             'kode_barang' => 'required|string|max:100|unique:master_barangs,kode_barang',
             'kode_permendagri' => 'nullable|string|max:50',
+            'kode_level5' => 'nullable|string|max:20',
+            'nama_level5' => 'nullable|string|max:255',
+            'kode_level6' => 'nullable|string|max:30',
+            'nama_level6' => 'nullable|string|max:255',
             'nama_barang' => 'required|string|max:255',
             'satuan' => 'nullable|string|max:50',
             'deskripsi' => 'nullable|string',
@@ -142,6 +206,10 @@ class MasterBarangController extends Controller
         $validated = $request->validate([
             'kode_barang' => 'required|string|max:100|unique:master_barangs,kode_barang,' . $masterBarang->id,
             'kode_permendagri' => 'nullable|string|max:50',
+            'kode_level5' => 'nullable|string|max:20',
+            'nama_level5' => 'nullable|string|max:255',
+            'kode_level6' => 'nullable|string|max:30',
+            'nama_level6' => 'nullable|string|max:255',
             'nama_barang' => 'required|string|max:255',
             'satuan' => 'nullable|string|max:50',
             'deskripsi' => 'nullable|string',
