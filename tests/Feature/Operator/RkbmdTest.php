@@ -1019,6 +1019,49 @@ class RkbmdTest extends TestCase
         $response->assertSee('data-order="' . $sub->created_at->timestamp . '"', false);
         $response->assertSee('data-date="' . $sub->created_at->format('Y-m-d') . '"', false);
     }
+
+    public function test_operator_can_search_master_barangs_via_async_api()
+    {
+        $response = $this->actingAs($this->pemohon)->getJson(route('operator.rkbmd.api.master-barangs', ['q' => 'Conditioner']));
+        $response->assertStatus(200);
+        $response->assertJsonCount(1);
+        $response->assertJsonFragment([
+            'id' => $this->barangAC->id,
+            'nama_barang' => 'Air Conditioner (AC) Split Wall 2 PK',
+        ]);
+
+        // Cari kode permendagri / kode barang
+        $responseCode = $this->actingAs($this->pemohon)->getJson(route('operator.rkbmd.api.master-barangs', ['q' => '1.3.2.05.01']));
+        $responseCode->assertStatus(200);
+        $responseCode->assertJsonCount(1);
+        $responseCode->assertJsonFragment([
+            'id' => $this->barangMeja->id,
+            'nama_barang' => 'Meja Kerja Dokter Poliklinik',
+        ]);
+
+        // Cek unauthenticated
+        $this->post(route('logout'));
+        $guestResp = $this->getJson(route('operator.rkbmd.api.master-barangs', ['q' => 'AC']));
+        $guestResp->assertStatus(401);
+    }
+
+    public function test_search_master_barangs_excludes_inactive_items_and_respects_limit()
+    {
+        MasterBarang::create([
+            'kode_barang' => '1.3.2.99.99.99.001',
+            'nama_barang' => 'AC Bekas Rusak (Tidak Aktif)',
+            'satuan' => 'Unit',
+            'is_active' => false,
+        ]);
+
+        $response = $this->actingAs($this->pemohon)->getJson(route('operator.rkbmd.api.master-barangs', ['q' => 'AC']));
+        $response->assertStatus(200);
+        
+        $data = $response->json();
+        $ids = collect($data)->pluck('id');
+        $this->assertTrue($ids->contains($this->barangAC->id));
+        $this->assertFalse(collect($data)->contains('nama_barang', 'AC Bekas Rusak (Tidak Aktif)'));
+    }
 }
 
 

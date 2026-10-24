@@ -31,27 +31,38 @@
             'volume' => (float)$item->volume,
             'satuan' => $item->satuan,
             'spesifikasi' => $item->spesifikasi ?? '',
+            'selected_barang' => $item->masterBarang ? [
+                'id' => $item->masterBarang->id,
+                'kode_barang' => $item->masterBarang->kode_barang,
+                'kode_permendagri' => $item->masterBarang->kode_permendagri,
+                'nama_barang' => $item->masterBarang->nama_barang,
+                'satuan' => $item->masterBarang->satuan,
+                'deskripsi' => $item->masterBarang->deskripsi,
+            ] : null,
         ])),
         masterBarangs: @js($masterBarangs),
+        searchUrl: '{{ route('operator.rkbmd.api.master-barangs') }}',
         addItem() {
-            this.items.push({ master_barang_id: '', volume: 1, satuan: '', spesifikasi: '' });
+            this.items.push({ master_barang_id: '', volume: 1, satuan: '', spesifikasi: '', selected_barang: null });
         },
         removeItem(index) {
             if (this.items.length > 1) {
                 this.items.splice(index, 1);
             }
         },
-        onBarangChange(index) {
-            const selectedId = this.items[index].master_barang_id;
-            const barang = this.masterBarangs.find(b => b.id == selectedId);
-            if (barang && barang.satuan) {
-                this.items[index].satuan = barang.satuan;
+        validateBeforeSubmit(e) {
+            for (let i = 0; i < this.items.length; i++) {
+                if (!this.items[i].master_barang_id) {
+                    e.preventDefault();
+                    alert('Mohon pilih barang dari katalog Permendagri 108 untuk Baris #' + (i + 1) + '.');
+                    return false;
+                }
             }
         }
     }">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80">
-                <form method="POST" action="{{ route('operator.rkbmd.update', $rkbmd) }}" enctype="multipart/form-data" class="p-6 space-y-6">
+                <form method="POST" action="{{ route('operator.rkbmd.update', $rkbmd) }}" enctype="multipart/form-data" @submit="validateBeforeSubmit($event)" class="p-6 space-y-6">
                     @csrf
                     @method('PUT')
 
@@ -115,7 +126,7 @@
                         <x-input-error :messages="$errors->get('notes')" class="mt-1" />
                     </div>
 
-                    <!-- TABEL DAFTAR BARANG (DYNAMIC ALPINE.JS) -->
+                    <!-- TABEL DAFTAR BARANG (DYNAMIC ALPINE.JS ASYNC COMBOBOX) -->
                     <div class="border border-slate-200 rounded-2xl p-5 bg-slate-50/50 space-y-4">
                         <div class="flex items-center justify-between">
                             <div>
@@ -123,7 +134,7 @@
                                     <span>📋</span>
                                     <span>Daftar Barang yang Dimohonkan (Permendagri No. 108 Tahun 2016)</span>
                                 </h3>
-                                <p class="text-xs text-slate-500">Sesuaikan pilihan kode barang dan volume yang diajukan</p>
+                                <p class="text-xs text-slate-500">Sesuaikan pilihan kode barang dan volume yang diajukan (cari dari 13.476 item Permendagri 108)</p>
                             </div>
                             <button type="button" @click="addItem()"
                                 class="inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-2xs gap-1.5">
@@ -144,20 +155,247 @@
                                     </div>
 
                                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
-                                        <!-- Barang BMD Dropdown -->
-                                        <div class="md:col-span-6">
+                                        <!-- Barang BMD Async Combobox -->
+                                        <div class="md:col-span-6" x-data="{
+                                            open: false,
+                                            query: '',
+                                            loading: false,
+                                            results: [],
+                                            highlightedIndex: -1,
+                                            init() {
+                                                if (item.master_barang_id && !item.selected_barang) {
+                                                    const found = masterBarangs.find(b => b.id == item.master_barang_id);
+                                                    if (found) {
+                                                        item.selected_barang = found;
+                                                        if (!item.satuan) item.satuan = found.satuan || '';
+                                                    }
+                                                }
+                                            },
+                                            openDropdown() {
+                                                this.open = true;
+                                                if (this.results.length === 0 && !this.query) {
+                                                    this.results = masterBarangs;
+                                                }
+                                            },
+                                            closeDropdown() {
+                                                this.open = false;
+                                                this.highlightedIndex = -1;
+                                            },
+                                            async search() {
+                                                const q = this.query.trim();
+                                                if (q.length === 0) {
+                                                    this.results = masterBarangs;
+                                                    this.loading = false;
+                                                    return;
+                                                }
+                                                this.loading = true;
+                                                try {
+                                                    const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}&limit=25`, {
+                                                        headers: {
+                                                            'Accept': 'application/json',
+                                                            'X-Requested-With': 'XMLHttpRequest'
+                                                        }
+                                                    });
+                                                    if (resp.ok) {
+                                                        this.results = await resp.json();
+                                                        this.highlightedIndex = this.results.length > 0 ? 0 : -1;
+                                                    }
+                                                } catch (e) {
+                                                    console.error('Gagal memuat barang:', e);
+                                                } finally {
+                                                    this.loading = false;
+                                                }
+                                            },
+                                            selectBarang(b) {
+                                                item.master_barang_id = b.id;
+                                                item.selected_barang = b;
+                                                if (b.satuan) {
+                                                    item.satuan = b.satuan;
+                                                }
+                                                this.query = '';
+                                                this.open = false;
+                                                this.highlightedIndex = -1;
+                                            },
+                                            resetBarang() {
+                                                item.master_barang_id = '';
+                                                item.selected_barang = null;
+                                                this.query = '';
+                                                this.open = true;
+                                                this.results = masterBarangs;
+                                                this.$nextTick(() => {
+                                                    this.$refs.searchInput?.focus();
+                                                });
+                                            },
+                                            highlightNext() {
+                                                if (!this.open) {
+                                                    this.openDropdown();
+                                                    return;
+                                                }
+                                                if (this.results.length === 0) return;
+                                                this.highlightedIndex = (this.highlightedIndex + 1) % this.results.length;
+                                                this.scrollToHighlighted();
+                                            },
+                                            highlightPrev() {
+                                                if (!this.open) {
+                                                    this.openDropdown();
+                                                    return;
+                                                }
+                                                if (this.results.length === 0) return;
+                                                this.highlightedIndex = (this.highlightedIndex - 1 + this.results.length) % this.results.length;
+                                                this.scrollToHighlighted();
+                                            },
+                                            selectHighlighted() {
+                                                if (this.open && this.highlightedIndex >= 0 && this.results[this.highlightedIndex]) {
+                                                    this.selectBarang(this.results[this.highlightedIndex]);
+                                                }
+                                            },
+                                            scrollToHighlighted() {
+                                                this.$nextTick(() => {
+                                                    const el = this.$refs.dropdownList?.children[this.highlightedIndex];
+                                                    if (el) el.scrollIntoView({ block: 'nearest' });
+                                                });
+                                            }
+                                        }">
                                             <label class="block text-[11px] font-bold text-slate-700 mb-1">
                                                 Nama / Kode Barang BMD Permendagri 108 <span class="text-rose-500">*</span>
                                             </label>
-                                            <select :name="'items[' + index + '][master_barang_id]'" x-model="item.master_barang_id"
-                                                @change="onBarangChange(index)" required
-                                                class="w-full text-xs rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2">
-                                                <option value="" disabled>-- Pilih Barang dari Katalog Permendagri 108 --</option>
-                                                <template x-for="b in masterBarangs" :key="b.id">
-                                                    <option :value="b.id" x-text="b.kode_barang + ' - ' + b.nama_barang" :selected="b.id == item.master_barang_id"></option>
-                                                </template>
-                                            </select>
+
+                                            <!-- Hidden input payload POST standard -->
+                                            <input type="hidden" :name="'items[' + index + '][master_barang_id]'" :value="item.master_barang_id">
+
+                                            <!-- TAMPILAN 1: BARANG SUDAH DIPILIH -->
+                                            <template x-if="item.selected_barang">
+                                                <div class="flex items-center justify-between p-2.5 bg-indigo-50/70 border border-indigo-200 rounded-xl transition-all">
+                                                    <div class="min-w-0 flex-1 pr-2">
+                                                        <div class="flex items-center gap-1.5 flex-wrap mb-0.5">
+                                                            <span class="inline-flex items-center px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded font-mono text-[10px] font-bold border border-indigo-200">
+                                                                <span x-text="item.selected_barang.kode_permendagri ? ('Ref 108: ' + item.selected_barang.kode_permendagri) : ('Kode: ' + item.selected_barang.kode_barang)"></span>
+                                                            </span>
+                                                            <span x-show="item.selected_barang.satuan" class="text-[10px] text-slate-500 font-medium" x-text="'• Satuan: ' + item.selected_barang.satuan"></span>
+                                                        </div>
+                                                        <div class="text-xs font-bold text-slate-900 truncate" x-text="item.selected_barang.nama_barang"></div>
+                                                    </div>
+                                                    <button type="button" @click="resetBarang()"
+                                                        class="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-rose-700 bg-white hover:bg-rose-50 border border-rose-200 rounded-lg shadow-2xs transition-colors"
+                                                        title="Ganti pilihan barang ini">
+                                                        <span>🔄</span>
+                                                        <span>Ganti</span>
+                                                    </button>
+                                                </div>
+                                            </template>
+
+                                            <!-- TAMPILAN 2: BELUM DIPILIH / MODE PENCARIAN -->
+                                            <div x-show="!item.selected_barang" class="relative">
+                                                <div class="relative flex items-center">
+                                                    <span class="absolute left-3 text-slate-400 text-xs pointer-events-none">🔍</span>
+                                                    <input type="text"
+                                                        x-ref="searchInput"
+                                                        x-model="query"
+                                                        @focus="openDropdown()"
+                                                        @input.debounce.250ms="search()"
+                                                        @keydown.arrow-down.prevent="highlightNext()"
+                                                        @keydown.arrow-up.prevent="highlightPrev()"
+                                                        @keydown.enter.prevent="selectHighlighted()"
+                                                        @keydown.escape="closeDropdown()"
+                                                        placeholder="Ketik kode (1.3.2...) atau nama barang..."
+                                                        class="w-full pl-9 pr-9 text-xs rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2 placeholder:text-slate-400">
+                                                    
+                                                    <!-- Loading Indicator -->
+                                                    <span x-show="loading" class="absolute right-3 inline-flex items-center text-indigo-600 animate-spin">
+                                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                                        </svg>
+                                                    </span>
+                                                    <button type="button" x-show="!loading && query" @click="query = ''; search(); $refs.searchInput.focus()"
+                                                        class="absolute right-3 text-slate-400 hover:text-slate-600 text-xs">✕</button>
+                                                </div>
+
+                                                <!-- Dropdown List Opsi -->
+                                                <div x-show="open"
+                                                    @click.outside="closeDropdown()"
+                                                    x-transition:enter="transition ease-out duration-100"
+                                                    x-transition:enter-start="opacity-0 translate-y-1"
+                                                    x-transition:enter-end="opacity-100 translate-y-0"
+                                                    x-transition:leave="transition ease-in duration-75"
+                                                    x-transition:leave-start="opacity-100 translate-y-0"
+                                                    x-transition:leave-end="opacity-0 translate-y-1"
+                                                    class="absolute z-50 left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl divide-y divide-slate-100">
+                                                    
+                                                    <div x-ref="dropdownList">
+                                                        <template x-for="(b, bIdx) in results" :key="b.id">
+                                                            <div @click="selectBarang(b)"
+                                                                @mouseenter="highlightedIndex = bIdx"
+                                                                :class="{ 'bg-indigo-50 text-indigo-900': highlightedIndex === bIdx, 'hover:bg-slate-50': highlightedIndex !== bIdx }"
+                                                                class="p-2.5 text-xs cursor-pointer transition-colors flex items-start justify-between gap-2">
+                                                                <div class="min-w-0 flex-1">
+                                                                    <div class="flex items-center gap-1.5 flex-wrap mb-0.5">
+                                                                        <span class="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold"
+                                                                            :class="highlightedIndex === bIdx ? 'bg-indigo-200 text-indigo-900' : 'bg-slate-100 text-slate-700'"
+                                                                            x-text="b.kode_permendagri ? ('Ref 108: ' + b.kode_permendagri) : ('Kode: ' + b.kode_barang)">
+                                                                        </span>
+                                                                        <span x-show="b.satuan" class="text-[10px] text-slate-500 font-medium" x-text="'• ' + b.satuan"></span>
+                                                                    </div>
+                                                                    <div class="font-bold text-slate-800 leading-snug" x-text="b.nama_barang"></div>
+                                                                    <div x-show="b.deskripsi" class="text-[10px] text-slate-400 line-clamp-1 mt-0.5" x-text="b.deskripsi"></div>
+                                                                </div>
+                                                                <span class="text-xs text-indigo-600 font-bold opacity-0 transition-opacity" :class="{ 'opacity-100': highlightedIndex === bIdx }">
+                                                                    Pilih ↵
+                                                                </span>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+
+                                                    <!-- Pesan Tidak Ditemukan -->
+                                                    <div x-show="!loading && results.length === 0" class="p-4 text-center text-xs text-slate-400">
+                                                        <span>🔍 Barang tidak ditemukan untuk "<span class="font-bold text-slate-600" x-text="query"></span>"</span>
+                                                        <p class="text-[10px] text-slate-400 mt-1">Gunakan kata kunci umum atau potongan kode rekening.</p>
+                                                    </div>
+
+                                                    <!-- Indikator Pencarian Berjalan -->
+                                                    <div x-show="loading" class="p-3 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+                                                        <svg class="h-4 w-4 text-indigo-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                                        </svg>
+                                                        <span>Mencari di katalog Permendagri 108...</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
+
+                                        <!-- Jumlah / Volume -->
+                                        <div class="md:col-span-2">
+                                            <label class="block text-[11px] font-bold text-slate-700 mb-1">
+                                                Jumlah <span class="text-rose-500">*</span>
+                                            </label>
+                                            <input type="number" step="0.01" min="0.01" :name="'items[' + index + '][volume]'" x-model="item.volume" required
+                                                class="w-full text-xs font-bold text-right rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2" placeholder="0">
+                                        </div>
+
+                                        <!-- Satuan -->
+                                        <div class="md:col-span-4">
+                                            <label class="block text-[11px] font-bold text-slate-700 mb-1">
+                                                Satuan <span class="text-rose-500">*</span>
+                                            </label>
+                                            <input type="text" :name="'items[' + index + '][satuan]'" x-model="item.satuan" required
+                                                class="w-full text-xs rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2" placeholder="Unit, Buah, Set...">
+                                        </div>
+
+                                        <!-- Spesifikasi Tambahan -->
+                                        <div class="md:col-span-12">
+                                            <label class="block text-[11px] font-bold text-slate-700 mb-1">
+                                                Spesifikasi / Merk / Keterangan Kebutuhan Tambahan (Opsional)
+                                            </label>
+                                            <input type="text" :name="'items[' + index + '][spesifikasi]'" x-model="item.spesifikasi"
+                                                class="w-full text-xs rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-1.5"
+                                                placeholder="Contoh: Ukuran 2 PK, Inverter, bahan stainless steel, dilengkapi laci...">
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
 
                                         <!-- Jumlah / Volume -->
                                         <div class="md:col-span-2">

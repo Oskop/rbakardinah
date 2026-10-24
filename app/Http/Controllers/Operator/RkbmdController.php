@@ -77,6 +77,23 @@ class RkbmdController extends Controller
         ));
     }
 
+    /**
+     * Endpoint API pencarian master barang (Permendagri 108 / SIPAKAR) secara async
+     */
+    public function searchMasterBarangs(Request $request)
+    {
+        $q = trim((string) $request->input('q', ''));
+        $limit = min(max((int) $request->input('limit', 20), 1), 50);
+
+        $items = MasterBarang::active()
+            ->search($q)
+            ->orderBy('nama_barang')
+            ->limit($limit)
+            ->get(['id', 'kode_barang', 'kode_permendagri', 'nama_barang', 'satuan', 'deskripsi']);
+
+        return response()->json($items);
+    }
+
     public function create()
     {
         $user = Auth::user();
@@ -90,8 +107,11 @@ class RkbmdController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Master Barang Permendagri 108/2016 aktif
-        $masterBarangs = MasterBarang::active()->orderBy('nama_barang')->get();
+        // Sampel awal Master Barang (15 item saja untuk kecepatan render instan & hemat memori)
+        $masterBarangs = MasterBarang::active()
+            ->orderBy('nama_barang')
+            ->limit(15)
+            ->get(['id', 'kode_barang', 'kode_permendagri', 'nama_barang', 'satuan']);
 
         return view('operator.rkbmd.create', compact('user', 'targetOperators', 'masterBarangs'));
     }
@@ -416,9 +436,17 @@ class RkbmdController extends Controller
             ->orderBy('name')
             ->get();
 
-        $masterBarangs = MasterBarang::orderBy('kode_barang')->get(['id', 'kode_barang', 'nama_barang', 'satuan']);
-
         $rkbmd->load(['items.masterBarang', 'subUnit', 'unit', 'targetOperator']);
+
+        // Hanya muat barang yang terpilih di submission ini dan sampel awal (hemat memori)
+        $selectedIds = $rkbmd->items->pluck('master_barang_id')->filter()->unique();
+        $selectedBarangs = MasterBarang::whereIn('id', $selectedIds)
+            ->get(['id', 'kode_barang', 'kode_permendagri', 'nama_barang', 'satuan']);
+        $sampleBarangs = MasterBarang::active()
+            ->orderBy('nama_barang')
+            ->limit(15)
+            ->get(['id', 'kode_barang', 'kode_permendagri', 'nama_barang', 'satuan']);
+        $masterBarangs = $selectedBarangs->merge($sampleBarangs)->unique('id')->values();
 
         return view('operator.rkbmd.edit', compact('rkbmd', 'targetOperators', 'masterBarangs', 'user'));
     }

@@ -135,6 +135,7 @@ Route::middleware(['auth', 'role:Operator'])->prefix('operator')->name('operator
     Route::post('details/{detail}/upload-version', [\App\Http\Controllers\Operator\DetailController::class, 'uploadVersion'])->name('details.upload-version');
 
     // RKBMD Routes
+    Route::get('rkbmd/api/master-barangs', [\App\Http\Controllers\Operator\RkbmdController::class, 'searchMasterBarangs'])->name('rkbmd.api.master-barangs');
     Route::post('rkbmd/{rkbmd}/reply', [\App\Http\Controllers\Operator\RkbmdController::class, 'reply'])->name('rkbmd.reply');
     Route::put('rkbmd/{rkbmd}/reply', [\App\Http\Controllers\Operator\RkbmdController::class, 'updateReply'])->name('rkbmd.reply.update');
     Route::post('rkbmd/{rkbmd}/forward', [\App\Http\Controllers\Operator\RkbmdController::class, 'forward'])->name('rkbmd.forward');
