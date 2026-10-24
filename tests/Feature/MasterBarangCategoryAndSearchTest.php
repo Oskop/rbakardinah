@@ -203,4 +203,15 @@ class MasterBarangCategoryAndSearchTest extends TestCase
         $response->assertSee('btn-reset-filters');
         $response->assertSee('KOMPUTER UNIT');
     }
+
+    public function test_operator_rkbmd_create_renders_searchable_category_popover(): void
+    {
+        $response = $this->actingAs($this->operator)->get(route('operator.rkbmd.create'));
+
+        $response->assertOk();
+        $response->assertSee('Saring Kategori Level 5 (Opsional)');
+        $response->assertSee('catOpen');
+        $response->assertSee('filteredCategories()');
+        $response->assertSee('level5List');
+    }
 }

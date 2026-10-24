@@ -38,9 +38,14 @@
                 'nama_barang' => $item->masterBarang->nama_barang,
                 'satuan' => $item->masterBarang->satuan,
                 'deskripsi' => $item->masterBarang->deskripsi,
+                'kode_level5' => $item->masterBarang->kode_level5,
+                'nama_level5' => $item->masterBarang->nama_level5,
+                'kode_level6' => $item->masterBarang->kode_level6,
+                'nama_level6' => $item->masterBarang->nama_level6,
             ] : null,
         ])),
         masterBarangs: @js($masterBarangs),
+        level5List: @js($level5List ?? []),
         searchUrl: '{{ route('operator.rkbmd.api.master-barangs') }}',
         addItem() {
             this.items.push({ master_barang_id: '', volume: 1, satuan: '', spesifikasi: '', selected_barang: null });
@@ -156,7 +161,7 @@
 
                                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
                                         <!-- Barang BMD Async Combobox -->
-                                        <div class="md:col-span-6 relative" :class="open ? 'z-30' : 'z-10'" x-data="rkbmdBarangCombobox(item, masterBarangs, searchUrl)">
+                                        <div class="md:col-span-6 relative" :class="open || catOpen ? 'z-30' : 'z-10'" x-data="rkbmdBarangCombobox(item, masterBarangs, searchUrl, level5List)">
                                             <label class="block text-[11px] font-bold text-slate-700 mb-1">
                                                 Nama / Kode Barang BMD Permendagri 108 <span class="text-rose-500">*</span>
                                             </label>
@@ -195,17 +200,82 @@
 
                                             <!-- TAMPILAN 2: BELUM DIPILIH / MODE PENCARIAN -->
                                             <div x-show="!item.selected_barang" class="relative" @click.outside="closeDropdown()">
-                                                <!-- Filter Cepat Kategori Level 5 -->
-                                                <div class="mb-1.5">
-                                                    <select x-model="selectedCategory" @change="search()"
-                                                        class="w-full text-[11px] rounded-lg border-slate-200 bg-slate-50/80 text-slate-700 py-1.5 px-2.5 shadow-2xs focus:border-indigo-500 focus:ring-indigo-500">
-                                                        <option value="">-- Semua Kategori Level 5 (Rincian Objek) --</option>
-                                                        @if(isset($level5List))
-                                                            @foreach ($level5List as $lvl5)
-                                                                <option value="{{ $lvl5->kode_level5 }}">[{{ $lvl5->kode_level5 }}] {{ $lvl5->nama_level5 }}</option>
-                                                            @endforeach
-                                                        @endif
-                                                    </select>
+                                                <!-- Filter Cepat Kategori Level 5 (Searchable Popover) -->
+                                                <div class="mb-2 relative" @click.outside="catOpen = false">
+                                                    <!-- Tombol Status 1: Belum Ada Kategori Dipilih -->
+                                                    <div x-show="!selectedCategory">
+                                                        <button type="button" @click="catOpen = !catOpen"
+                                                            class="w-full flex items-center justify-between text-left text-xs py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition-colors shadow-2xs">
+                                                            <span class="flex items-center gap-1.5 truncate">
+                                                                <span>📁</span>
+                                                                <span class="text-[11px] font-medium text-slate-600">Saring Kategori Level 5 (Opsional)</span>
+                                                            </span>
+                                                            <span class="text-slate-400 text-[10px] ml-1">▼</span>
+                                                        </button>
+                                                    </div>
+
+                                                    <!-- Tombol Status 2: Kategori Terpilih (Active Badge) -->
+                                                    <div x-show="selectedCategory">
+                                                        <div class="flex items-center justify-between p-1 px-2.5 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 shadow-2xs">
+                                                            <div class="flex items-center gap-1.5 truncate min-w-0">
+                                                                <span class="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold bg-blue-200 text-blue-800 shrink-0" x-text="selectedCategory"></span>
+                                                                <span class="font-bold text-[11px] text-blue-900 truncate" x-text="selectedCategoryName"></span>
+                                                            </div>
+                                                            <button type="button" @click="clearCategory()"
+                                                                class="text-blue-500 hover:text-rose-600 font-bold ml-2 text-xs px-1 rounded hover:bg-blue-100/50 transition-colors shrink-0"
+                                                                title="Hapus saringan kategori">✕</button>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Popover Pencarian Kategori Level 5 -->
+                                                    <div x-show="catOpen"
+                                                        x-transition:enter="transition ease-out duration-100"
+                                                        x-transition:enter-start="opacity-0 translate-y-1"
+                                                        x-transition:enter-end="opacity-100 translate-y-0"
+                                                        x-transition:leave="transition ease-in duration-75"
+                                                        x-transition:leave-start="opacity-100 translate-y-0"
+                                                        x-transition:leave-end="opacity-0 translate-y-1"
+                                                        class="absolute left-0 right-0 top-full mt-1 z-40 bg-white rounded-xl shadow-xl border border-slate-200 p-2 text-xs">
+                                                        
+                                                        <!-- Input Pencarian Kategori -->
+                                                        <div class="relative mb-1.5">
+                                                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px]">🔍</span>
+                                                            <input type="text"
+                                                                x-model="catQuery"
+                                                                placeholder="Ketik nama atau kode kategori..."
+                                                                class="w-full pl-7 pr-3 py-1 text-xs rounded-lg border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 placeholder:text-slate-400">
+                                                        </div>
+
+                                                        <!-- Daftar Opsi Kategori Terfilter -->
+                                                        <div class="custom-scrollbar divide-y divide-slate-100" style="max-height: 180px; overflow-y: auto;">
+                                                            <!-- Opsi Reset Semua Kategori -->
+                                                            <div @click="clearCategory()"
+                                                                class="p-1.5 px-2 cursor-pointer hover:bg-slate-50 text-slate-500 font-medium text-[11px] flex items-center justify-between rounded-lg">
+                                                                <span>-- Tampilkan Semua Kategori --</span>
+                                                                <span x-show="!selectedCategory" class="text-indigo-600 font-bold">✓</span>
+                                                            </div>
+
+                                                            <!-- List Kategori yang Cocok -->
+                                                            <template x-for="cat in filteredCategories()" :key="cat.kode_level5">
+                                                                <div @click="selectCategory(cat)"
+                                                                    :class="selectedCategory === cat.kode_level5 ? 'bg-blue-50 text-blue-900 font-bold' : 'hover:bg-slate-50 text-slate-700'"
+                                                                    class="p-1.5 px-2 cursor-pointer transition-colors flex items-center justify-between gap-1.5 rounded-lg text-xs">
+                                                                    <div class="flex items-center gap-1.5 truncate">
+                                                                        <span class="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold shrink-0"
+                                                                            :class="selectedCategory === cat.kode_level5 ? 'bg-blue-200 text-blue-900' : 'bg-slate-100 text-slate-600'"
+                                                                            x-text="cat.kode_level5"></span>
+                                                                        <span class="truncate text-[11px]" x-text="cat.nama_level5"></span>
+                                                                    </div>
+                                                                    <span x-show="selectedCategory === cat.kode_level5" class="text-blue-600 font-bold text-xs shrink-0">✓</span>
+                                                                </div>
+                                                            </template>
+
+                                                            <!-- Pesan jika tidak ada kategori cocok -->
+                                                            <div x-show="filteredCategories().length === 0" class="p-3 text-center text-slate-400 text-[11px]">
+                                                                Kategori tidak ditemukan
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
 
                                                 <div class="relative flex items-center">
@@ -411,11 +481,14 @@
 
     @push('scripts')
     <script>
-        function rkbmdBarangCombobox(item, masterBarangs, searchUrl) {
+        function rkbmdBarangCombobox(item, masterBarangs, searchUrl, level5List) {
             return {
                 open: false,
                 query: '',
                 selectedCategory: '',
+                selectedCategoryName: '',
+                catOpen: false,
+                catQuery: '',
                 loading: false,
                 results: [],
                 highlightedIndex: -1,
@@ -426,8 +499,42 @@
                         if (found) {
                             item.selected_barang = found;
                             if (!item.satuan) item.satuan = found.satuan || '';
+                            if (found.kode_level5) {
+                                this.selectedCategory = found.kode_level5;
+                                this.selectedCategoryName = found.nama_level5 || '';
+                            }
                         }
                     }
+                },
+
+                filteredCategories() {
+                    const q = (this.catQuery || '').trim().toLowerCase();
+                    if (!q) return level5List || [];
+                    return (level5List || []).filter(c => {
+                        const code = (c.kode_level5 || '').toLowerCase();
+                        const name = (c.nama_level5 || '').toLowerCase();
+                        return code.includes(q) || name.includes(q);
+                    });
+                },
+
+                selectCategory(cat) {
+                    if (!cat) {
+                        this.clearCategory();
+                        return;
+                    }
+                    this.selectedCategory = cat.kode_level5;
+                    this.selectedCategoryName = cat.nama_level5;
+                    this.catOpen = false;
+                    this.catQuery = '';
+                    this.search();
+                },
+
+                clearCategory() {
+                    this.selectedCategory = '';
+                    this.selectedCategoryName = '';
+                    this.catOpen = false;
+                    this.catQuery = '';
+                    this.search();
                 },
 
                 openDropdown() {
@@ -489,6 +596,9 @@
                     item.selected_barang = null;
                     this.query = '';
                     this.selectedCategory = '';
+                    this.selectedCategoryName = '';
+                    this.catOpen = false;
+                    this.catQuery = '';
                     this.open = true;
                     this.results = masterBarangs;
                     this.$nextTick(() => {
