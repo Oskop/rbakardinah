@@ -324,7 +324,7 @@
                                                 {{ $history->action === 'Edit Balasan' ? '✏️ Edit Balasan' : ($history->action === 'Edit Permohonan' ? '✏️ Edit Permohonan' : $history->action) }}
                                             </span>
                                             <span class="text-[10px] text-slate-400">
-                                                {{ $history->created_at->format('d/m/Y H:i') }}
+                                                {{ $history->created_at->format('Y/m/d H:i') }} WIB
                                             </span>
                                         </div>
 

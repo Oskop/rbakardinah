@@ -201,7 +201,7 @@
                                                     {{ $sub->nomor_permohonan }}
                                                 </span>
                                                 <div class="text-[11px] text-gray-500 mt-1">
-                                                    Tahun {{ $sub->year }} • {{ $sub->created_at->format('d/m/Y H:i') }}
+                                                    Tahun {{ $sub->year }} • {{ $sub->created_at->format('Y/m/d H:i') }} WIB
                                                 </div>
                                             </td>
 
@@ -292,7 +292,7 @@
                                                         {{ $inSub->nomor_permohonan }}
                                                     </span>
                                                     <div class="text-[11px] text-gray-500 mt-1">
-                                                        Tahun {{ $inSub->year }} • {{ $inSub->created_at->format('d/m/Y H:i') }}
+                                                        Tahun {{ $inSub->year }} • {{ $inSub->created_at->format('Y/m/d H:i') }} WIB
                                                     </div>
                                                     @if($inSub->status === 'Dialihkan')
                                                         <div class="mt-1">
@@ -387,7 +387,7 @@
                                                         {{ $fSub->nomor_permohonan }}
                                                     </span>
                                                     <div class="text-[11px] text-gray-500 mt-1">
-                                                        Tahun {{ $fSub->year }} • {{ $fSub->created_at->format('d/m/Y H:i') }}
+                                                        Tahun {{ $fSub->year }} • {{ $fSub->created_at->format('Y/m/d H:i') }} WIB
                                                     </div>
                                                 </td>
 
