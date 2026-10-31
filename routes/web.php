@@ -45,6 +45,11 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::get('api-logs/{apiLog}', [\App\Http\Controllers\Admin\ApiAccessLogController::class, 'show'])->name('api-logs.show');
     Route::post('api-logs/prune', [\App\Http\Controllers\Admin\ApiAccessLogController::class, 'prune'])->name('api-logs.prune');
 
+    // Hard Delete Archives (Recycle Bin & Safe Restore)
+    Route::get('archives', [\App\Http\Controllers\Admin\HardDeleteArchiveController::class, 'index'])->name('archives.index');
+    Route::get('archives/{archive}', [\App\Http\Controllers\Admin\HardDeleteArchiveController::class, 'show'])->name('archives.show');
+    Route::post('archives/{archive}/restore', [\App\Http\Controllers\Admin\HardDeleteArchiveController::class, 'restore'])->name('archives.restore');
+
     // Announcements Management Routes
     Route::post('announcements/{announcement}/toggle-active', [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggleActive'])->name('announcements.toggle-active');
     Route::post('announcements/{announcement}/force-end', [\App\Http\Controllers\Admin\AnnouncementController::class, 'forceEnd'])->name('announcements.force-end');

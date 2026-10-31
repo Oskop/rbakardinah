@@ -314,11 +314,24 @@ class RbaHeaderController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage with archival snapshot.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, \App\Models\RbaHeader $header, \App\Services\HardDeleteArchiveService $archiveService)
     {
-        //
+        $validatedCount = \App\Models\RbaDetail::whereIn('rba_submission_id', $header->submissions->pluck('id'))
+            ->where('is_validated', true)
+            ->count();
+
+        // Safety guard: Jika ada item belanja yang sudah sah divalidasi supervisor, cegah hapus sembarangan kecuali force
+        if ($validatedCount > 0 && !$request->boolean('force')) {
+            return back()->with('error', "RBA Header ini memuat {$validatedCount} usulan belanja yang sudah divalidasi sah oleh Supervisor. Batalkan validasi terlebih dahulu atau gunakan konfirmasi paksa.");
+        }
+
+        $reason = $request->input('reason', 'Penghapusan data RBA salah input');
+        $archive = $archiveService->deleteRbaHeader($header, $reason, \Illuminate\Support\Facades\Auth::id());
+
+        return redirect()->route('admin.headers.index')
+            ->with('success', "RBA Header ({$archive->label}) berhasil dihapus dari tabel operasional. Snapshot data lengkap diamankan ke Arsip Sampah (Archive ID #{$archive->id}) dan dapat dipulihkan kapan saja.");
     }
 
     public function toggleStatus(\App\Models\RbaHeader $header)
