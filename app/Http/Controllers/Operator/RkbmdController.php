@@ -24,6 +24,7 @@ class RkbmdController extends Controller
         $endDate = $request->input('end_date');
         $status = $request->input('status');
         $search = $request->input('search');
+        $unitId = $request->input('unit_id');
 
         $applyFilters = function ($query) use ($startDate, $endDate, $status, $search) {
             $query->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
@@ -38,37 +39,69 @@ class RkbmdController extends Controller
                 });
         };
 
-        // 1. Permohonan Saya (Dibuat oleh pengguna login)
-        $myQuery = RkbmdSubmission::with(['targetOperator', 'subUnit', 'unit', 'items'])
-            ->where('user_id', $user->id);
-        $applyFilters($myQuery);
-        $mySubmissions = $myQuery->latest('created_at')->get();
-
-        // 2. Permohonan Masuk (Khusus Operator Pengusul / Penerima Berkas Saat Ini)
+        $mySubmissions = collect();
         $incomingSubmissions = collect();
         $forwardedSubmissions = collect();
+        $allSubmissions = collect();
+        $supervisorSubmissions = collect();
+        $units = collect();
 
-        if ($isProposer) {
-            $incomingQuery = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'originalOperator'])
-                ->where('target_operator_id', $user->id);
-            $applyFilters($incomingQuery);
-            $incomingSubmissions = $incomingQuery->latest('created_at')->get();
+        if ($user->role === 'Administrator') {
+            // Administrator: Melihat seluruh permohonan RKBMD lintas unit (Rumah Sakit)
+            $adminQuery = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'targetOperator', 'originalOperator', 'repliedBy']);
+            $applyFilters($adminQuery);
+            if ($unitId) {
+                $adminQuery->where('unit_id', $unitId);
+            }
+            $allSubmissions = $adminQuery->latest('created_at')->get();
+            $units = \App\Models\Unit::orderBy('name')->get();
+        } elseif ($user->role === 'Supervisor') {
+            // Supervisor: Dua arah (diajukan oleh sub-unit di bawah unitnya ATAU ditujukan ke sub-unit di bawah unitnya)
+            $spvUnitId = $user->unit_id;
+            $supervisorQuery = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'targetOperator.unit', 'originalOperator.unit', 'repliedBy'])
+                ->where(function ($q) use ($spvUnitId) {
+                    $q->where('unit_id', $spvUnitId)
+                      ->orWhereHas('targetOperator', function ($opQ) use ($spvUnitId) {
+                          $opQ->where('unit_id', $spvUnitId);
+                      });
+                });
+            $applyFilters($supervisorQuery);
+            $supervisorSubmissions = $supervisorQuery->latest('created_at')->get();
+        } else {
+            // Operator Role: Operasional mandiri
+            // 1. Permohonan Saya (Dibuat oleh pengguna login)
+            $myQuery = RkbmdSubmission::with(['targetOperator', 'subUnit', 'unit', 'items'])
+                ->where('user_id', $user->id);
+            $applyFilters($myQuery);
+            $mySubmissions = $myQuery->latest('created_at')->get();
 
-            // 3. Permohonan yang Dialihkan oleh Operator Pengusul ini
-            $forwardedQuery = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'targetOperator', 'histories'])
-                ->whereHas('histories', function ($q) use ($user) {
-                    $q->where('action', 'Pengalihan')
-                        ->where('from_operator_id', $user->id);
-                })
-                ->where('target_operator_id', '!=', $user->id);
-            $applyFilters($forwardedQuery);
-            $forwardedSubmissions = $forwardedQuery->latest('updated_at')->get();
+            if ($isProposer) {
+                // 2. Permohonan Masuk (Khusus Operator Pengusul / Penerima Berkas Saat Ini)
+                $incomingQuery = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'originalOperator'])
+                    ->where('target_operator_id', $user->id);
+                $applyFilters($incomingQuery);
+                $incomingSubmissions = $incomingQuery->latest('created_at')->get();
+
+                // 3. Permohonan yang Dialihkan oleh Operator Pengusul ini
+                $forwardedQuery = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'targetOperator', 'histories'])
+                    ->whereHas('histories', function ($q) use ($user) {
+                        $q->where('action', 'Pengalihan')
+                            ->where('from_operator_id', $user->id);
+                    })
+                    ->where('target_operator_id', '!=', $user->id);
+                $applyFilters($forwardedQuery);
+                $forwardedSubmissions = $forwardedQuery->latest('updated_at')->get();
+            }
         }
 
         return view('operator.rkbmd.index', compact(
             'mySubmissions',
             'incomingSubmissions',
             'forwardedSubmissions',
+            'allSubmissions',
+            'supervisorSubmissions',
+            'units',
+            'unitId',
             'isProposer',
             'startDate',
             'endDate',
@@ -107,6 +140,10 @@ class RkbmdController extends Controller
 
     public function create()
     {
+        if (Auth::user()->role !== 'Operator') {
+            abort(403, 'Akses Ditolak: Hanya Operator yang dapat membuat permohonan RKBMD.');
+        }
+
         $user = Auth::user();
 
         // Operator Pengusul yang dapat dituju (can_propose = true, aktif, bukan diri sendiri)
@@ -136,6 +173,10 @@ class RkbmdController extends Controller
 
     public function store(Request $request)
     {
+        if (Auth::user()->role !== 'Operator') {
+            abort(403, 'Akses Ditolak: Hanya Operator yang dapat membuat permohonan RKBMD.');
+        }
+
         $user = Auth::user();
 
         $request->validate([
@@ -229,7 +270,7 @@ class RkbmdController extends Controller
     {
         $user = Auth::user();
 
-        // Pastikan hak akses lihat (Pemohon, Target saat ini, Pengalih terdahulu, SPV unit, atau Admin)
+        // Pastikan hak akses lihat (Pemohon, Target saat ini, Pengalih terdahulu, SPV unit pemohon ATAU unit target, atau Admin)
         $isParticipant = $rkbmd->user_id === $user->id
             || $rkbmd->target_operator_id === $user->id
             || $rkbmd->histories()->where(function ($q) use ($user) {
@@ -237,7 +278,7 @@ class RkbmdController extends Controller
                     ->orWhere('from_operator_id', $user->id)
                     ->orWhere('to_operator_id', $user->id);
             })->exists()
-            || ($user->role === 'Supervisor' && $user->unit_id === $rkbmd->unit_id)
+            || ($user->role === 'Supervisor' && ($user->unit_id === $rkbmd->unit_id || $user->unit_id === $rkbmd->targetOperator?->unit_id))
             || $user->role === 'Administrator';
 
         if (!$isParticipant) {

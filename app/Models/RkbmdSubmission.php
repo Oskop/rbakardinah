@@ -86,10 +86,11 @@ class RkbmdSubmission extends Model
 
     /**
      * Check if a given user can manage (reply/forward) this submission.
+     * Hanya Operator pemegang berkas aktif (target_operator_id) yang berhak mengelola.
      */
     public function canBeManagedBy(User $user): bool
     {
-        if ($user->role !== 'Operator' && $user->role !== 'Administrator') {
+        if ($user->role !== 'Operator') {
             return false;
         }
 
@@ -103,13 +104,10 @@ class RkbmdSubmission extends Model
 
     /**
      * Check if a given user can edit an already submitted reply on this submission.
+     * Hanya Operator yang memberikan balasan atau target operator yang berhak mengedit.
      */
     public function canEditReply(User $user): bool
     {
-        if ($user->role === 'Administrator') {
-            return !empty($this->replied_at);
-        }
-
         if ($user->role !== 'Operator' || !$user->can_propose) {
             return false;
         }
@@ -125,15 +123,13 @@ class RkbmdSubmission extends Model
 
     /**
      * Check if a given user can edit this submission.
-     * Hanya pemohon (atau Administrator) yang berhak mengedit,
+     * Hanya Operator pemohon yang berhak mengedit,
      * dan hanya saat status masih 'Diajukan', belum ada balasan, dan belum pernah dialihkan.
      */
     public function canEditSubmission(User $user): bool
     {
-        if ($user->role === 'Administrator') {
-            return $this->status === 'Diajukan'
-                && empty($this->replied_at)
-                && !$this->histories()->where('action', 'Pengalihan')->exists();
+        if ($user->role !== 'Operator') {
+            return false;
         }
 
         if ($this->user_id !== $user->id) {

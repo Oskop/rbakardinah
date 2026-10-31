@@ -7,14 +7,27 @@
                     <span>{{ __('Rencana Kebutuhan Barang Milik Daerah (RKBMD)') }}</span>
                 </h2>
                 <p class="text-xs text-slate-500 mt-1">
-                    Fasilitas permohonan pengadaan barang dari sub-unit ke Operator Pengusul RBA (Permendagri No. 108 Tahun 2016)
+                    @if(Auth::user()->role === 'Administrator')
+                        Pemantauan & Peninjauan usulan kebutuhan barang seluruh Rumah Sakit (Permendagri No. 108 Tahun 2016)
+                    @elseif(Auth::user()->role === 'Supervisor')
+                        Pemantauan & Peninjauan kebutuhan barang terkait Unit {{ Auth::user()->unit?->name ?? 'Kerja' }} (Permendagri No. 108 Tahun 2016)
+                    @else
+                        Fasilitas permohonan pengadaan barang dari sub-unit ke Operator Pengusul RBA (Permendagri No. 108 Tahun 2016)
+                    @endif
                 </p>
             </div>
-            <a href="{{ route('operator.rkbmd.create') }}"
-                class="inline-flex items-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm hover:shadow transition-all duration-150 gap-2">
-                <span>✍️</span>
-                <span>Buat Permohonan Baru</span>
-            </a>
+            @if(Auth::user()->role === 'Operator')
+                <a href="{{ route('operator.rkbmd.create') }}"
+                    class="inline-flex items-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm hover:shadow transition-all duration-150 gap-2">
+                    <span>✍️</span>
+                    <span>Buat Permohonan Baru</span>
+                </a>
+            @else
+                <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                    <span>👁️</span>
+                    <span>Mode Peninjauan (Read-Only)</span>
+                </div>
+            @endif
         </div>
     </x-slot>
 
@@ -63,7 +76,7 @@
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 {{ Auth::user()->role === 'Administrator' ? 'lg:grid-cols-5' : 'lg:grid-cols-4' }} gap-3.5">
                     <!-- Filter 1: Pencarian Bebas -->
                     <div>
                         <label for="filter-search" class="block text-xs font-bold text-slate-700 mb-1.5">Pencarian Cepat</label>
@@ -73,6 +86,19 @@
                             <span class="absolute left-2.5 top-2.5 text-slate-400">🔍</span>
                         </div>
                     </div>
+
+                    @if(Auth::user()->role === 'Administrator')
+                        <!-- Filter Unit: Khusus Administrator -->
+                        <div>
+                            <label for="filter-unit" class="block text-xs font-bold text-slate-700 mb-1.5">Unit Kerja Induk</label>
+                            <select id="filter-unit" class="w-full text-xs rounded-xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2.5">
+                                <option value="">Semua Unit Kerja</option>
+                                @foreach($units as $u)
+                                    <option value="{{ $u->id }}" {{ ($unitId ?? '') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
 
                     <!-- Filter 2: Status Permohonan -->
                     <div>
@@ -105,8 +131,9 @@
                 </div>
             </div>
 
-            <!-- Tab Switcher Card -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-2 flex items-center gap-2">
+            @if(Auth::user()->role === 'Operator')
+                <!-- Tab Switcher Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-2 flex items-center gap-2">
                 <button type="button" @click="switchTab('mine')"
                     :class="activeTab === 'mine' ? 'bg-indigo-600 text-white shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'"
                     class="flex-1 py-2.5 px-4 rounded-xl text-xs transition-all duration-150 flex items-center justify-center gap-2">
@@ -424,6 +451,198 @@
                     </div>
                 </div>
             @endif
+            @elseif(Auth::user()->role === 'Administrator')
+                <!-- TAB ADMINISTRATOR: SELURUH PERMOHONAN RUMAH SAKIT -->
+                <div class="space-y-4">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80">
+                        <div class="p-6 text-gray-900">
+                            <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                                <div>
+                                    <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
+                                        <span>🏥</span>
+                                        <span>Daftar Seluruh Permohonan RKBMD (Rumah Sakit)</span>
+                                    </h3>
+                                    <p class="text-xs text-slate-400">Menampilkan seluruh permohonan kebutuhan barang dari semua unit kerja untuk pemantauan dan audit BPK</p>
+                                </div>
+                                <span class="px-3 py-1 bg-indigo-50 text-indigo-700 font-bold text-xs rounded-full border border-indigo-200">
+                                    Total: {{ $allSubmissions->count() }} Permohonan
+                                </span>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table id="table-admin-rkbmd" class="min-w-full divide-y divide-gray-200 stripe hover">
+                                    <thead class="bg-gray-50/80">
+                                        <tr>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No. Tiket / Tanggal</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Asal Unit & Sub-Unit</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Perihal Permohonan</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Pemegang Berkas</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Jumlah Item</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
+                                            <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        @foreach($allSubmissions as $sub)
+                                            <tr class="hover:bg-slate-50/60 transition-colors"
+                                                data-date="{{ $sub->created_at->format('Y-m-d') }}"
+                                                data-status="{{ $sub->status }}"
+                                                data-unit-id="{{ $sub->unit_id }}">
+                                                <td class="px-5 py-4 whitespace-nowrap">
+                                                    <div class="font-mono font-bold text-xs text-indigo-600">{{ $sub->nomor_permohonan }}</div>
+                                                    <div class="text-[11px] text-gray-400 mt-0.5">{{ $sub->created_at->format('d/m/Y H:i') }} WIB</div>
+                                                </td>
+                                                <td class="px-5 py-4">
+                                                    <div class="font-bold text-xs text-slate-900">{{ $sub->unit?->name }}</div>
+                                                    <div class="text-[11px] text-slate-500">{{ $sub->subUnit?->name ?? 'Sub-Unit' }}</div>
+                                                </td>
+                                                <td class="px-5 py-4">
+                                                    <div class="font-bold text-xs text-slate-800 line-clamp-1">{{ $sub->title }}</div>
+                                                    <div class="text-[11px] text-slate-400 mt-0.5">Pemohon: {{ $sub->applicant->name }}</div>
+                                                </td>
+                                                <td class="px-5 py-4 whitespace-nowrap">
+                                                    <div class="text-xs font-semibold text-slate-700">{{ $sub->targetOperator?->name }}</div>
+                                                    <div class="text-[10px] text-slate-400">{{ $sub->targetOperator?->unit?->name }}</div>
+                                                </td>
+                                                <td class="px-5 py-4 whitespace-nowrap text-center text-xs font-bold text-slate-700">
+                                                    {{ $sub->items->count() }} Item
+                                                </td>
+                                                <td class="px-5 py-4 whitespace-nowrap text-center" data-search="{{ $sub->status }}">
+                                                    @php
+                                                        $statusClasses = [
+                                                            'Diajukan' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                                            'Dialihkan' => 'bg-amber-100 text-amber-800 border-amber-200',
+                                                            'Dipenuhi' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                                                            'Dipenuhi Sebagian' => 'bg-teal-100 text-teal-800 border-teal-200',
+                                                            'Substitusi' => 'bg-cyan-100 text-cyan-800 border-cyan-200',
+                                                            'Optimalisasi' => 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                                                            'Ditolak' => 'bg-rose-100 text-rose-800 border-rose-200',
+                                                        ];
+                                                        $cls = $statusClasses[$sub->status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+                                                    @endphp
+                                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full border {{ $cls }}">
+                                                        {{ $sub->status }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-5 py-4 whitespace-nowrap text-right text-xs">
+                                                    <a href="{{ route('rkbmd.show', $sub) }}"
+                                                        class="inline-flex items-center px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-bold border border-indigo-200 transition-colors gap-1 shadow-2xs">
+                                                        <span>👁️</span>
+                                                        <span>Tinjau Berkas &rarr;</span>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @elseif(Auth::user()->role === 'Supervisor')
+                <!-- TAB SUPERVISOR: PERMOHONAN TERKAIT UNIT (DIAJUKAN DARI UNIT & DITUJUKAN KE UNIT) -->
+                <div class="space-y-4">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80">
+                        <div class="p-6 text-gray-900">
+                            <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                                <div>
+                                    <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
+                                        <span>🏛️</span>
+                                        <span>Daftar Permohonan RKBMD Terkait Unit {{ Auth::user()->unit?->name ?? 'Kerja' }}</span>
+                                    </h3>
+                                    <p class="text-xs text-slate-400">Memantau seluruh usulan yang diajukan oleh sub-unit di bawah unit Anda serta usulan yang ditujukan ke operator di unit Anda</p>
+                                </div>
+                                <span class="px-3 py-1 bg-indigo-50 text-indigo-700 font-bold text-xs rounded-full border border-indigo-200">
+                                    Total: {{ $supervisorSubmissions->count() }} Permohonan
+                                </span>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table id="table-supervisor-rkbmd" class="min-w-full divide-y divide-gray-200 stripe hover">
+                                    <thead class="bg-gray-50/80">
+                                        <tr>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No. Tiket / Tanggal</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Keterkaitan / Arah Berkas</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Perihal Permohonan</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Pemegang Berkas</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Jumlah Item</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
+                                            <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        @foreach($supervisorSubmissions as $sub)
+                                            @php
+                                                $isOutbound = ($sub->unit_id === Auth::user()->unit_id);
+                                            @endphp
+                                            <tr class="hover:bg-slate-50/60 transition-colors"
+                                                data-date="{{ $sub->created_at->format('Y-m-d') }}"
+                                                data-status="{{ $sub->status }}">
+                                                <td class="px-5 py-4 whitespace-nowrap">
+                                                    <div class="font-mono font-bold text-xs text-indigo-600">{{ $sub->nomor_permohonan }}</div>
+                                                    <div class="text-[11px] text-gray-400 mt-0.5">{{ $sub->created_at->format('d/m/Y H:i') }} WIB</div>
+                                                </td>
+                                                <td class="px-5 py-4">
+                                                    @if($isOutbound)
+                                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                                            <span>📤</span> Diajukan dari Sub-Unit Kita
+                                                        </span>
+                                                        <div class="text-[11px] font-semibold text-slate-700 mt-1">
+                                                            {{ $sub->subUnit?->name ?? $sub->unit?->name }}
+                                                        </div>
+                                                    @else
+                                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                                            <span>📥</span> Ditujukan ke Operator Kita
+                                                        </span>
+                                                        <div class="text-[11px] font-semibold text-slate-700 mt-1">
+                                                            Dari: {{ $sub->unit?->name }} ({{ $sub->subUnit?->name ?? 'Sub-Unit' }})
+                                                        </div>
+                                                    @endif
+                                                </td>
+                                                <td class="px-5 py-4">
+                                                    <div class="font-bold text-xs text-slate-800 line-clamp-1">{{ $sub->title }}</div>
+                                                    <div class="text-[11px] text-slate-400 mt-0.5">Pemohon: {{ $sub->applicant->name }}</div>
+                                                </td>
+                                                <td class="px-5 py-4 whitespace-nowrap">
+                                                    <div class="text-xs font-semibold text-slate-700">{{ $sub->targetOperator?->name }}</div>
+                                                    <div class="text-[10px] text-slate-400">{{ $sub->targetOperator?->unit?->name }}</div>
+                                                </td>
+                                                <td class="px-5 py-4 whitespace-nowrap text-center text-xs font-bold text-slate-700">
+                                                    {{ $sub->items->count() }} Item
+                                                </td>
+                                                <td class="px-5 py-4 whitespace-nowrap text-center" data-search="{{ $sub->status }}">
+                                                    @php
+                                                        $statusClasses = [
+                                                            'Diajukan' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                                            'Dialihkan' => 'bg-amber-100 text-amber-800 border-amber-200',
+                                                            'Dipenuhi' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                                                            'Dipenuhi Sebagian' => 'bg-teal-100 text-teal-800 border-teal-200',
+                                                            'Substitusi' => 'bg-cyan-100 text-cyan-800 border-cyan-200',
+                                                            'Optimalisasi' => 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                                                            'Ditolak' => 'bg-rose-100 text-rose-800 border-rose-200',
+                                                        ];
+                                                        $cls = $statusClasses[$sub->status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+                                                    @endphp
+                                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full border {{ $cls }}">
+                                                        {{ $sub->status }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-5 py-4 whitespace-nowrap text-right text-xs">
+                                                    <a href="{{ route('rkbmd.show', $sub) }}"
+                                                        class="inline-flex items-center px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-bold border border-indigo-200 transition-colors gap-1 shadow-2xs">
+                                                        <span>👁️</span>
+                                                        <span>Tinjau Berkas &rarr;</span>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -460,14 +679,17 @@
                     }
                 };
 
-                const tableMy = $('#table-my-rkbmd').DataTable({
-                    responsive: true,
-                    order: [[0, 'desc']], // Urutkan berdasarkan kolom 0 (Tanggal/No. Tiket) descending
-                    language: dataTableLang,
-                    columnDefs: [
-                        { orderable: false, targets: [5] } // Kolom Aksi tidak dapat disortir
-                    ]
-                });
+                let tableMy = null;
+                if ($('#table-my-rkbmd').length) {
+                    tableMy = $('#table-my-rkbmd').DataTable({
+                        responsive: true,
+                        order: [[0, 'desc']], // Urutkan berdasarkan kolom 0 (Tanggal/No. Tiket) descending
+                        language: dataTableLang,
+                        columnDefs: [
+                            { orderable: false, targets: [5] } // Kolom Aksi tidak dapat disortir
+                        ]
+                    });
+                }
 
                 let tableIncoming = null;
                 if ($('#table-incoming-rkbmd').length) {
@@ -493,17 +715,43 @@
                     });
                 }
 
-                // Custom DataTables Filter: Date Range & Status
+                let tableAdmin = null;
+                if ($('#table-admin-rkbmd').length) {
+                    tableAdmin = $('#table-admin-rkbmd').DataTable({
+                        responsive: true,
+                        order: [[0, 'desc']],
+                        language: dataTableLang,
+                        columnDefs: [
+                            { orderable: false, targets: [6] }
+                        ]
+                    });
+                }
+
+                let tableSupervisor = null;
+                if ($('#table-supervisor-rkbmd').length) {
+                    tableSupervisor = $('#table-supervisor-rkbmd').DataTable({
+                        responsive: true,
+                        order: [[0, 'desc']],
+                        language: dataTableLang,
+                        columnDefs: [
+                            { orderable: false, targets: [6] }
+                        ]
+                    });
+                }
+
+                // Custom DataTables Filter: Date Range, Status & Unit
                 $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
                     const rowNode = settings.aoData[dataIndex].nTr;
                     if (!rowNode) return true;
 
                     const rowDate = $(rowNode).attr('data-date');
                     const rowStatus = $(rowNode).attr('data-status');
+                    const rowUnitId = $(rowNode).attr('data-unit-id');
 
                     const minDate = $('#filter-start-date').val();
                     const maxDate = $('#filter-end-date').val();
                     const selectedStatus = $('#filter-status').val();
+                    const selectedUnit = $('#filter-unit').length ? $('#filter-unit').val() : '';
 
                     if (minDate && rowDate && rowDate < minDate) {
                         return false;
@@ -514,35 +762,44 @@
                     if (selectedStatus && rowStatus !== selectedStatus) {
                         return false;
                     }
+                    if (selectedUnit && rowUnitId && rowUnitId !== selectedUnit) {
+                        return false;
+                    }
 
                     return true;
                 });
 
                 function redrawAllTables() {
-                    tableMy.draw();
+                    if (tableMy) tableMy.draw();
                     if (tableIncoming) tableIncoming.draw();
                     if (tableForwarded) tableForwarded.draw();
+                    if (tableAdmin) tableAdmin.draw();
+                    if (tableSupervisor) tableSupervisor.draw();
                 }
 
-                // Event Listeners: Filter Tanggal & Status
-                $('#filter-start-date, #filter-end-date, #filter-status').on('change', function() {
+                // Event Listeners: Filter Tanggal, Status & Unit
+                $('#filter-start-date, #filter-end-date, #filter-status, #filter-unit').on('change', function() {
                     redrawAllTables();
                 });
 
                 // Event Listener: Pencarian Cepat
                 $('#filter-search').on('keyup input', function() {
                     const searchVal = $(this).val();
-                    tableMy.search(searchVal).draw();
+                    if (tableMy) tableMy.search(searchVal).draw();
                     if (tableIncoming) tableIncoming.search(searchVal).draw();
                     if (tableForwarded) tableForwarded.search(searchVal).draw();
+                    if (tableAdmin) tableAdmin.search(searchVal).draw();
+                    if (tableSupervisor) tableSupervisor.search(searchVal).draw();
                 });
 
                 // Inisialisasi awal pencarian jika sudah ada nilai search dari URL
                 if ($('#filter-search').val()) {
                     const initialSearch = $('#filter-search').val();
-                    tableMy.search(initialSearch).draw();
+                    if (tableMy) tableMy.search(initialSearch).draw();
                     if (tableIncoming) tableIncoming.search(initialSearch).draw();
                     if (tableForwarded) tableForwarded.search(initialSearch).draw();
+                    if (tableAdmin) tableAdmin.search(initialSearch).draw();
+                    if (tableSupervisor) tableSupervisor.search(initialSearch).draw();
                 }
 
                 // Tombol Reset Filter
@@ -551,10 +808,13 @@
                     $('#filter-status').val('');
                     $('#filter-start-date').val('');
                     $('#filter-end-date').val('');
+                    if ($('#filter-unit').length) $('#filter-unit').val('');
 
-                    tableMy.search('');
+                    if (tableMy) tableMy.search('');
                     if (tableIncoming) tableIncoming.search('');
                     if (tableForwarded) tableForwarded.search('');
+                    if (tableAdmin) tableAdmin.search('');
+                    if (tableSupervisor) tableSupervisor.search('');
 
                     redrawAllTables();
                 });

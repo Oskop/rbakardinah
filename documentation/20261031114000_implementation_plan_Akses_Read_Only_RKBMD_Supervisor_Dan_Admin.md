@@ -9,7 +9,7 @@ Fitur **RKBMD (Rencana Kebutuhan Barang Milik Daerah)** saat ini hanya dapat dia
 | Role | Cakupan Data (Data Scoping) | Hak Akses | Antarmuka / Tampilan |
 | :--- | :--- | :---: | :--- |
 | **Administrator** | **Hospital-Wide (Seluruh Rumah Sakit)**: Melihat seluruh permohonan RKBMD dari semua unit dan sub-unit. | **Read-Only** | Tab *"Semua Permohonan RKBMD (Rumah Sakit)"*, filter tambahan Unit Kerja, tanpa tombol buat/edit/balas/alihkan. |
-| **Supervisor** | **Unit-Level (Unit Kerja Terkait)**: Melihat permohonan yang diajukan oleh sub-unit di bawah unit kerjanya (`unit_id`). | **Read-Only** | Tab *"Permohonan Unit [Nama Unit]"*, tanpa tombol buat/edit/balas/alihkan. |
+| **Supervisor** | **Unit-Level (Unit Kerja Terkait)**: Melihat permohonan yang **diajukan oleh** sub-unit di bawah unit kerjanya (`unit_id`), serta permohonan yang **ditujukan ke** sub-unit / operator di bawah unit kerjanya (`targetOperator.unit_id`). | **Read-Only** | Tab *"Permohonan Terkait Unit [Nama Unit]"* (dengan indikator status berkas diajukan dari unit vs berkas ditujukan ke unit), tanpa tombol buat/edit/balas/alihkan. |
 | **Operator** | **Operasional / Mandiri**: Permohonan yang diajukan sendiri, permohonan masuk ke dirinya, dan permohonan yang dialihkannya. | **Read & Write** (Sesuai alur bisnis) | Tetap memiliki 3 tab operasional (*Permohonan Saya*, *Permohonan Masuk*, *Permohonan Dialihkan*) dan tombol aksi lengkap. |
 
 ---
@@ -102,7 +102,9 @@ flowchart TD
       - Menambahkan filter `unit_id` opsional.
       - Menyiapkan variabel `$units = Unit::orderBy('name')->get()` untuk dropdown filter.
     - **Supervisor**:
-      - Mengambil permohonan yang terkait unitnya: `where('unit_id', $user->unit_id)`.
+      - Mengambil permohonan yang terkait unitnya secara dua arah:
+        1. **Diajukan oleh** sub-unit di bawah unit kerjanya (`where('unit_id', $user->unit_id)`), ATAU
+        2. **Ditujukan ke** sub-unit / operator di bawah unit kerjanya (`orWhereHas('targetOperator', fn($q) => $q->where('unit_id', $user->unit_id))`).
     - **Operator**:
       - Mempertahankan alur yang ada (`$mySubmissions`, `$incomingSubmissions`, `$forwardedSubmissions`).
 - **Method `show(RkbmdSubmission $rkbmd)`**:
@@ -126,7 +128,7 @@ flowchart TD
     - Tampilkan tab tunggal *"Semua Permohonan RKBMD (Rumah Sakit)"* dengan badge Unit Kerja dan kolom lengkap.
     - Tambahkan elemen dropdown filter *"Filter Berdasarkan Unit Kerja"*.
   - Jika Supervisor:
-    - Tampilkan tab tunggal *"Daftar Permohonan Unit [Nama Unit]"*.
+    - Tampilkan tab permohonan terkait unitnya dengan badge pembeda yang jelas (misal: *"Diajukan oleh Sub-Unit Kita"* vs *"Ditujukan ke Sub-Unit Kita"*) sehingga Supervisor dapat memantau permohonan keluar maupun permohonan masuk ke unit kerjanya.
   - Jika Operator:
     - Tampilkan 3 tab operasional seperti sedia kala.
 - **`show.blade.php`**:
@@ -137,7 +139,7 @@ flowchart TD
 ### Langkah 6: Pembuatan Pengujian Otomatis (`tests/Feature/General/RkbmdReadOnlyAccessTest.php`)
 - Uji skenario lengkap:
   1. `test_admin_can_view_rkbmd_index_and_see_all_hospital_submissions`
-  2. `test_supervisor_can_view_rkbmd_index_and_see_own_unit_submissions`
+  2. `test_supervisor_can_view_rkbmd_index_and_see_submissions_originated_from_and_targeted_to_own_unit`
   3. `test_supervisor_cannot_view_other_unit_rkbmd_detail_in_show`
   4. `test_admin_and_supervisor_can_view_rkbmd_detail_page_and_timeline`
   5. `test_admin_and_supervisor_cannot_access_create_form` (assertStatus 403)
@@ -152,4 +154,3 @@ flowchart TD
 1. Menjalankan pengujian fitur `RkbmdReadOnlyAccessTest`.
 2. Menjalankan kembali seluruh 296 pengujian aplikasi (`php artisan test`) untuk memastikan zero regression.
 3. Membuat berkas walkthrough dan mempresentasikannya kepada pengguna.
-

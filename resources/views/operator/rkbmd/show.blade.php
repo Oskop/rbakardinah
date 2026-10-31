@@ -34,7 +34,7 @@
                         <span>Edit Permohonan</span>
                     </a>
                 @endif
-                <a href="{{ route('operator.rkbmd.index') }}"
+                <a href="{{ route('rkbmd.index') }}"
                     class="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors">
                     ← Kembali
                 </a>
@@ -55,6 +55,24 @@
                 <div class="p-4 bg-rose-50 border-l-4 border-rose-500 text-rose-800 rounded-xl shadow-sm text-sm font-semibold flex items-center gap-2">
                     <span>⚠️</span>
                     <span>{{ session('error') }}</span>
+                </div>
+            @endif
+
+            <!-- BANNER MODE PENINJAUAN (READ-ONLY UNTUK ADMIN & SUPERVISOR) -->
+            @if(Auth::user()->role !== 'Operator')
+                <div class="bg-gradient-to-r from-slate-100 via-gray-100 to-white border border-slate-300 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <span class="p-2.5 bg-slate-700 text-white rounded-xl text-xs">👁️</span>
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-900">Mode Peninjauan (Read-Only)</h4>
+                            <p class="text-[11px] text-slate-600">
+                                Anda meninjau permohonan ini sebagai <strong>{{ Auth::user()->role }}</strong>. Seluruh data permohonan, dokumen nota dinas, daftar barang, dan riwayat pengalihan dapat ditinjau secara transparan tanpa hak manipulasi berkas.
+                            </p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 bg-slate-200 text-slate-800 font-bold rounded-full text-[11px] shrink-0 border border-slate-300">
+                        READ-ONLY
+                    </span>
                 </div>
             @endif
 

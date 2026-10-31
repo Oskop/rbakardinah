@@ -144,12 +144,26 @@ Route::middleware(['auth', 'role:Operator'])->prefix('operator')->name('operator
     Route::post('details/{detail}/submit-item', [\App\Http\Controllers\Operator\DetailController::class, 'submitItem'])->name('details.submit-item');
     Route::post('details/{detail}/upload-version', [\App\Http\Controllers\Operator\DetailController::class, 'uploadVersion'])->name('details.upload-version');
 
-    // RKBMD Routes
+    // RKBMD Mutation Routes (Khusus Operator)
     Route::get('rkbmd/api/master-barangs', [\App\Http\Controllers\Operator\RkbmdController::class, 'searchMasterBarangs'])->name('rkbmd.api.master-barangs');
+    Route::get('rkbmd/create', [\App\Http\Controllers\Operator\RkbmdController::class, 'create'])->name('rkbmd.create');
+    Route::post('rkbmd', [\App\Http\Controllers\Operator\RkbmdController::class, 'store'])->name('rkbmd.store');
+    Route::get('rkbmd/{rkbmd}/edit', [\App\Http\Controllers\Operator\RkbmdController::class, 'edit'])->name('rkbmd.edit');
+    Route::put('rkbmd/{rkbmd}', [\App\Http\Controllers\Operator\RkbmdController::class, 'update'])->name('rkbmd.update');
+    Route::delete('rkbmd/{rkbmd}', [\App\Http\Controllers\Operator\RkbmdController::class, 'destroy'])->name('rkbmd.destroy');
     Route::post('rkbmd/{rkbmd}/reply', [\App\Http\Controllers\Operator\RkbmdController::class, 'reply'])->name('rkbmd.reply');
     Route::put('rkbmd/{rkbmd}/reply', [\App\Http\Controllers\Operator\RkbmdController::class, 'updateReply'])->name('rkbmd.reply.update');
     Route::post('rkbmd/{rkbmd}/forward', [\App\Http\Controllers\Operator\RkbmdController::class, 'forward'])->name('rkbmd.forward');
-    Route::resource('rkbmd', \App\Http\Controllers\Operator\RkbmdController::class);
+});
+
+// RKBMD Read-Only Shared Routes (Dapat diakses oleh Operator, Supervisor, dan Administrator)
+Route::middleware(['auth', 'role:Operator,Supervisor,Administrator'])->group(function () {
+    Route::get('rkbmd', [\App\Http\Controllers\Operator\RkbmdController::class, 'index'])->name('rkbmd.index');
+    Route::get('rkbmd/{rkbmd}', [\App\Http\Controllers\Operator\RkbmdController::class, 'show'])->name('rkbmd.show');
+
+    // Alias backward compatibility untuk operator.rkbmd.index dan operator.rkbmd.show
+    Route::get('operator/rkbmd', [\App\Http\Controllers\Operator\RkbmdController::class, 'index'])->name('operator.rkbmd.index');
+    Route::get('operator/rkbmd/{rkbmd}', [\App\Http\Controllers\Operator\RkbmdController::class, 'show'])->name('operator.rkbmd.show');
 });
 
 Route::middleware('auth')->group(function () {

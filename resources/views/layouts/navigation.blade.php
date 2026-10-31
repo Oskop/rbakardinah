@@ -67,6 +67,9 @@
                             <x-nav-link :href="route('admin.headers.index')" :active="request()->routeIs('admin.headers.*')">
                                 {{ __('RBA Headers') }}
                             </x-nav-link>
+                            <x-nav-link :href="route('rkbmd.index')" :active="request()->routeIs('*rkbmd*')">
+                                📦 {{ __('RKBMD') }}
+                            </x-nav-link>
                             <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                                 {{ __('Laporan') }}
                             </x-nav-link>
@@ -83,6 +86,9 @@
                             <x-nav-link :href="route('supervisor.submissions.index')"
                                 :active="request()->routeIs('supervisor.submissions.*')">
                                 {{ __('Review RBA') }}
+                            </x-nav-link>
+                            <x-nav-link :href="route('rkbmd.index')" :active="request()->routeIs('*rkbmd*')">
+                                📦 {{ __('RKBMD') }}
                             </x-nav-link>
                             <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                                 {{ __('Laporan') }}
@@ -240,6 +246,9 @@
                 <x-responsive-nav-link :href="route('admin.headers.index')" :active="request()->routeIs('admin.headers.*')">
                     {{ __('RBA Headers') }}
                 </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('rkbmd.index')" :active="request()->routeIs('*rkbmd*')">
+                    📦 {{ __('RKBMD') }}
+                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                     {{ __('Laporan') }}
                 </x-responsive-nav-link>
@@ -256,6 +265,9 @@
                 <x-responsive-nav-link :href="route('supervisor.submissions.index')"
                     :active="request()->routeIs('supervisor.submissions.*')">
                     {{ __('Review RBA') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('rkbmd.index')" :active="request()->routeIs('*rkbmd*')">
+                    📦 {{ __('RKBMD') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                     {{ __('Laporan') }}
