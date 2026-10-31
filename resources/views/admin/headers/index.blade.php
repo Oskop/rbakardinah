@@ -32,6 +32,18 @@
                 </div>
             @endif
 
+            @if(\App\Models\SystemSetting::isRbaDeletionAllowed())
+                <div class="p-4 bg-amber-50 border-l-4 border-amber-500 text-amber-900 rounded-xl shadow-sm text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">⚠️</span>
+                        <span><strong>Mode Pembersihan Aktif:</strong> Tombol "Hapus RBA" saat ini sedang ditampilkan. Harap berhati-hati dan segera kunci kembali setelah selesai membersihkan data yang keliru.</span>
+                    </div>
+                    <a href="{{ route('admin.settings.index') }}" class="font-bold underline text-amber-950 hover:text-black whitespace-nowrap">
+                        Ke Pengaturan Sistem &rarr;
+                    </a>
+                </div>
+            @endif
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80">
                 <div class="p-6 text-gray-900">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -84,16 +96,18 @@
                                                 Lihat Data
                                             </a>
 
-                                            <!-- Hapus RBA ke Arsip Sampah -->
-                                            <form action="{{ route('admin.headers.destroy', $header) }}" method="POST"
-                                                onsubmit="const r = prompt('⚠️ KONFIRMASI PENGHAPUSAN RBA:\n\nAnda akan menghapus permanen RBA {{ $header->year }} - {{ $header->period->name }} dari data operasional.\nData lengkap beserta seluruh relasi akan diamankan ke Arsip Sampah dan dapat dipulihkan kapan saja.\n\nKetik alasan penghapusan di bawah ini:'); if (!r) return false; this.reason.value = r; return true;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <input type="hidden" name="reason" value="">
-                                                <button type="submit" class="text-rose-600 hover:text-rose-900 border border-rose-200 px-2.5 py-1 rounded-lg bg-rose-50 font-bold transition-colors" title="Hapus ke Arsip Sampah">
-                                                    Hapus RBA
-                                                </button>
-                                            </form>
+                                            @if(\App\Models\SystemSetting::isRbaDeletionAllowed())
+                                                <!-- Hapus RBA ke Arsip Sampah -->
+                                                <form action="{{ route('admin.headers.destroy', $header) }}" method="POST"
+                                                    onsubmit="const r = prompt('⚠️ KONFIRMASI PENGHAPUSAN RBA:\n\nAnda akan menghapus permanen RBA {{ $header->year }} - {{ $header->period->name }} dari data operasional.\nData lengkap beserta seluruh relasi akan diamankan ke Arsip Sampah dan dapat dipulihkan kapan saja.\n\nKetik alasan penghapusan di bawah ini:'); if (!r) return false; this.reason.value = r; return true;">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <input type="hidden" name="reason" value="">
+                                                    <button type="submit" class="text-rose-600 hover:text-rose-900 border border-rose-200 px-2.5 py-1 rounded-lg bg-rose-50 font-bold transition-colors cursor-pointer" title="Hapus ke Arsip Sampah">
+                                                        Hapus RBA
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

@@ -50,6 +50,10 @@ Route::middleware(['auth', 'role:Administrator'])->prefix('admin')->name('admin.
     Route::get('archives/{archive}', [\App\Http\Controllers\Admin\HardDeleteArchiveController::class, 'show'])->name('archives.show');
     Route::post('archives/{archive}/restore', [\App\Http\Controllers\Admin\HardDeleteArchiveController::class, 'restore'])->name('archives.restore');
 
+    // System Settings Routes (Pengaturan Sistem & Kebijakan Keamanan)
+    Route::get('settings', [\App\Http\Controllers\Admin\SystemSettingController::class, 'index'])->name('settings.index');
+    Route::post('settings', [\App\Http\Controllers\Admin\SystemSettingController::class, 'update'])->name('settings.update');
+
     // Announcements Management Routes
     Route::post('announcements/{announcement}/toggle-active', [\App\Http\Controllers\Admin\AnnouncementController::class, 'toggleActive'])->name('announcements.toggle-active');
     Route::post('announcements/{announcement}/force-end', [\App\Http\Controllers\Admin\AnnouncementController::class, 'forceEnd'])->name('announcements.force-end');

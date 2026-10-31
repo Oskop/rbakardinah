@@ -318,6 +318,12 @@ class RbaHeaderController extends Controller
      */
     public function destroy(Request $request, \App\Models\RbaHeader $header, \App\Services\HardDeleteArchiveService $archiveService)
     {
+        // Security guard: Cek apakah tindakan penghapusan RBA diizinkan di Pengaturan Sistem
+        if (!\App\Models\SystemSetting::isRbaDeletionAllowed()) {
+            return redirect()->route('admin.headers.index')
+                ->with('error', 'Tindakan penghapusan RBA sedang dinonaktifkan di Pengaturan Sistem. Silakan aktifkan izin terlebih dahulu melalui menu Pengaturan Sistem.');
+        }
+
         $validatedCount = \App\Models\RbaDetail::whereIn('rba_submission_id', $header->submissions->pluck('id'))
             ->where('is_validated', true)
             ->count();

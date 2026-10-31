@@ -234,6 +234,9 @@ class HardDeleteAndRestoreRbaTest extends TestCase
 
     public function test_admin_can_delete_header_and_restore_via_web_routes(): void
     {
+        // Enable RBA deletion in system settings
+        \App\Models\SystemSetting::set('allow_rba_deletion', true, $this->admin->id);
+
         $header = RbaHeader::create([
             'period_id' => $this->period->id,
             'admin_id' => $this->admin->id,

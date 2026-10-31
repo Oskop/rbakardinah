@@ -38,6 +38,14 @@ class DeleteRbaHeaderCommand extends Command
         $periodName = $header->period->name ?? 'None';
         $this->warn("Target RBA Header: ID #{$header->id} | Year: {$header->year} | Period: {$periodName}");
 
+        if (!\App\Models\SystemSetting::isRbaDeletionAllowed() && !$this->option('force')) {
+            $this->warn("Pemberitahuan: Fitur penghapusan RBA saat ini sedang terkunci di Pengaturan Sistem.");
+            if (!$this->confirm('Apakah Anda ingin mem-bypass kunci sistem dan tetap melanjutkan penghapusan?')) {
+                $this->info('Operasi dibatalkan.');
+                return 0;
+            }
+        }
+
         $validatedCount = \App\Models\RbaDetail::whereIn('rba_submission_id', $header->submissions->pluck('id'))
             ->where('is_validated', true)
             ->count();
