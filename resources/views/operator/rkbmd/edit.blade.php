@@ -87,20 +87,20 @@
                             </p>
                         </div>
 
-                        <!-- Operator Pengusul RBA Tujuan -->
+                        <!-- Sub-Unit Kerja & Operator Pengusul RBA Tujuan -->
                         <div>
                             <label for="target_operator_id" class="block text-xs font-bold text-slate-700 mb-1">
-                                Operator Pengusul RBA Tujuan <span class="text-rose-500">*</span>
+                                Sub-Unit Kerja & PIC RBA Tujuan <span class="text-rose-500">*</span>
                             </label>
                             <select id="target_operator_id" name="target_operator_id" required
                                 class="w-full text-xs rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-2.5">
                                 @foreach($targetOperators as $op)
                                     <option value="{{ $op->id }}" {{ old('target_operator_id', $rkbmd->target_operator_id) == $op->id ? 'selected' : '' }}>
-                                        👤 {{ $op->name }} - {{ $op->unit?->name }} {{ $op->subUnit ? '(' . $op->subUnit->name . ')' : '' }} {{ $op->jabatan ? '• ' . $op->jabatan : '' }}
+                                        🏢 {{ $op->subUnit ? $op->subUnit->name : $op->unit?->name }} — 👤 PIC: {{ $op->name }} ({{ $op->unit?->name }})
                                     </option>
                                 @endforeach
                             </select>
-                            <p class="text-[11px] text-slate-400 mt-1">Hanya menampilkan operator yang memiliki hak pengusulan RBA (can_propose = 1).</p>
+                            <p class="text-[11px] text-slate-400 mt-1">Permohonan akan ditujukan ke Sub-Unit Kerja dan ditindaklanjuti oleh PIC RBA bersangkutan.</p>
                             <x-input-error :messages="$errors->get('target_operator_id')" class="mt-1" />
                         </div>
                     </div>

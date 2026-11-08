@@ -69,29 +69,47 @@ class RkbmdController extends Controller
             $supervisorSubmissions = $supervisorQuery->latest('created_at')->get();
         } else {
             // Operator Role: Operasional mandiri
-            // 1. Permohonan Saya (Dibuat oleh pengguna login)
-            $myQuery = RkbmdSubmission::with(['targetOperator', 'subUnit', 'unit', 'items'])
-                ->where('user_id', $user->id);
+            // 1. Permohonan Diajukan oleh Sub-Unit Kita (atau dibuat oleh user login)
+            $myQuery = RkbmdSubmission::with(['targetOperator', 'subUnit', 'unit', 'items', 'applicant'])
+                ->where(function ($q) use ($user) {
+                    if ($user->sub_unit_id) {
+                        $q->where('sub_unit_id', $user->sub_unit_id)
+                          ->orWhere('user_id', $user->id);
+                    } elseif ($user->unit_id) {
+                        $q->where('unit_id', $user->unit_id)
+                          ->orWhere('user_id', $user->id);
+                    } else {
+                        $q->where('user_id', $user->id);
+                    }
+                });
             $applyFilters($myQuery);
             $mySubmissions = $myQuery->latest('created_at')->get();
 
-            if ($isProposer) {
-                // 2. Permohonan Masuk (Khusus Operator Pengusul / Penerima Berkas Saat Ini)
-                $incomingQuery = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'originalOperator'])
-                    ->where('target_operator_id', $user->id);
-                $applyFilters($incomingQuery);
-                $incomingSubmissions = $incomingQuery->latest('created_at')->get();
+            // 2. Permohonan Masuk ke Sub-Unit Kita (Terbuka untuk semua operator di sub-unit tersebut)
+            $incomingQuery = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'originalOperator', 'targetOperator', 'targetSubUnit'])
+                ->where(function ($q) use ($user) {
+                    if ($user->sub_unit_id) {
+                        $q->where('target_sub_unit_id', $user->sub_unit_id)
+                          ->orWhere('target_operator_id', $user->id);
+                    } elseif ($user->unit_id) {
+                        $q->where('target_unit_id', $user->unit_id)
+                          ->orWhere('target_operator_id', $user->id);
+                    } else {
+                        $q->where('target_operator_id', $user->id);
+                    }
+                });
+            $applyFilters($incomingQuery);
+            $incomingSubmissions = $incomingQuery->latest('created_at')->get();
 
-                // 3. Permohonan yang Dialihkan oleh Operator Pengusul ini
-                $forwardedQuery = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'targetOperator', 'histories'])
-                    ->whereHas('histories', function ($q) use ($user) {
-                        $q->where('action', 'Pengalihan')
-                            ->where('from_operator_id', $user->id);
-                    })
-                    ->where('target_operator_id', '!=', $user->id);
-                $applyFilters($forwardedQuery);
-                $forwardedSubmissions = $forwardedQuery->latest('updated_at')->get();
-            }
+            // 3. Permohonan yang Pernah Dialihkan oleh Operator Pengusul ini
+            $forwardedQuery = RkbmdSubmission::with(['applicant', 'subUnit', 'unit', 'items', 'targetOperator', 'histories'])
+                ->whereHas('histories', function ($q) use ($user) {
+                    $q->where('action', 'Pengalihan')
+                        ->where('from_operator_id', $user->id);
+                })
+                ->where('target_operator_id', '!=', $user->id);
+            $applyFilters($forwardedQuery);
+            $forwardedSubmissions = $forwardedQuery->latest('updated_at')->get();
         }
 
         return view('operator.rkbmd.index', compact(
@@ -217,15 +235,19 @@ class RkbmdController extends Controller
             $attachmentPath = $request->file('attachment')->store('rkbmd_attachments', 'public');
         }
 
-        $submission = DB::transaction(function () use ($request, $user, $year, $nomorPermohonan, $attachmentPath) {
+        $target = User::findOrFail($request->target_operator_id);
+
+        $submission = DB::transaction(function () use ($request, $user, $target, $year, $nomorPermohonan, $attachmentPath) {
             $sub = RkbmdSubmission::create([
                 'nomor_permohonan' => $nomorPermohonan,
                 'year' => $year,
                 'user_id' => $user->id,
                 'unit_id' => $user->unit_id ?? 1,
                 'sub_unit_id' => $user->sub_unit_id,
-                'target_operator_id' => $request->target_operator_id,
-                'original_operator_id' => $request->target_operator_id,
+                'target_unit_id' => $target->unit_id,
+                'target_sub_unit_id' => $target->sub_unit_id,
+                'target_operator_id' => $target->id,
+                'original_operator_id' => $target->id,
                 'title' => $request->title,
                 'notes' => $request->notes,
                 'attachment_path' => $attachmentPath,
@@ -270,15 +292,29 @@ class RkbmdController extends Controller
     {
         $user = Auth::user();
 
-        // Pastikan hak akses lihat (Pemohon, Target saat ini, Pengalih terdahulu, SPV unit pemohon ATAU unit target, atau Admin)
+        // Pastikan hak akses lihat (Pemohon / rekan sub-unit pemohon, Target / rekan sub-unit penerima, Pengalih terdahulu, SPV unit pemohon ATAU unit target, atau Admin)
         $isParticipant = $rkbmd->user_id === $user->id
             || $rkbmd->target_operator_id === $user->id
+            || ($user->sub_unit_id && (
+                $user->sub_unit_id === $rkbmd->sub_unit_id 
+                || $user->sub_unit_id === $rkbmd->target_sub_unit_id
+                || $user->sub_unit_id === $rkbmd->targetOperator?->sub_unit_id
+            ))
+            || ($user->unit_id && (
+                $user->unit_id === $rkbmd->unit_id 
+                || $user->unit_id === $rkbmd->target_unit_id
+                || $user->unit_id === $rkbmd->targetOperator?->unit_id
+            ))
             || $rkbmd->histories()->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
                     ->orWhere('from_operator_id', $user->id)
                     ->orWhere('to_operator_id', $user->id);
             })->exists()
-            || ($user->role === 'Supervisor' && ($user->unit_id === $rkbmd->unit_id || $user->unit_id === $rkbmd->targetOperator?->unit_id))
+            || ($user->role === 'Supervisor' && (
+                $user->unit_id === $rkbmd->unit_id 
+                || $user->unit_id === $rkbmd->target_unit_id
+                || $user->unit_id === $rkbmd->targetOperator?->unit_id
+            ))
             || $user->role === 'Administrator';
 
         if (!$isParticipant) {
@@ -289,6 +325,8 @@ class RkbmdController extends Controller
             'applicant',
             'unit',
             'subUnit',
+            'targetUnit',
+            'targetSubUnit',
             'targetOperator',
             'originalOperator',
             'repliedBy',
@@ -451,6 +489,8 @@ class RkbmdController extends Controller
 
         DB::transaction(function () use ($request, $rkbmd, $user, $newTarget, $statusBefore) {
             $rkbmd->update([
+                'target_unit_id' => $newTarget->unit_id,
+                'target_sub_unit_id' => $newTarget->sub_unit_id,
                 'target_operator_id' => $newTarget->id,
                 'status' => 'Dialihkan',
                 'updated_by' => $user->id,
@@ -560,10 +600,14 @@ class RkbmdController extends Controller
             $attachmentPath = $request->file('attachment')->store('rkbmd_attachments', 'public');
         }
 
-        DB::transaction(function () use ($request, $rkbmd, $user, $attachmentPath) {
+        $target = User::findOrFail($request->target_operator_id);
+
+        DB::transaction(function () use ($request, $rkbmd, $user, $target, $attachmentPath) {
             $rkbmd->update([
-                'target_operator_id' => $request->target_operator_id,
-                'original_operator_id' => $request->target_operator_id,
+                'target_unit_id' => $target->unit_id,
+                'target_sub_unit_id' => $target->sub_unit_id,
+                'target_operator_id' => $target->id,
+                'original_operator_id' => $target->id,
                 'title' => $request->title,
                 'year' => $request->year,
                 'notes' => $request->notes,

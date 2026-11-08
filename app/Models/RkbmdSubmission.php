@@ -22,6 +22,8 @@ class RkbmdSubmission extends Model
         'user_id',
         'unit_id',
         'sub_unit_id',
+        'target_unit_id',
+        'target_sub_unit_id',
         'target_operator_id',
         'original_operator_id',
         'title',
@@ -64,6 +66,16 @@ class RkbmdSubmission extends Model
         return $this->belongsTo(User::class, 'target_operator_id');
     }
 
+    public function targetUnit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'target_unit_id');
+    }
+
+    public function targetSubUnit(): BelongsTo
+    {
+        return $this->belongsTo(SubUnit::class, 'target_sub_unit_id');
+    }
+
     public function originalOperator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'original_operator_id');
@@ -86,7 +98,7 @@ class RkbmdSubmission extends Model
 
     /**
      * Check if a given user can manage (reply/forward) this submission.
-     * Hanya Operator pemegang berkas aktif (target_operator_id) yang berhak mengelola.
+     * Hanya User PIC (can_propose = true) dari Sub-Unit Kerja tujuan (atau target_operator_id) yang berhak mengelola.
      */
     public function canBeManagedBy(User $user): bool
     {
@@ -99,16 +111,32 @@ class RkbmdSubmission extends Model
             return false;
         }
 
+        // Hanya operator dengan hak pengusulan (PIC / can_propose = true)
+        if (!$user->isProposer()) {
+            return false;
+        }
+
+        // Harus berada di Sub-Unit tujuan yang sama
+        if ($this->target_sub_unit_id && $user->sub_unit_id === $this->target_sub_unit_id) {
+            return true;
+        }
+
+        // Atau jika tidak ada sub-unit dan permohonan ke unit induk
+        if (!$this->target_sub_unit_id && $this->target_unit_id && $user->unit_id === $this->target_unit_id) {
+            return true;
+        }
+
+        // Fallback backward compatibility: jika target_operator_id sama persis
         return $this->target_operator_id === $user->id;
     }
 
     /**
      * Check if a given user can edit an already submitted reply on this submission.
-     * Hanya Operator yang memberikan balasan atau target operator yang berhak mengedit.
+     * Hanya PIC yang memberikan balasan atau PIC sub-unit target saat ini yang berhak mengedit.
      */
     public function canEditReply(User $user): bool
     {
-        if ($user->role !== 'Operator' || !$user->can_propose) {
+        if ($user->role !== 'Operator' || !$user->isProposer()) {
             return false;
         }
 
@@ -117,8 +145,19 @@ class RkbmdSubmission extends Model
             return false;
         }
 
-        // Hanya operator yang membalas atau target_operator saat ini yang berhak mengedit
-        return $this->replied_by === $user->id || $this->target_operator_id === $user->id;
+        if ($this->replied_by === $user->id || $this->target_operator_id === $user->id) {
+            return true;
+        }
+
+        if ($this->target_sub_unit_id && $user->sub_unit_id === $this->target_sub_unit_id) {
+            return true;
+        }
+
+        if (!$this->target_sub_unit_id && $this->target_unit_id && $user->unit_id === $this->target_unit_id) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

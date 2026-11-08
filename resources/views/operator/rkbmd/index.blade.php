@@ -32,7 +32,7 @@
     </x-slot>
 
     <div class="py-8" x-data="{
-        activeTab: '{{ request('tab', $isProposer && $incomingSubmissions->isNotEmpty() ? 'incoming' : 'mine') }}',
+        activeTab: '{{ request('tab', $incomingSubmissions->isNotEmpty() ? 'incoming' : 'mine') }}',
         switchTab(tab) {
             this.activeTab = tab;
             if (window.adjustRkbmdTables) {
@@ -138,25 +138,25 @@
                     :class="activeTab === 'mine' ? 'bg-indigo-600 text-white shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'"
                     class="flex-1 py-2.5 px-4 rounded-xl text-xs transition-all duration-150 flex items-center justify-center gap-2">
                     <span>📤</span>
-                    <span>Permohonan Saya</span>
+                    <span>Permohonan Saya (Sub-Unit Kita)</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px]"
                         :class="activeTab === 'mine' ? 'bg-indigo-700/80 text-white' : 'bg-slate-200 text-slate-700'">
                         {{ $mySubmissions->count() }}
                     </span>
                 </button>
 
-                @if($isProposer)
-                    <button type="button" @click="switchTab('incoming')"
-                        :class="activeTab === 'incoming' ? 'bg-indigo-600 text-white shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'"
-                        class="flex-1 py-2.5 px-4 rounded-xl text-xs transition-all duration-150 flex items-center justify-center gap-2">
-                        <span>📥</span>
-                        <span>Permohonan Masuk (Perlu Tindak Lanjut)</span>
-                        <span class="px-2 py-0.5 rounded-full text-[10px]"
-                            :class="activeTab === 'incoming' ? 'bg-indigo-700/80 text-white' : 'bg-slate-200 text-slate-700'">
-                            {{ $incomingSubmissions->count() }}
-                        </span>
-                    </button>
+                <button type="button" @click="switchTab('incoming')"
+                    :class="activeTab === 'incoming' ? 'bg-indigo-600 text-white shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'"
+                    class="flex-1 py-2.5 px-4 rounded-xl text-xs transition-all duration-150 flex items-center justify-center gap-2">
+                    <span>📥</span>
+                    <span>Permohonan Masuk (Sub-Unit Kita)</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px]"
+                        :class="activeTab === 'incoming' ? 'bg-indigo-700/80 text-white' : 'bg-slate-200 text-slate-700'">
+                        {{ $incomingSubmissions->count() }}
+                    </span>
+                </button>
 
+                @if($isProposer || $forwardedSubmissions->isNotEmpty())
                     <button type="button" @click="switchTab('forwarded')"
                         :class="activeTab === 'forwarded' ? 'bg-indigo-600 text-white shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'"
                         class="flex-1 py-2.5 px-4 rounded-xl text-xs transition-all duration-150 flex items-center justify-center gap-2">
@@ -201,12 +201,18 @@
                                                     {{ $sub->nomor_permohonan }}
                                                 </span>
                                                 <div class="text-[11px] text-gray-500 mt-1">
-                                                    Tahun {{ $sub->year }} • {{ $sub->created_at->format('Y/m/d H:i') }} WIB
+                                                    Tahun {{ $sub->year }} • {{ $sub->created_at->format('d/m/Y H:i') }} WIB
                                                 </div>
                                             </td>
 
                                             <td class="px-5 py-4">
                                                 <div class="text-sm font-semibold text-gray-900">{{ $sub->title }}</div>
+                                                <div class="text-[11px] text-slate-500 mt-0.5">
+                                                    Pemohon: <strong>{{ $sub->applicant?->name ?? 'Operator' }}</strong>
+                                                    @if($sub->user_id === Auth::id())
+                                                        <span class="ml-1 text-[10px] bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.5 rounded border border-indigo-200">Anda</span>
+                                                    @endif
+                                                </div>
                                                 @if($sub->notes)
                                                     <div class="text-xs text-gray-500 mt-0.5 line-clamp-1">{{ $sub->notes }}</div>
                                                 @endif
@@ -260,9 +266,8 @@
                 </div>
             </div>
 
-            <!-- TAB 2: PERMOHONAN MASUK (KHUSUS OPERATOR PENGUSUL) -->
-            @if($isProposer)
-                <div x-show="activeTab === 'incoming'" x-transition class="space-y-4">
+            <!-- TAB 2: PERMOHONAN MASUK (SUB-UNIT KITA) -->
+            <div x-show="activeTab === 'incoming'" x-transition class="space-y-4">
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80">
                         <div class="p-6 text-gray-900">
                             <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
@@ -292,7 +297,7 @@
                                                         {{ $inSub->nomor_permohonan }}
                                                     </span>
                                                     <div class="text-[11px] text-gray-500 mt-1">
-                                                        Tahun {{ $inSub->year }} • {{ $inSub->created_at->format('Y/m/d H:i') }} WIB
+                                                        Tahun {{ $inSub->year }} • {{ $inSub->created_at->format('d/m/Y H:i') }} WIB
                                                     </div>
                                                     @if($inSub->status === 'Dialihkan')
                                                         <div class="mt-1">
@@ -338,10 +343,17 @@
                                                 </td>
 
                                                 <td class="px-5 py-4 whitespace-nowrap text-right text-xs">
-                                                    <a href="{{ route('operator.rkbmd.show', $inSub) }}"
-                                                        class="inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-xs transition-colors">
-                                                        Telaah & Tindak Lanjut →
-                                                    </a>
+                                                    @if($inSub->canBeManagedBy(Auth::user()))
+                                                        <a href="{{ route('operator.rkbmd.show', $inSub) }}"
+                                                            class="inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-xs transition-colors">
+                                                            Telaah & Tindak Lanjut →
+                                                        </a>
+                                                    @else
+                                                        <a href="{{ route('operator.rkbmd.show', $inSub) }}"
+                                                            class="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold border border-slate-200 transition-colors">
+                                                            Lihat Berkas →
+                                                        </a>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -353,6 +365,7 @@
                 </div>
 
                 <!-- TAB 3: PERMOHONAN DIALIHKAN (KHUSUS OPERATOR PENGUSUL) -->
+            @if($isProposer || $forwardedSubmissions->isNotEmpty())
                 <div x-show="activeTab === 'forwarded'" x-transition class="space-y-4">
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-200/80">
                         <div class="p-6 text-gray-900">
@@ -387,7 +400,7 @@
                                                         {{ $fSub->nomor_permohonan }}
                                                     </span>
                                                     <div class="text-[11px] text-gray-500 mt-1">
-                                                        Tahun {{ $fSub->year }} • {{ $fSub->created_at->format('Y/m/d H:i') }} WIB
+                                                        Tahun {{ $fSub->year }} • {{ $fSub->created_at->format('d/m/Y H:i') }} WIB
                                                     </div>
                                                 </td>
 

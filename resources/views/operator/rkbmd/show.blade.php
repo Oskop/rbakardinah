@@ -96,6 +96,42 @@
                 </div>
             @endif
 
+            <!-- BANNER REKAN SATU SUB-UNIT PEMOHON (READ-ONLY) -->
+            @if(Auth::user()->role === 'Operator' && $rkbmd->user_id !== Auth::id() && ($rkbmd->sub_unit_id === Auth::user()->sub_unit_id && Auth::user()->sub_unit_id !== null))
+                <div class="bg-gradient-to-r from-indigo-50 via-slate-50 to-white border border-indigo-200 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <span class="p-2.5 bg-indigo-600 text-white rounded-xl text-xs">📤</span>
+                        <div>
+                            <h4 class="text-xs font-bold text-indigo-950">Permohonan Diajukan oleh Ruangan Anda</h4>
+                            <p class="text-[11px] text-indigo-800">
+                                Permohonan ini diajukan oleh rekan Anda: <strong>{{ $rkbmd->applicant?->name }}</strong> dari <strong>{{ $rkbmd->subUnit?->name }}</strong>. Anda dapat memantau rincian kebutuhan barang dan perkembangan status tindak lanjut tanpa hak edit berkas.
+                            </p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-indigo-100 text-indigo-800 font-bold rounded-full text-[10px] shrink-0 border border-indigo-200">
+                        REKAN PEMOHON
+                    </span>
+                </div>
+            @endif
+
+            <!-- BANNER PEMANTAUAN RUANGAN (READ-ONLY BAGI STAF SATU SUB-UNIT TUJUAN NON-PIC) -->
+            @if(Auth::user()->role === 'Operator' && !$rkbmd->canBeManagedBy(Auth::user()) && !$rkbmd->canEditSubmission(Auth::user()) && (($rkbmd->target_sub_unit_id && $rkbmd->target_sub_unit_id === Auth::user()->sub_unit_id) || ($rkbmd->targetOperator?->sub_unit_id && $rkbmd->targetOperator?->sub_unit_id === Auth::user()->sub_unit_id)))
+                <div class="bg-gradient-to-r from-blue-50 via-slate-50 to-white border border-blue-200 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <span class="p-2.5 bg-blue-600 text-white rounded-xl text-xs">🏢</span>
+                        <div>
+                            <h4 class="text-xs font-bold text-blue-950">Akses Pemantauan Sub-Unit (Read-Only)</h4>
+                            <p class="text-[11px] text-blue-800">
+                                Permohonan ini ditujukan ke sub-unit kerja Anda (<strong>{{ $rkbmd->targetSubUnit?->name ?? ($rkbmd->targetOperator?->subUnit?->name ?? 'Sub-Unit') }}</strong>). Kewenangan memberikan balasan keputusan atau mengalihkan berkas dipegang oleh PIC RBA Sub-Unit: <strong>{{ $rkbmd->targetOperator?->name }}</strong>.
+                            </p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-blue-100 text-blue-800 font-bold rounded-full text-[10px] shrink-0 border border-blue-200">
+                        MONITORING RUANGAN
+                    </span>
+                </div>
+            @endif
+
             <!-- BANNER STATUS INFORMASI BERKAS DIALIHKAN (BAGI OPERATOR PENGALIH) -->
             @if($rkbmd->histories->where('action', 'Pengalihan')->where('from_operator_id', Auth::id())->isNotEmpty() && $rkbmd->target_operator_id !== Auth::id())
                 <div class="bg-gradient-to-r from-amber-50 via-sky-50 to-white border border-amber-200/90 rounded-2xl p-4 shadow-xs flex items-center gap-3">
@@ -351,8 +387,9 @@
             </div>
         </div>
 
-        <!-- MODAL 1: BALASAN KEPUTUSAN (SKENARIO 1) -->
-        <div x-show="replyModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+        <!-- MODAL 1: BALASAN KEPUTUSAN (SKENARIO 1) & MODAL 2: PENGALIHAN BERKAS (SKENARIO 2) -->
+        @if($rkbmd->canBeManagedBy(Auth::user()))
+            <div x-show="replyModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
             <div @click.away="replyModalOpen = false" class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-5">
                 <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                     <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
@@ -417,18 +454,18 @@
 
                     <div>
                         <label for="new_target_operator_id" class="block text-xs font-bold text-slate-700 mb-1">
-                            Pilih Operator Pengusul Tujuan Baru <span class="text-rose-500">*</span>
+                            Pilih Sub-Unit Kerja & PIC Tujuan Baru <span class="text-rose-500">*</span>
                         </label>
                         <select id="new_target_operator_id" name="new_target_operator_id" required
                             class="w-full text-xs rounded-xl border-slate-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 py-2.5">
-                            <option value="" disabled selected>-- Pilih Operator Pengusul Baru --</option>
+                            <option value="" disabled selected>-- Pilih Sub-Unit Kerja & PIC Baru --</option>
                             @foreach($otherProposers as $prop)
                                 <option value="{{ $prop->id }}">
-                                    👤 {{ $prop->name }} - {{ $prop->unit?->name }} {{ $prop->subUnit ? '(' . $prop->subUnit->name . ')' : '' }} {{ $prop->jabatan ? '• ' . $prop->jabatan : '' }}
+                                    🏢 {{ $prop->subUnit ? $prop->subUnit->name : $prop->unit?->name }} — 👤 PIC: {{ $prop->name }} ({{ $prop->unit?->name }})
                                 </option>
                             @endforeach
                         </select>
-                        <p class="text-[11px] text-slate-400 mt-1">Hanya menampilkan operator dengan hak pengusulan RBA (can_propose = 1).</p>
+                        <p class="text-[11px] text-slate-400 mt-1">Berkas akan dialihkan ke Sub-Unit Kerja baru dan diproses oleh PIC RBA bersangkutan.</p>
                     </div>
 
                     <div>
@@ -453,6 +490,7 @@
                 </form>
             </div>
         </div>
+        @endif
 
         <!-- MODAL 3: EDIT BALASAN KEPUTUSAN -->
         @if($rkbmd->canEditReply(Auth::user()))
