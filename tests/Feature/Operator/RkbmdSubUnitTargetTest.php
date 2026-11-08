@@ -438,4 +438,69 @@ class RkbmdSubUnitTargetTest extends TestCase
         $this->assertTrue($oldSubmission->canBeManagedBy($this->userPDE));
         $this->assertFalse($oldSubmission->canBeManagedBy($this->userDhimas));
     }
+
+    public function test_description_in_all_three_tables_renders_with_wrap_classes_and_avoids_horizontal_overflow()
+    {
+        $longNotes = 'Deskripsi permohonan yang sangat panjang untuk keperluan pengadaan infrastruktur jaringan LAN di seluruh lantai ruang rawat inap demi kelancaran integrasi rekam medis elektronik RME dan sistem informasi manajemen rumah sakit.';
+
+        // 1. Buat permohonan dengan deskripsi panjang
+        $submission = RkbmdSubmission::create([
+            'nomor_permohonan' => 'RKBMD/2026/11/WRAP01',
+            'year' => 2026,
+            'user_id' => $this->perawatA->id,
+            'unit_id' => $this->unitRajal->id,
+            'sub_unit_id' => $this->subUnitJantung->id,
+            'target_operator_id' => $this->userPDE->id,
+            'original_operator_id' => $this->userPDE->id,
+            'target_unit_id' => $this->unitPDE->id,
+            'target_sub_unit_id' => $this->subUnitPDE->id,
+            'title' => 'Pengadaan Switch dan Kabel Jaringan Utama',
+            'notes' => $longNotes,
+            'status' => 'Diajukan',
+        ]);
+
+        // Verifikasi Tabel 1 (Permohonan Saya)
+        $responseMine = $this->actingAs($this->perawatA)->get(route('operator.rkbmd.index'));
+        $responseMine->assertStatus(200);
+        $responseMine->assertSee('min-w-[220px] max-w-xs md:max-w-sm', false);
+        $responseMine->assertSee('break-words whitespace-normal leading-relaxed', false);
+        $responseMine->assertSee($longNotes);
+
+        // Verifikasi Tabel 2 (Permohonan Masuk)
+        $responseIncoming = $this->actingAs($this->userPDE)->get(route('operator.rkbmd.index'));
+        $responseIncoming->assertStatus(200);
+        $responseIncoming->assertSee('min-w-[220px] max-w-xs md:max-w-sm', false);
+        $responseIncoming->assertSee('break-words whitespace-normal leading-relaxed', false);
+        $responseIncoming->assertSee($longNotes);
+
+        // Alihkan permohonan untuk menguji Tabel 3 (Permohonan Dialihkan)
+        $unitApotek = Unit::create(['code' => 'APT2', 'name' => 'Instalasi Farmasi 2', 'is_active' => true]);
+        $subUnitApotek = SubUnit::create([
+            'unit_id' => $unitApotek->id,
+            'name' => 'Gudang Farmasi 2',
+            'code' => 'APT02',
+            'is_active' => true,
+        ]);
+        $userApotek = User::factory()->create([
+            'name' => 'PIC Farmasi 2',
+            'role' => 'Operator',
+            'unit_id' => $unitApotek->id,
+            'sub_unit_id' => $subUnitApotek->id,
+            'can_propose' => true,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($this->userPDE)->post(route('operator.rkbmd.forward', $submission), [
+            'new_target_operator_id' => $userApotek->id,
+            'forward_reason' => 'Dialihkan ke farmasi untuk koordinasi',
+        ]);
+
+        // Verifikasi Tabel 3 (Permohonan Dialihkan di akun userPDE)
+        $responseForwarded = $this->actingAs($this->userPDE)->get(route('operator.rkbmd.index'));
+        $responseForwarded->assertStatus(200);
+        $responseForwarded->assertSee('table-forwarded-rkbmd', false);
+        $responseForwarded->assertSee('min-w-[220px] max-w-xs md:max-w-sm', false);
+        $responseForwarded->assertSee('break-words whitespace-normal leading-relaxed', false);
+        $responseForwarded->assertSee($longNotes);
+    }
 }

@@ -186,7 +186,7 @@
                                 <thead class="bg-gray-50/80">
                                     <tr>
                                         <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No. Tiket / Tanggal</th>
-                                        <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Perihal Permohonan</th>
+                                        <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider min-w-[220px] max-w-sm">Perihal Permohonan</th>
                                         <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Operator Tujuan</th>
                                         <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Jumlah Item</th>
                                         <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
@@ -205,8 +205,8 @@
                                                 </div>
                                             </td>
 
-                                            <td class="px-5 py-4">
-                                                <div class="text-sm font-semibold text-gray-900">{{ $sub->title }}</div>
+                                            <td class="px-5 py-4 min-w-[220px] max-w-xs md:max-w-sm">
+                                                <div class="text-sm font-semibold text-gray-900 break-words whitespace-normal">{{ $sub->title }}</div>
                                                 <div class="text-[11px] text-slate-500 mt-0.5">
                                                     Pemohon: <strong>{{ $sub->applicant?->name ?? 'Operator' }}</strong>
                                                     @if($sub->user_id === Auth::id())
@@ -214,7 +214,9 @@
                                                     @endif
                                                 </div>
                                                 @if($sub->notes)
-                                                    <div class="text-xs text-gray-500 mt-0.5 line-clamp-1">{{ $sub->notes }}</div>
+                                                    <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed" title="{{ $sub->notes }}">
+                                                        {{ $sub->notes }}
+                                                    </div>
                                                 @endif
                                             </td>
 
@@ -283,7 +285,7 @@
                                         <tr>
                                             <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No. Tiket / Tanggal</th>
                                             <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Pemohon / Asal Sub-Unit</th>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Perihal Permohonan</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider min-w-[220px] max-w-sm">Perihal Permohonan</th>
                                             <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Jumlah Item</th>
                                             <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
                                             <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi Tindak Lanjut</th>
@@ -315,9 +317,13 @@
                                                     </div>
                                                 </td>
 
-                                                <td class="px-5 py-4">
-                                                    <div class="text-sm font-semibold text-gray-900">{{ $inSub->title }}</div>
-                                                    <div class="text-xs text-gray-500 mt-0.5 line-clamp-1">{{ $inSub->notes }}</div>
+                                                <td class="px-5 py-4 min-w-[220px] max-w-xs md:max-w-sm">
+                                                    <div class="text-sm font-semibold text-gray-900 break-words whitespace-normal">{{ $inSub->title }}</div>
+                                                    @if($inSub->notes)
+                                                        <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed" title="{{ $inSub->notes }}">
+                                                            {{ $inSub->notes }}
+                                                        </div>
+                                                    @endif
                                                 </td>
 
                                                 <td class="px-5 py-4 whitespace-nowrap text-center text-xs font-bold text-slate-700">
@@ -385,7 +391,7 @@
                                         <tr>
                                             <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No. Tiket / Tanggal</th>
                                             <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Pemohon / Asal Sub-Unit</th>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Perihal Permohonan</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider min-w-[220px] max-w-sm">Perihal Permohonan</th>
                                             <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Dialihkan Kepada</th>
                                             <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Jumlah Item</th>
                                             <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Status Terkini</th>
@@ -411,9 +417,13 @@
                                                     </div>
                                                 </td>
 
-                                                <td class="px-5 py-4">
-                                                    <div class="text-sm font-semibold text-gray-900">{{ $fSub->title }}</div>
-                                                    <div class="text-xs text-gray-500 mt-0.5 line-clamp-1">{{ $fSub->notes }}</div>
+                                                <td class="px-5 py-4 min-w-[220px] max-w-xs md:max-w-sm">
+                                                    <div class="text-sm font-semibold text-gray-900 break-words whitespace-normal">{{ $fSub->title }}</div>
+                                                    @if($fSub->notes)
+                                                        <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed" title="{{ $fSub->notes }}">
+                                                            {{ $fSub->notes }}
+                                                        </div>
+                                                    @endif
                                                 </td>
 
                                                 <td class="px-5 py-4 whitespace-nowrap">
