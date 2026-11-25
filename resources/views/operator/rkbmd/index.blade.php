@@ -214,11 +214,7 @@
                                                             <span class="ml-1 text-[10px] bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.5 rounded border border-indigo-200">Anda</span>
                                                         @endif
                                                     </div>
-                                                    @if($sub->notes)
-                                                        <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed rkbmd-notes-wrap" title="{{ $sub->notes }}">
-                                                            {{ $sub->notes }}
-                                                        </div>
-                                                    @endif
+                                                    <x-rkbmd-description :notes="$sub->notes" />
                                                 </div>
                                             </td>
 
@@ -322,11 +318,7 @@
                                                 <td class="px-5 py-4 rkbmd-col-perihal min-w-[220px] max-w-xs md:max-w-sm">
                                                     <div class="rkbmd-perihal-wrap">
                                                         <div class="text-sm font-semibold text-gray-900 break-words whitespace-normal rkbmd-notes-wrap">{{ $inSub->title }}</div>
-                                                        @if($inSub->notes)
-                                                            <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed rkbmd-notes-wrap" title="{{ $inSub->notes }}">
-                                                                {{ $inSub->notes }}
-                                                            </div>
-                                                        @endif
+                                                        <x-rkbmd-description :notes="$inSub->notes" />
                                                     </div>
                                                 </td>
 
@@ -424,11 +416,7 @@
                                                 <td class="px-5 py-4 rkbmd-col-perihal min-w-[220px] max-w-xs md:max-w-sm">
                                                     <div class="rkbmd-perihal-wrap">
                                                         <div class="text-sm font-semibold text-gray-900 break-words whitespace-normal rkbmd-notes-wrap">{{ $fSub->title }}</div>
-                                                        @if($fSub->notes)
-                                                            <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed rkbmd-notes-wrap" title="{{ $fSub->notes }}">
-                                                                {{ $fSub->notes }}
-                                                            </div>
-                                                        @endif
+                                                        <x-rkbmd-description :notes="$fSub->notes" />
                                                     </div>
                                                 </td>
 
@@ -531,11 +519,7 @@
                                                     <div class="rkbmd-perihal-wrap">
                                                         <div class="font-bold text-xs text-slate-800 break-words whitespace-normal rkbmd-notes-wrap">{{ $sub->title }}</div>
                                                         <div class="text-[11px] text-slate-400 mt-0.5 whitespace-normal">Pemohon: {{ $sub->applicant?->name }}</div>
-                                                        @if($sub->notes)
-                                                            <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed rkbmd-notes-wrap" title="{{ $sub->notes }}">
-                                                                {{ $sub->notes }}
-                                                            </div>
-                                                        @endif
+                                                        <x-rkbmd-description :notes="$sub->notes" />
                                                     </div>
                                                 </td>
                                                 <td class="px-5 py-4 whitespace-nowrap">
@@ -643,11 +627,7 @@
                                                     <div class="rkbmd-perihal-wrap">
                                                         <div class="font-bold text-xs text-slate-800 break-words whitespace-normal rkbmd-notes-wrap">{{ $sub->title }}</div>
                                                         <div class="text-[11px] text-slate-400 mt-0.5 whitespace-normal">Pemohon: {{ $sub->applicant?->name }}</div>
-                                                        @if($sub->notes)
-                                                            <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed rkbmd-notes-wrap" title="{{ $sub->notes }}">
-                                                                {{ $sub->notes }}
-                                                            </div>
-                                                        @endif
+                                                        <x-rkbmd-description :notes="$sub->notes" />
                                                     </div>
                                                 </td>
                                                 <td class="px-5 py-4 whitespace-nowrap">
@@ -870,6 +850,26 @@
                     if (tableSupervisor) tableSupervisor.search('');
 
                     redrawAllTables();
+                });
+
+                // Toggle delegated deskripsi panjang (selengkapnya... / ringkas) agar kebal terhadap DataTables sort/filter/pagination
+                $(document).on('click', '.rkbmd-desc-toggle', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const action = $(this).data('rkbmd-toggle');
+                    const container = $(this).closest('.rkbmd-desc-container');
+                    if (!container.length) return;
+
+                    const trimmedEl = container.find('.rkbmd-desc-trimmed');
+                    const fullEl = container.find('.rkbmd-desc-full');
+
+                    if (action === 'expand') {
+                        trimmedEl.addClass('hidden');
+                        fullEl.removeClass('hidden');
+                    } else {
+                        fullEl.addClass('hidden');
+                        trimmedEl.removeClass('hidden');
+                    }
                 });
 
                 // Fungsi global penyesuaian lebar kolom saat tab Alpine berubah

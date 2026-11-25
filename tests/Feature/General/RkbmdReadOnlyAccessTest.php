@@ -181,6 +181,7 @@ class RkbmdReadOnlyAccessTest extends TestCase
         $response->assertSee('rkbmd-perihal-wrap', false);
         $response->assertSee('rkbmd-notes-wrap', false);
         $response->assertSee($this->subFromAtoB->notes);
+        $response->assertDontSee('(selengkapnya...)');
     }
 
     public function test_supervisor_can_view_rkbmd_index_and_see_submissions_originated_from_and_targeted_to_own_unit(): void
@@ -195,6 +196,7 @@ class RkbmdReadOnlyAccessTest extends TestCase
         $response->assertSee('rkbmd-perihal-wrap', false);
         $response->assertSee('rkbmd-notes-wrap', false);
         $response->assertSee($this->subFromAtoB->notes);
+        $response->assertDontSee('(selengkapnya...)');
 
         // 1. Must see submission originated from Unit A
         $response->assertSee('RKBMD/2026/10/0001');
@@ -330,5 +332,36 @@ class RkbmdReadOnlyAccessTest extends TestCase
         // 3. Backward-compatible operator.rkbmd.index and show still work
         $this->actingAs($this->operatorPemohonA)->get(route('operator.rkbmd.index'))->assertOk();
         $this->actingAs($this->operatorPemohonA)->get(route('operator.rkbmd.show', $this->subFromAtoB))->assertOk();
+    }
+
+    public function test_admin_and_supervisor_see_trimmed_mode_and_selengkapnya_for_long_notes(): void
+    {
+        $longNotes = 'Catatan panjang dari instalasi rawat inap mengenai kebutuhan mendesak pengadaan unit pendingin ruangan baru untuk ruang ICU dan NICU guna menjaga stabilitas suhu alat kesehatan vital serta kenyamanan pasien rawat inap kritis selama 24 jam penuh.';
+
+        RkbmdSubmission::create([
+            'nomor_permohonan' => 'RKBMD/2026/11/TRIMADMIN01',
+            'year' => 2026,
+            'user_id' => $this->operatorPemohonA->id,
+            'unit_id' => $this->unitA->id,
+            'sub_unit_id' => $this->subUnitA->id,
+            'target_operator_id' => $this->operatorPengusulB->id,
+            'original_operator_id' => $this->operatorPengusulB->id,
+            'title' => 'Pengadaan AC Ruang ICU',
+            'notes' => $longNotes,
+            'status' => 'Diajukan',
+            'created_by' => $this->operatorPemohonA->id,
+            'updated_by' => $this->operatorPemohonA->id,
+        ]);
+
+        $preview = \Illuminate\Support\Str::limit($longNotes, 150, '');
+
+        foreach ([$this->admin, $this->supervisorA] as $viewer) {
+            $response = $this->actingAs($viewer)->get(route('rkbmd.index'));
+            $response->assertOk();
+            $response->assertSee($preview);
+            $response->assertSee('(selengkapnya...)');
+            $response->assertSee('(ringkas)');
+            $response->assertSee($longNotes);
+        }
     }
 }

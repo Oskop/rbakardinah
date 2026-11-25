@@ -459,7 +459,8 @@ class RkbmdSubUnitTargetTest extends TestCase
             'status' => 'Diajukan',
         ]);
 
-        // Verifikasi Tabel 1 (Permohonan Saya) + proteksi DataTables Tailwind override
+        // Verifikasi Tabel 1 (Permohonan Saya) + proteksi DataTables Tailwind override + mode trim
+        $trimmedPreview = \Illuminate\Support\Str::limit($longNotes, 150, '');
         $responseMine = $this->actingAs($this->perawatA)->get(route('operator.rkbmd.index'));
         $responseMine->assertStatus(200);
         $responseMine->assertSee('rkbmd-perihal-wrap', false);
@@ -468,6 +469,12 @@ class RkbmdSubUnitTargetTest extends TestCase
         $responseMine->assertSee("DataTable.ext.classes.table = 'dataTable min-w-full text-sm align-middle'", false);
         $responseMine->assertSee('min-w-[220px] max-w-xs md:max-w-sm', false);
         $responseMine->assertSee('break-words whitespace-normal leading-relaxed', false);
+        $responseMine->assertSee('rkbmd-desc-container', false);
+        $responseMine->assertSee('rkbmd-desc-toggle', false);
+        $responseMine->assertSee('rkbmd-desc-full hidden', false);
+        $responseMine->assertSee($trimmedPreview);
+        $responseMine->assertSee('(selengkapnya...)');
+        $responseMine->assertSee('(ringkas)');
         $responseMine->assertSee($longNotes);
 
         // Verifikasi Tabel 2 (Permohonan Masuk)
@@ -477,6 +484,8 @@ class RkbmdSubUnitTargetTest extends TestCase
         $responseIncoming->assertSee('rkbmd-notes-wrap', false);
         $responseIncoming->assertSee('min-w-[220px] max-w-xs md:max-w-sm', false);
         $responseIncoming->assertSee('break-words whitespace-normal leading-relaxed', false);
+        $responseIncoming->assertSee($trimmedPreview);
+        $responseIncoming->assertSee('(selengkapnya...)');
         $responseIncoming->assertSee($longNotes);
 
         // Alihkan permohonan untuk menguji Tabel 3 (Permohonan Dialihkan)
@@ -509,6 +518,35 @@ class RkbmdSubUnitTargetTest extends TestCase
         $responseForwarded->assertSee('rkbmd-notes-wrap', false);
         $responseForwarded->assertSee('min-w-[220px] max-w-xs md:max-w-sm', false);
         $responseForwarded->assertSee('break-words whitespace-normal leading-relaxed', false);
+        $responseForwarded->assertSee($trimmedPreview);
+        $responseForwarded->assertSee('(selengkapnya...)');
+        $responseForwarded->assertSee('(ringkas)');
         $responseForwarded->assertSee($longNotes);
+    }
+
+    public function test_short_description_renders_without_selengkapnya_toggle()
+    {
+        $shortNotes = 'Permohonan ATK bulanan Poli Jantung.';
+
+        RkbmdSubmission::create([
+            'nomor_permohonan' => 'RKBMD/2026/11/SHORT01',
+            'year' => 2026,
+            'user_id' => $this->perawatA->id,
+            'unit_id' => $this->unitRajal->id,
+            'sub_unit_id' => $this->subUnitJantung->id,
+            'target_operator_id' => $this->userPDE->id,
+            'original_operator_id' => $this->userPDE->id,
+            'target_unit_id' => $this->unitPDE->id,
+            'target_sub_unit_id' => $this->subUnitPDE->id,
+            'title' => 'Pengadaan Kertas A4',
+            'notes' => $shortNotes,
+            'status' => 'Diajukan',
+        ]);
+
+        $response = $this->actingAs($this->perawatA)->get(route('operator.rkbmd.index'));
+        $response->assertStatus(200);
+        $response->assertSee($shortNotes);
+        $response->assertDontSee('(selengkapnya...)');
+        $response->assertDontSee('(ringkas)');
     }
 }
