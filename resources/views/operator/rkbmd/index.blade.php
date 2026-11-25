@@ -185,12 +185,12 @@
                             <table id="table-my-rkbmd" class="min-w-full divide-y divide-gray-200 stripe hover">
                                 <thead class="bg-gray-50/80">
                                     <tr>
-                                        <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No. Tiket / Tanggal</th>
-                                        <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider min-w-[220px] max-w-sm">Perihal Permohonan</th>
-                                        <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Operator Tujuan</th>
-                                        <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Jumlah Item</th>
-                                        <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
-                                        <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi</th>
+                                        <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">No. Tiket / Tanggal</th>
+                                        <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider rkbmd-col-perihal whitespace-nowrap min-w-[220px] max-w-sm">Perihal Permohonan</th>
+                                        <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Operator Tujuan</th>
+                                        <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Jumlah Item</th>
+                                        <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Status</th>
+                                        <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -205,19 +205,21 @@
                                                 </div>
                                             </td>
 
-                                            <td class="px-5 py-4 min-w-[220px] max-w-xs md:max-w-sm">
-                                                <div class="text-sm font-semibold text-gray-900 break-words whitespace-normal">{{ $sub->title }}</div>
-                                                <div class="text-[11px] text-slate-500 mt-0.5">
-                                                    Pemohon: <strong>{{ $sub->applicant?->name ?? 'Operator' }}</strong>
-                                                    @if($sub->user_id === Auth::id())
-                                                        <span class="ml-1 text-[10px] bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.5 rounded border border-indigo-200">Anda</span>
+                                            <td class="px-5 py-4 rkbmd-col-perihal min-w-[220px] max-w-xs md:max-w-sm">
+                                                <div class="rkbmd-perihal-wrap">
+                                                    <div class="text-sm font-semibold text-gray-900 break-words whitespace-normal rkbmd-notes-wrap">{{ $sub->title }}</div>
+                                                    <div class="text-[11px] text-slate-500 mt-0.5 whitespace-normal">
+                                                        Pemohon: <strong>{{ $sub->applicant?->name ?? 'Operator' }}</strong>
+                                                        @if($sub->user_id === Auth::id())
+                                                            <span class="ml-1 text-[10px] bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.5 rounded border border-indigo-200">Anda</span>
+                                                        @endif
+                                                    </div>
+                                                    @if($sub->notes)
+                                                        <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed rkbmd-notes-wrap" title="{{ $sub->notes }}">
+                                                            {{ $sub->notes }}
+                                                        </div>
                                                     @endif
                                                 </div>
-                                                @if($sub->notes)
-                                                    <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed" title="{{ $sub->notes }}">
-                                                        {{ $sub->notes }}
-                                                    </div>
-                                                @endif
                                             </td>
 
                                             <td class="px-5 py-4 whitespace-nowrap">
@@ -283,12 +285,12 @@
                                 <table id="table-incoming-rkbmd" class="min-w-full divide-y divide-gray-200 stripe hover">
                                     <thead class="bg-gray-50/80">
                                         <tr>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No. Tiket / Tanggal</th>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Pemohon / Asal Sub-Unit</th>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider min-w-[220px] max-w-sm">Perihal Permohonan</th>
-                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Jumlah Item</th>
-                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
-                                            <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi Tindak Lanjut</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">No. Tiket / Tanggal</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Pemohon / Asal Sub-Unit</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider rkbmd-col-perihal whitespace-nowrap min-w-[220px] max-w-sm">Perihal Permohonan</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Jumlah Item</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Status</th>
+                                            <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Aksi Tindak Lanjut</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
@@ -317,13 +319,15 @@
                                                     </div>
                                                 </td>
 
-                                                <td class="px-5 py-4 min-w-[220px] max-w-xs md:max-w-sm">
-                                                    <div class="text-sm font-semibold text-gray-900 break-words whitespace-normal">{{ $inSub->title }}</div>
-                                                    @if($inSub->notes)
-                                                        <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed" title="{{ $inSub->notes }}">
-                                                            {{ $inSub->notes }}
-                                                        </div>
-                                                    @endif
+                                                <td class="px-5 py-4 rkbmd-col-perihal min-w-[220px] max-w-xs md:max-w-sm">
+                                                    <div class="rkbmd-perihal-wrap">
+                                                        <div class="text-sm font-semibold text-gray-900 break-words whitespace-normal rkbmd-notes-wrap">{{ $inSub->title }}</div>
+                                                        @if($inSub->notes)
+                                                            <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed rkbmd-notes-wrap" title="{{ $inSub->notes }}">
+                                                                {{ $inSub->notes }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 </td>
 
                                                 <td class="px-5 py-4 whitespace-nowrap text-center text-xs font-bold text-slate-700">
@@ -389,13 +393,13 @@
                                 <table id="table-forwarded-rkbmd" class="min-w-full divide-y divide-gray-200 stripe hover">
                                     <thead class="bg-gray-50/80">
                                         <tr>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No. Tiket / Tanggal</th>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Pemohon / Asal Sub-Unit</th>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider min-w-[220px] max-w-sm">Perihal Permohonan</th>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Dialihkan Kepada</th>
-                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Jumlah Item</th>
-                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Status Terkini</th>
-                                            <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">No. Tiket / Tanggal</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Pemohon / Asal Sub-Unit</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider rkbmd-col-perihal whitespace-nowrap min-w-[220px] max-w-sm">Perihal Permohonan</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Dialihkan Kepada</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Jumlah Item</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Status Terkini</th>
+                                            <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
@@ -417,13 +421,15 @@
                                                     </div>
                                                 </td>
 
-                                                <td class="px-5 py-4 min-w-[220px] max-w-xs md:max-w-sm">
-                                                    <div class="text-sm font-semibold text-gray-900 break-words whitespace-normal">{{ $fSub->title }}</div>
-                                                    @if($fSub->notes)
-                                                        <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed" title="{{ $fSub->notes }}">
-                                                            {{ $fSub->notes }}
-                                                        </div>
-                                                    @endif
+                                                <td class="px-5 py-4 rkbmd-col-perihal min-w-[220px] max-w-xs md:max-w-sm">
+                                                    <div class="rkbmd-perihal-wrap">
+                                                        <div class="text-sm font-semibold text-gray-900 break-words whitespace-normal rkbmd-notes-wrap">{{ $fSub->title }}</div>
+                                                        @if($fSub->notes)
+                                                            <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed rkbmd-notes-wrap" title="{{ $fSub->notes }}">
+                                                                {{ $fSub->notes }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 </td>
 
                                                 <td class="px-5 py-4 whitespace-nowrap">
@@ -496,13 +502,13 @@
                                 <table id="table-admin-rkbmd" class="min-w-full divide-y divide-gray-200 stripe hover">
                                     <thead class="bg-gray-50/80">
                                         <tr>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No. Tiket / Tanggal</th>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Asal Unit & Sub-Unit</th>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Perihal Permohonan</th>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Pemegang Berkas</th>
-                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Jumlah Item</th>
-                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
-                                            <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">No. Tiket / Tanggal</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Asal Unit & Sub-Unit</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider rkbmd-col-perihal whitespace-nowrap min-w-[220px] max-w-sm">Perihal Permohonan</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Pemegang Berkas</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Jumlah Item</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Status</th>
+                                            <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
@@ -515,13 +521,22 @@
                                                     <div class="font-mono font-bold text-xs text-indigo-600">{{ $sub->nomor_permohonan }}</div>
                                                     <div class="text-[11px] text-gray-400 mt-0.5">{{ $sub->created_at->format('d/m/Y H:i') }} WIB</div>
                                                 </td>
-                                                <td class="px-5 py-4">
-                                                    <div class="font-bold text-xs text-slate-900">{{ $sub->unit?->name }}</div>
-                                                    <div class="text-[11px] text-slate-500">{{ $sub->subUnit?->name ?? 'Sub-Unit' }}</div>
+                                                <td class="px-5 py-4 rkbmd-col-meta">
+                                                    <div class="rkbmd-meta-wrap">
+                                                        <div class="font-bold text-xs text-slate-900 break-words whitespace-normal">{{ $sub->unit?->name }}</div>
+                                                        <div class="text-[11px] text-slate-500 break-words whitespace-normal">{{ $sub->subUnit?->name ?? 'Sub-Unit' }}</div>
+                                                    </div>
                                                 </td>
-                                                <td class="px-5 py-4">
-                                                    <div class="font-bold text-xs text-slate-800 line-clamp-1">{{ $sub->title }}</div>
-                                                    <div class="text-[11px] text-slate-400 mt-0.5">Pemohon: {{ $sub->applicant->name }}</div>
+                                                <td class="px-5 py-4 rkbmd-col-perihal min-w-[220px] max-w-xs md:max-w-sm">
+                                                    <div class="rkbmd-perihal-wrap">
+                                                        <div class="font-bold text-xs text-slate-800 break-words whitespace-normal rkbmd-notes-wrap">{{ $sub->title }}</div>
+                                                        <div class="text-[11px] text-slate-400 mt-0.5 whitespace-normal">Pemohon: {{ $sub->applicant?->name }}</div>
+                                                        @if($sub->notes)
+                                                            <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed rkbmd-notes-wrap" title="{{ $sub->notes }}">
+                                                                {{ $sub->notes }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 </td>
                                                 <td class="px-5 py-4 whitespace-nowrap">
                                                     <div class="text-xs font-semibold text-slate-700">{{ $sub->targetOperator?->name }}</div>
@@ -584,13 +599,13 @@
                                 <table id="table-supervisor-rkbmd" class="min-w-full divide-y divide-gray-200 stripe hover">
                                     <thead class="bg-gray-50/80">
                                         <tr>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No. Tiket / Tanggal</th>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Keterkaitan / Arah Berkas</th>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Perihal Permohonan</th>
-                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Pemegang Berkas</th>
-                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Jumlah Item</th>
-                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
-                                            <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">No. Tiket / Tanggal</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Keterkaitan / Arah Berkas</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider rkbmd-col-perihal whitespace-nowrap min-w-[220px] max-w-sm">Perihal Permohonan</th>
+                                            <th class="px-5 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Pemegang Berkas</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Jumlah Item</th>
+                                            <th class="px-5 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Status</th>
+                                            <th class="px-5 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider whitespace-nowrap">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
@@ -605,26 +620,35 @@
                                                     <div class="font-mono font-bold text-xs text-indigo-600">{{ $sub->nomor_permohonan }}</div>
                                                     <div class="text-[11px] text-gray-400 mt-0.5">{{ $sub->created_at->format('d/m/Y H:i') }} WIB</div>
                                                 </td>
-                                                <td class="px-5 py-4">
-                                                    @if($isOutbound)
-                                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
-                                                            <span>📤</span> Diajukan dari Sub-Unit Kita
-                                                        </span>
-                                                        <div class="text-[11px] font-semibold text-slate-700 mt-1">
-                                                            {{ $sub->subUnit?->name ?? $sub->unit?->name }}
-                                                        </div>
-                                                    @else
-                                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                                            <span>📥</span> Ditujukan ke Operator Kita
-                                                        </span>
-                                                        <div class="text-[11px] font-semibold text-slate-700 mt-1">
-                                                            Dari: {{ $sub->unit?->name }} ({{ $sub->subUnit?->name ?? 'Sub-Unit' }})
-                                                        </div>
-                                                    @endif
+                                                <td class="px-5 py-4 rkbmd-col-meta">
+                                                    <div class="rkbmd-meta-wrap">
+                                                        @if($isOutbound)
+                                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200 whitespace-nowrap">
+                                                                <span>📤</span> Diajukan dari Sub-Unit Kita
+                                                            </span>
+                                                            <div class="text-[11px] font-semibold text-slate-700 mt-1 break-words whitespace-normal">
+                                                                {{ $sub->subUnit?->name ?? $sub->unit?->name }}
+                                                            </div>
+                                                        @else
+                                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 whitespace-nowrap">
+                                                                <span>📥</span> Ditujukan ke Operator Kita
+                                                            </span>
+                                                            <div class="text-[11px] font-semibold text-slate-700 mt-1 break-words whitespace-normal">
+                                                                Dari: {{ $sub->unit?->name }} ({{ $sub->subUnit?->name ?? 'Sub-Unit' }})
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 </td>
-                                                <td class="px-5 py-4">
-                                                    <div class="font-bold text-xs text-slate-800 line-clamp-1">{{ $sub->title }}</div>
-                                                    <div class="text-[11px] text-slate-400 mt-0.5">Pemohon: {{ $sub->applicant->name }}</div>
+                                                <td class="px-5 py-4 rkbmd-col-perihal min-w-[220px] max-w-xs md:max-w-sm">
+                                                    <div class="rkbmd-perihal-wrap">
+                                                        <div class="font-bold text-xs text-slate-800 break-words whitespace-normal rkbmd-notes-wrap">{{ $sub->title }}</div>
+                                                        <div class="text-[11px] text-slate-400 mt-0.5 whitespace-normal">Pemohon: {{ $sub->applicant?->name }}</div>
+                                                        @if($sub->notes)
+                                                            <div class="text-xs text-slate-500 mt-1 break-words whitespace-normal leading-relaxed rkbmd-notes-wrap" title="{{ $sub->notes }}">
+                                                                {{ $sub->notes }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 </td>
                                                 <td class="px-5 py-4 whitespace-nowrap">
                                                     <div class="text-xs font-semibold text-slate-700">{{ $sub->targetOperator?->name }}</div>
@@ -678,6 +702,43 @@
             .dt-search {
                 display: none; /* Menyembunyikan input search bawaan, digantikan oleh filter toolbar terpadu */
             }
+            /* Cegah whitespace-nowrap DataTables menimpa wrap text kolom Perihal & Meta */
+            table.dataTable {
+                white-space: normal;
+            }
+            table.dataTable td.rkbmd-col-perihal {
+                white-space: normal !important;
+                min-width: 220px;
+                max-width: 24rem;
+                vertical-align: top;
+            }
+            .rkbmd-perihal-wrap {
+                display: block;
+                width: 100%;
+                min-width: 220px;
+                max-width: 24rem;
+                white-space: normal !important;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+            .rkbmd-notes-wrap {
+                white-space: normal !important;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+            table.dataTable td.rkbmd-col-meta {
+                white-space: normal !important;
+                vertical-align: top;
+            }
+            .rkbmd-meta-wrap {
+                display: block;
+                width: 100%;
+                min-width: 160px;
+                max-width: 220px;
+                white-space: normal !important;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
         </style>
     @endpush
 
@@ -687,6 +748,14 @@
         <script src="https://cdn.datatables.net/2.0.3/js/dataTables.tailwindcss.js"></script>
         <script>
             $(document).ready(function() {
+                // Nonaktifkan whitespace-nowrap global yang disuntikkan oleh dataTables.tailwindcss.js
+                if (window.DataTable && DataTable.ext && DataTable.ext.classes) {
+                    DataTable.ext.classes.table = 'dataTable min-w-full text-sm align-middle';
+                }
+                if ($.fn.dataTable && $.fn.dataTable.ext && $.fn.dataTable.ext.classes) {
+                    $.fn.dataTable.ext.classes.table = 'dataTable min-w-full text-sm align-middle';
+                }
+
                 const dataTableLang = {
                     lengthMenu: "Tampilkan _MENU_ data",
                     info: "Menampilkan _START_ s/d _END_ dari total _TOTAL_ permohonan",
@@ -702,65 +771,26 @@
                     }
                 };
 
-                let tableMy = null;
-                if ($('#table-my-rkbmd').length) {
-                    tableMy = $('#table-my-rkbmd').DataTable({
+                function initRkbmdDataTable(selector, nonOrderableCol) {
+                    if (!$(selector).length) return null;
+                    const dt = $(selector).DataTable({
                         responsive: true,
+                        autoWidth: false,
                         order: [[0, 'desc']], // Urutkan berdasarkan kolom 0 (Tanggal/No. Tiket) descending
                         language: dataTableLang,
                         columnDefs: [
-                            { orderable: false, targets: [5] } // Kolom Aksi tidak dapat disortir
+                            { orderable: false, targets: [nonOrderableCol] } // Kolom Aksi tidak dapat disortir
                         ]
                     });
+                    $(selector).removeClass('whitespace-nowrap');
+                    return dt;
                 }
 
-                let tableIncoming = null;
-                if ($('#table-incoming-rkbmd').length) {
-                    tableIncoming = $('#table-incoming-rkbmd').DataTable({
-                        responsive: true,
-                        order: [[0, 'desc']],
-                        language: dataTableLang,
-                        columnDefs: [
-                            { orderable: false, targets: [5] }
-                        ]
-                    });
-                }
-
-                let tableForwarded = null;
-                if ($('#table-forwarded-rkbmd').length) {
-                    tableForwarded = $('#table-forwarded-rkbmd').DataTable({
-                        responsive: true,
-                        order: [[0, 'desc']],
-                        language: dataTableLang,
-                        columnDefs: [
-                            { orderable: false, targets: [6] }
-                        ]
-                    });
-                }
-
-                let tableAdmin = null;
-                if ($('#table-admin-rkbmd').length) {
-                    tableAdmin = $('#table-admin-rkbmd').DataTable({
-                        responsive: true,
-                        order: [[0, 'desc']],
-                        language: dataTableLang,
-                        columnDefs: [
-                            { orderable: false, targets: [6] }
-                        ]
-                    });
-                }
-
-                let tableSupervisor = null;
-                if ($('#table-supervisor-rkbmd').length) {
-                    tableSupervisor = $('#table-supervisor-rkbmd').DataTable({
-                        responsive: true,
-                        order: [[0, 'desc']],
-                        language: dataTableLang,
-                        columnDefs: [
-                            { orderable: false, targets: [6] }
-                        ]
-                    });
-                }
+                const tableMy = initRkbmdDataTable('#table-my-rkbmd', 5);
+                const tableIncoming = initRkbmdDataTable('#table-incoming-rkbmd', 5);
+                const tableForwarded = initRkbmdDataTable('#table-forwarded-rkbmd', 6);
+                const tableAdmin = initRkbmdDataTable('#table-admin-rkbmd', 6);
+                const tableSupervisor = initRkbmdDataTable('#table-supervisor-rkbmd', 6);
 
                 // Custom DataTables Filter: Date Range, Status & Unit
                 $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {

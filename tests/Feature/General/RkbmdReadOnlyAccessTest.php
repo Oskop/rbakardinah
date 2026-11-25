@@ -174,10 +174,13 @@ class RkbmdReadOnlyAccessTest extends TestCase
         $response->assertSee('Mode Peninjauan (Read-Only)');
         $response->assertDontSee('Buat Permohonan Baru');
 
-        // Admin sees all 3 submissions across units
+        // Admin sees all 3 submissions across units along with wrapped description/title structure
         $response->assertSee('RKBMD/2026/10/0001');
         $response->assertSee('RKBMD/2026/10/0002');
         $response->assertSee('RKBMD/2026/10/0003');
+        $response->assertSee('rkbmd-perihal-wrap', false);
+        $response->assertSee('rkbmd-notes-wrap', false);
+        $response->assertSee($this->subFromAtoB->notes);
     }
 
     public function test_supervisor_can_view_rkbmd_index_and_see_submissions_originated_from_and_targeted_to_own_unit(): void
@@ -189,6 +192,9 @@ class RkbmdReadOnlyAccessTest extends TestCase
         $response->assertSee('terkait Unit ' . $this->unitA->name);
         $response->assertSee('Mode Peninjauan (Read-Only)');
         $response->assertDontSee('Buat Permohonan Baru');
+        $response->assertSee('rkbmd-perihal-wrap', false);
+        $response->assertSee('rkbmd-notes-wrap', false);
+        $response->assertSee($this->subFromAtoB->notes);
 
         // 1. Must see submission originated from Unit A
         $response->assertSee('RKBMD/2026/10/0001');

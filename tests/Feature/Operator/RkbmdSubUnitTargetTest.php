@@ -441,9 +441,9 @@ class RkbmdSubUnitTargetTest extends TestCase
 
     public function test_description_in_all_three_tables_renders_with_wrap_classes_and_avoids_horizontal_overflow()
     {
-        $longNotes = 'Deskripsi permohonan yang sangat panjang untuk keperluan pengadaan infrastruktur jaringan LAN di seluruh lantai ruang rawat inap demi kelancaran integrasi rekam medis elektronik RME dan sistem informasi manajemen rumah sakit.';
+        $longNotes = 'Deskripsi permohonan yang sangat panjang untuk keperluan pengadaan infrastruktur jaringan LAN di seluruh lantai ruang rawat inap demi kelancaran integrasi rekam medis elektronik RME dan sistem informasi manajemen rumah sakit https://contoh-url-sangat-panjang-tanpa-spasi.example.com/path/yang/harus/terlipat/dengan/rapi.';
 
-        // 1. Buat permohonan dengan deskripsi panjang
+        // 1. Buat permohonan dengan deskripsi panjang (termasuk string panjang tanpa spasi)
         $submission = RkbmdSubmission::create([
             'nomor_permohonan' => 'RKBMD/2026/11/WRAP01',
             'year' => 2026,
@@ -459,9 +459,13 @@ class RkbmdSubUnitTargetTest extends TestCase
             'status' => 'Diajukan',
         ]);
 
-        // Verifikasi Tabel 1 (Permohonan Saya)
+        // Verifikasi Tabel 1 (Permohonan Saya) + proteksi DataTables Tailwind override
         $responseMine = $this->actingAs($this->perawatA)->get(route('operator.rkbmd.index'));
         $responseMine->assertStatus(200);
+        $responseMine->assertSee('rkbmd-perihal-wrap', false);
+        $responseMine->assertSee('rkbmd-notes-wrap', false);
+        $responseMine->assertSee('autoWidth: false', false);
+        $responseMine->assertSee("DataTable.ext.classes.table = 'dataTable min-w-full text-sm align-middle'", false);
         $responseMine->assertSee('min-w-[220px] max-w-xs md:max-w-sm', false);
         $responseMine->assertSee('break-words whitespace-normal leading-relaxed', false);
         $responseMine->assertSee($longNotes);
@@ -469,6 +473,8 @@ class RkbmdSubUnitTargetTest extends TestCase
         // Verifikasi Tabel 2 (Permohonan Masuk)
         $responseIncoming = $this->actingAs($this->userPDE)->get(route('operator.rkbmd.index'));
         $responseIncoming->assertStatus(200);
+        $responseIncoming->assertSee('rkbmd-perihal-wrap', false);
+        $responseIncoming->assertSee('rkbmd-notes-wrap', false);
         $responseIncoming->assertSee('min-w-[220px] max-w-xs md:max-w-sm', false);
         $responseIncoming->assertSee('break-words whitespace-normal leading-relaxed', false);
         $responseIncoming->assertSee($longNotes);
@@ -499,6 +505,8 @@ class RkbmdSubUnitTargetTest extends TestCase
         $responseForwarded = $this->actingAs($this->userPDE)->get(route('operator.rkbmd.index'));
         $responseForwarded->assertStatus(200);
         $responseForwarded->assertSee('table-forwarded-rkbmd', false);
+        $responseForwarded->assertSee('rkbmd-perihal-wrap', false);
+        $responseForwarded->assertSee('rkbmd-notes-wrap', false);
         $responseForwarded->assertSee('min-w-[220px] max-w-xs md:max-w-sm', false);
         $responseForwarded->assertSee('break-words whitespace-normal leading-relaxed', false);
         $responseForwarded->assertSee($longNotes);
