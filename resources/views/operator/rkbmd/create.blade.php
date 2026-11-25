@@ -379,7 +379,7 @@
                     <!-- Upload PDF Memo Intern / Nota Dinas -->
                     <div class="bg-indigo-50/40 border border-indigo-200/80 rounded-xl p-4">
                         <label for="attachment" class="block text-xs font-bold text-indigo-950 mb-1">
-                            📎 Upload Dokumen Pendukung (Memo Intern / Nota Dinas Permohonan) <span class="text-rose-500">*</span>
+                            📎 Upload Dokumen Pendukung (Contoh: Spesifikasi Barang) <span class="text-rose-500">*</span>
                         </label>
                         <p class="text-[11px] text-slate-500 mb-2">
                             Unggah berkas resmi nota dinas permohonan dari sub-unit Anda dalam format <strong>PDF (Maks. 10MB)</strong>.

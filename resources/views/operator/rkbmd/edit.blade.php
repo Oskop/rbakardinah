@@ -403,7 +403,7 @@
                     <div class="bg-indigo-50/40 border border-indigo-200/80 rounded-xl p-4 space-y-3">
                         <div class="flex items-center justify-between">
                             <label for="attachment" class="block text-xs font-bold text-indigo-950">
-                                📎 Dokumen Pendukung (Memo Intern / Nota Dinas Permohonan)
+                                📎 Dokumen Pendukung (Contoh: Spesifikasi Barang)
                             </label>
                             @if($rkbmd->attachment_path)
                                 <a href="{{ asset('storage/' . $rkbmd->attachment_path) }}" target="_blank"

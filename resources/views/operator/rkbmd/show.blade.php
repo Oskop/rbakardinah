@@ -239,7 +239,7 @@
                                 <div class="flex items-center gap-2.5">
                                     <span class="text-2xl">📄</span>
                                     <div>
-                                        <div class="text-xs font-bold text-indigo-950">Dokumen Nota Dinas / Memo Intern</div>
+                                        <div class="text-xs font-bold text-indigo-950">Dokumen Pendukung</div>
                                         <div class="text-[11px] text-indigo-600">Berkas permohonan resmi berformat PDF</div>
                                     </div>
                                 </div>
